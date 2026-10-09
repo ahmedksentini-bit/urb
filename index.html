@@ -1,0 +1,2037 @@
+<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Comparateur de modération des vitesses</title>
+<style>
+/* Mise en page : planche technique. Bandeau de commandes collant, une bande en plan par aménagement
+   (vignette 3D devant), empilées sur la même échelle ; verdict, synthèse, hypothèses, méthode. */
+:root {
+  --bg: #eceff0;
+  --surface: #f7f9f9;
+  --ink: #17212b;
+  --muted: #5b6770;
+  --line: #ccd4d8;
+  --accent: #1b5ea8;
+  --accent-ink: #ffffff;
+  --ok: #23774a;
+  --warn: #9a6512;
+  --bad: #b0303c;
+  --zone: rgba(27, 94, 168, .10);
+  /* plan */
+  --verge: #d3dcd4;
+  --walk: #c3c9cc;
+  --curb: #8f989e;
+  --asphalt: #3b4148;
+  --mark: #f3f5f6;
+  --bump: #5d656e;
+  --bump-ramp: #4c535b;
+  --raised: #8a5443;
+  --raised-ramp: #6f4336;
+  --pave: #6e6a66;
+  --pave-joint: #8b8681;
+  --island: #9db28d;
+  --ped: #ffd23f;
+  --ped-ring: #1d1f22;
+  --brake: #ff4040;
+  --shadow: rgba(0, 0, 0, .30);
+  --glass: #1c2834;
+  --roof: rgba(255, 255, 255, .18);
+  --roof-unit: #d5d9dd;
+  --headlight: #fff7d9;
+  --tail: #7d1d23;
+  --rib: rgba(0, 0, 0, .16);
+  --shade: rgba(0, 0, 0, .18);
+  --box: #e2e5e8;
+  --sp1: #23b5a5; --sp2: #74c45a; --sp3: #f1c232; --sp4: #f08a2c; --sp5: #e5414b;
+  --font-display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --leftcol: clamp(290px, 22vw, 390px);
+  --rowh: 90px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101418; --surface: #171c21; --ink: #e4e9ec; --muted: #98a4ad; --line: #2b333a;
+    --accent: #72aaea; --accent-ink: #0c1622; --ok: #5cc08a; --warn: #e3ab4c; --bad: #f07a83;
+    --zone: rgba(114, 170, 234, .13);
+    --verge: #1a231f; --walk: #3d444a; --curb: #59626a; --asphalt: #2a2f35; --mark: #d9dee2;
+    --bump: #4c535a; --bump-ramp: #3e444b; --raised: #74463a; --raised-ramp: #5d372d;
+    --pave: #57534f; --pave-joint: #6d6863; --island: #4c5e43; --ped-ring: #0d0f11; --brake: #ff5050;
+    --shadow: rgba(0, 0, 0, .42); --glass: #121a22; --roof: rgba(255, 255, 255, .14); --roof-unit: #a7aeb5;
+    --headlight: #f4ecc8; --tail: #6d1a1f; --rib: rgba(0, 0, 0, .22); --shade: rgba(0, 0, 0, .22); --box: #c9cdd2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101418; --surface: #171c21; --ink: #e4e9ec; --muted: #98a4ad; --line: #2b333a;
+  --accent: #72aaea; --accent-ink: #0c1622; --ok: #5cc08a; --warn: #e3ab4c; --bad: #f07a83;
+  --zone: rgba(114, 170, 234, .13);
+  --verge: #1a231f; --walk: #3d444a; --curb: #59626a; --asphalt: #2a2f35; --mark: #d9dee2;
+  --bump: #4c535a; --bump-ramp: #3e444b; --raised: #74463a; --raised-ramp: #5d372d;
+  --pave: #57534f; --pave-joint: #6d6863; --island: #4c5e43; --ped-ring: #0d0f11; --brake: #ff5050;
+  --shadow: rgba(0, 0, 0, .42); --glass: #121a22; --roof: rgba(255, 255, 255, .14); --roof-unit: #a7aeb5;
+  --headlight: #f4ecc8; --tail: #6d1a1f; --rib: rgba(0, 0, 0, .22); --shade: rgba(0, 0, 0, .22); --box: #c9cdd2;
+  color-scheme: dark;
+}
+/* arabe : polices système qui portent l'écriture arabe ; jamais d'espacement de lettres (il casse les liaisons) */
+html[lang="ar"] {
+  --font-display: "Segoe UI", Tahoma, "Noto Sans Arabic", "Geeza Pro", Arial, sans-serif;
+  --font-body: "Segoe UI", Tahoma, "Noto Sans Arabic", "Geeza Pro", Arial, sans-serif;
+}
+html[lang="ar"] * { letter-spacing: 0 !important; text-transform: none !important; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); }
+.wrap { max-width: 1400px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 36px); }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; }
+.num { unicode-bidi: isolate; direction: ltr; }
+
+header.top { padding-block: 30px 18px; }
+.eyebrow { margin: 0 0 8px; font: 600 12px/1.2 var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+h1 { margin: 0 0 10px; font-size: clamp(26px, 3.4vw, 40px); line-height: 1.12; font-weight: 600; }
+.lede { margin: 0; max-width: 72ch; color: var(--muted); }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-block: 1px solid var(--line); }
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 10px; }
+.group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.group-label { font: 500 11px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-inline-end: 2px; }
+.btn { font: 600 13px/1 var(--font-display); letter-spacing: .02em; padding: 8px 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; }
+.btn:hover { border-color: var(--accent); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn[aria-pressed="true"], .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: .55; cursor: progress; }
+#btn-lang { font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; }
+.seg { display: inline-flex; }
+.seg .btn { border-radius: 0; margin-inline-start: -1px; }
+.seg .btn:first-child { border-start-start-radius: 6px; border-end-start-radius: 6px; margin-inline-start: 0; }
+.seg .btn:last-child { border-start-end-radius: 6px; border-end-end-radius: 6px; }
+.clock { font: 600 20px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.clock small { display: block; font: 500 11px/1.3 var(--font-body); color: var(--muted); }
+.legend { margin-inline-start: auto; display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); }
+.ramp-wrap { display: grid; gap: 2px; direction: ltr; }
+.ramp { width: 150px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, var(--sp1) 0%, var(--sp1) 25%, var(--sp2) 37.5%, var(--sp3) 50%, var(--sp4) 62.5%, var(--sp5) 75%, var(--sp5) 100%); }
+.ramp-ticks { display: flex; justify-content: space-between; width: 150px; font: 500 10px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.ped-key { display: inline-flex; align-items: center; gap: 5px; }
+.ped-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ped); border: 1px solid var(--ped-ring); }
+.ped-dot.late { border: 2px solid var(--bad); }
+
+main { padding-block: 6px 48px; }
+
+.verdict { margin-block: 20px 8px; padding: 16px 18px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); }
+.verdict .eyebrow { margin-bottom: 4px; }
+.verdict h2 { margin: 0 0 6px; font-size: 24px; }
+.verdict p { margin: 4px 0; max-width: 110ch; font-size: 14px; }
+.verdict .v-rule, .verdict .v-excl { color: var(--muted); font-size: 13px; }
+.verdict .v-warn { color: var(--bad); font-weight: 600; }
+
+.strip { padding-block: 16px 14px; border-bottom: 1px solid var(--line); }
+.strip.ref, .strip.best { margin-inline: calc(-1 * clamp(8px, 1.5vw, 18px)); padding-inline: clamp(8px, 1.5vw, 18px); border-radius: 6px; }
+.strip.ref { background: linear-gradient(var(--zone), var(--zone)); }
+.strip.best { box-shadow: inset 0 0 0 2px var(--accent); }
+.strip-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 22px; margin-bottom: 10px; }
+.thumb { flex: none; width: 176px; aspect-ratio: 16 / 9; padding: 0; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--verge); cursor: zoom-in; align-self: center; max-width: 100%; }
+.thumb:hover { border-color: var(--accent); }
+.thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+body.no3d .thumb { display: none; }
+.strip-title { flex: 1 1 320px; min-width: 0; }
+.strip h3 { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 19px; line-height: 1.25; font-weight: 600; }
+.desc { margin: 3px 0 0; font-size: 13px; color: var(--muted); max-width: 86ch; }
+.pill { font: 600 10.5px/1 var(--font-display); letter-spacing: .07em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.pill.ok { color: var(--ok); } .pill.warn { color: var(--warn); } .pill.bad { color: var(--bad); }
+.pill.rec { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.sh { display: none; }
+.kpis { display: grid; grid-template-columns: repeat(5, auto); gap: 4px 22px; margin: 0; }
+.kpis dt { font: 500 10.5px/1.2 var(--font-display); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.kpis dd { margin: 2px 0 0; font: 600 19px/1.1 var(--font-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kpis dd small { font-size: 12px; font-weight: 500; color: var(--muted); }
+.ok-t { color: var(--ok); } .warn-t { color: var(--warn); } .bad-t { color: var(--bad); }
+canvas.plan { display: block; width: 100%; border-radius: 4px; }
+.qrow { direction: ltr; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 16px; min-height: 18px; margin-bottom: 4px; font: 600 12px/18px var(--font-display); letter-spacing: .02em; color: var(--bad); font-variant-numeric: tabular-nums; }
+.qrow span:last-child { margin-left: auto; text-align: right; }
+
+section.block { padding-top: 34px; }
+h2 { margin: 0 0 6px; font-size: 24px; font-weight: 600; }
+.note { margin: 0 0 14px; color: var(--muted); font-size: 13.5px; max-width: 100ch; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 1000px; font-size: 13.5px; }
+th, td { padding: 8px 10px; text-align: end; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: start; }
+thead th { font: 600 11px/1.25 var(--font-display); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); vertical-align: bottom; }
+thead th span { display: block; font-weight: 500; text-transform: none; letter-spacing: 0; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr.ref td { background: var(--zone); }
+tbody tr.best td { box-shadow: inset 0 2px 0 var(--accent), inset 0 -2px 0 var(--accent); font-weight: 600; }
+td.name { font-family: var(--font-display); font-weight: 600; font-size: 14px; white-space: nowrap; }
+
+form#params { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+fieldset { margin: 0; padding: 14px 14px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); min-width: 0; }
+fieldset.calib { grid-column: 1 / -1; }
+fieldset.calib .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); column-gap: 28px; }
+legend { padding: 0 6px; font: 600 13px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
+.field { display: grid; grid-template-columns: 1fr 86px 56px; align-items: center; gap: 8px; padding-block: 3px; font-size: 13.5px; }
+.field label { min-width: 0; }
+.field input { width: 100%; font: 500 14px/1.2 var(--font-display); font-variant-numeric: tabular-nums; padding: 5px 7px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); direction: ltr; text-align: right; }
+.field input[readonly] { background: var(--surface); color: var(--muted); border-style: dashed; }
+.field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field .unit { color: var(--muted); font-size: 12px; }
+fieldset .src { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+fieldset .btn { margin-top: 8px; }
+.form-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.form-actions .msg { font-size: 13px; color: var(--muted); }
+
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px 36px; }
+.cols > div { min-width: 0; }
+.cols h3 { margin: 14px 0 4px; font-size: 16px; font-weight: 600; }
+.cols p, .cols li { font-size: 14px; max-width: 72ch; }
+.cols ul, .cols ol { padding-inline-start: 20px; margin: 4px 0; }
+.formula { font-family: var(--font-display); font-variant-numeric: tabular-nums; white-space: nowrap; unicode-bidi: isolate; direction: ltr; }
+
+dialog#dlg3d { width: min(1200px, 94vw); padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+dialog#dlg3d::backdrop { background: rgba(10, 14, 18, .7); }
+#dlg3d figure { margin: 0; }
+#dlg3d img { display: block; width: 100%; height: auto; background: var(--verge); }
+#dlg3d figcaption { padding: 10px 14px 0; font: 600 16px/1.3 var(--font-display); }
+#dlg3d .dlg-note { margin: 4px 14px 0; font-size: 12.5px; color: var(--muted); }
+#dlg3d .dlg-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 14px 14px; }
+
+@media (max-width: 760px) {
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .legend { margin-inline-start: 0; }
+  .field { grid-template-columns: 1fr 78px 50px; }
+  .thumb { width: 100%; }
+}
+
+/* Mode présentation : toutes les bandes tiennent dans la hauteur de l'écran.
+   Colonnes : vignette 3D, nom et chiffres clés (sous un en-tête commun), vue en plan. */
+body:not(.compact) .compact-only { display: none; }
+body.compact .lg { display: none; }
+body.compact .sh { display: inline; }
+.bar-title { font: 600 17px/1.15 var(--font-display); }
+.bar-title small { display: block; font: 500 11.5px/1.3 var(--font-body); color: var(--muted); }
+body.compact #compact-head { display: grid; }
+#compact-head { grid-template-columns: calc(var(--rowh) * 1.7778) var(--leftcol) minmax(0, 1fr); column-gap: 12px; padding-block: 5px 3px; font: 500 10px/1.2 var(--font-display); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+body.no3d #compact-head { grid-template-columns: 0 var(--leftcol) minmax(0, 1fr); }
+#compact-head .ch-kpis { grid-column: 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 8px; align-items: end; }
+#compact-head #ch-view { grid-column: 3; }
+body.compact header.top, body.compact #synthese, body.compact #hypotheses, body.compact #methode, body.compact .desc,
+body.compact .ped-key:first-of-type, body.compact #verdict { display: none; }
+body.compact .bar { position: static; }
+body.compact .bar .wrap { padding-block: 6px; gap: 6px 14px; }
+body.compact main { padding-block: 0; }
+body.compact .strip { display: grid; grid-template-columns: calc(var(--rowh) * 1.7778) var(--leftcol) minmax(0, 1fr); grid-template-rows: auto auto 1fr; column-gap: 12px; padding-block: 3px; overflow: hidden; }
+body.compact.no3d .strip { grid-template-columns: 0 var(--leftcol) minmax(0, 1fr); }
+body.compact .strip.ref, body.compact .strip.best { border-radius: 0; }
+body.compact .strip-head { display: contents; }
+body.compact .thumb { grid-column: 1; grid-row: 1 / 4; width: 100%; height: var(--rowh); align-self: center; }
+body.compact .strip-title { grid-column: 2; grid-row: 1; min-width: 0; }
+body.compact .strip h3 { font-size: 15px; flex-wrap: nowrap; gap: 6px; white-space: nowrap; overflow: hidden; }
+body.compact .kpis { grid-column: 2; grid-row: 2; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 8px; margin-top: 2px; width: 100%; }
+body.compact .kpis > div:nth-child(3), body.compact .kpis dt { display: none; }
+body.compact .kpis dd { margin: 0; font-size: 15px; }
+body.compact .qrow { grid-column: 2; grid-row: 3; min-height: 0; margin: 2px 0 0; font-size: 11px; line-height: 14px; }
+body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+<!-- three.js, pour les vues 3D de synthèse seulement. Sans connexion, la page fonctionne sans les vignettes. -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow" data-i18n="eyebrow"></p>
+    <h1 data-i18n="h1"></h1>
+    <p class="lede" id="lede"></p>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="bar-title compact-only"><span data-i18n="h1"></span><small id="bar-sub"></small></div>
+    <div class="group">
+      <button class="btn" id="btn-lang" type="button" data-free="1"></button>
+      <button class="btn" id="btn-compact" type="button" aria-pressed="false" data-free="1"></button>
+      <button class="btn compact-only" id="btn-fs" type="button" data-free="1"></button>
+    </div>
+    <div class="group">
+      <button class="btn primary" id="btn-play" type="button" aria-pressed="true"></button>
+      <div class="seg" role="group" data-i18n-aria="speedAria">
+        <button class="btn" type="button" data-speed="1" aria-pressed="true">×1</button>
+        <button class="btn" type="button" data-speed="4" aria-pressed="false">×4</button>
+        <button class="btn" type="button" data-speed="15" aria-pressed="false">×15</button>
+      </div>
+    </div>
+    <div class="group">
+      <span class="group-label" data-i18n="view"></span>
+      <div class="seg" role="group" data-i18n-aria="viewAria">
+        <button class="btn" type="button" data-view="full" aria-pressed="false" data-i18n="viewFull"></button>
+        <button class="btn" type="button" data-view="zoom" aria-pressed="false" data-i18n="viewZoom"></button>
+      </div>
+    </div>
+    <div class="group">
+      <span class="group-label" data-i18n="colors"></span>
+      <div class="seg" role="group" data-i18n-aria="colorAria">
+        <button class="btn" type="button" data-color="speed" aria-pressed="true" data-i18n="colSpeed"></button>
+        <button class="btn" type="button" data-color="paint" aria-pressed="false" data-i18n="colPaint"></button>
+      </div>
+    </div>
+    <div class="group">
+      <button class="btn" id="btn-hour" type="button"></button>
+      <button class="btn" id="btn-reset" type="button" data-i18n="reset"></button>
+    </div>
+    <div class="clock" id="clock" aria-live="off"></div>
+    <span class="pill bad" id="calib-flag" hidden></span>
+    <div class="legend">
+      <div class="ramp-wrap" id="legend-speed" data-i18n-aria="rampAria">
+        <div class="ramp"></div>
+        <div class="ramp-ticks"><span>0</span><span>20</span><span>40</span><span data-i18n="ramp60"></span></div>
+      </div>
+      <span class="ped-key"><span class="ped-dot"></span><span data-i18n="pedKey"></span></span>
+      <span class="ped-key"><span class="ped-dot late"></span><span data-i18n="pedLate"></span></span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap compact-only" id="compact-head" aria-hidden="true">
+  <div class="ch-kpis"><span data-i18n="kV85"></span><span data-i18n="kTT"></span><span data-i18n="kPed"></span><span data-i18n="kRisk"></span></div>
+  <div id="ch-view"></div>
+</div>
+
+<main class="wrap">
+  <section class="verdict" id="verdict" aria-live="polite"></section>
+  <section id="strips"></section>
+
+  <section class="block" id="synthese">
+    <h2 data-i18n="sumTitle"></h2>
+    <p class="note" id="summary-note"></p>
+    <div class="table-wrap">
+      <table id="summary"><thead></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section class="block" id="hypotheses">
+    <h2 data-i18n="hypTitle"></h2>
+    <p class="note" data-i18n="hypNote"></p>
+    <form id="params" novalidate></form>
+  </section>
+
+  <section class="block" id="methode">
+    <h2 data-i18n="methTitle"></h2>
+    <div class="cols" id="method-body"></div>
+  </section>
+</main>
+
+<dialog id="dlg3d">
+  <figure>
+    <img id="dlg-img" alt="">
+    <figcaption id="dlg-cap"></figcaption>
+  </figure>
+  <p class="dlg-note" id="dlg-note"></p>
+  <div class="dlg-actions">
+    <a class="btn primary" id="dlg-dl" href="#" hidden></a>
+    <span class="dlg-note" id="dlg-status"></span>
+    <button class="btn" id="dlg-close" type="button"></button>
+  </div>
+</dialog>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- constantes ---------- */
+const KMH = 3.6, L = 500, XC = 250, DT = 0.1, WARMUP = 120, PRERUN = 600;
+const ZEBRA_HALF = 2;          // passage de 4 m dans le sens de la circulation
+const D_DEC = 12;              // distance minimale de décision d'un conducteur (m)
+const B_YIELD = 3.0;           // décélération acceptée pour céder (m/s²)
+const B_ENGAGE = 3.0;          // décélération qu'un piéton engagé impose sur la 2e voie (m/s²)
+const YIELD_PATIENCE = 8;      // un conducteur arrêté pour rien repart après 8 s
+const CVAR = 0.12;             // dispersion des vitesses de franchissement entre conducteurs
+const ISLAND_MIN = 1.5;        // îlot refuge utilisable (m)
+const REPS = 5, EVAL_T = WARMUP + 3600;   // évaluation : cinq simulations d'une heure
+const Y0 = -8, Y1 = 8;         // emprise latérale dessinée (m)
+const CLS = {
+  VL: { len: 4.5, w: 1.8, a: 1.5, b: 2.0, s0: 2.0, bAnt: 1.5, dT: 0 },
+  PL: { len: 12, w: 2.5, a: 0.8, b: 1.5, s0: 3.0, bAnt: 1.0, dT: 0.4 }
+};
+const VIEWS = { full: { x0: 0, x1: L, sy: 4.5 }, zoom: { x0: XC - 80, x1: XC + 80, sy: 6.5 } };
+
+const DEFAULTS = {
+  // données du site
+  q: 1500, pPL: 6, v85free: 56, qPed: 60, laneW: 3.5,
+  // choix de conception
+  retLane: 3.0, retIsl: 2.0, chOff: 3.0, chTrans: 15, chLane: 3.25,
+  // calibrage (verrouillé)
+  T: 1.2, sdVL: 6, sdPL: 5, vPed: 1.2, tSafe: 1.0, y50: 38, ySlope: 0.15, dSurg: 15, tReact: 1.0, bEmerg: 7,
+  dosVL: 25, dosPL: 15, trapVL: 25, trapPL: 15, platVL: 30, platPL: 25, cousVL: 30, cousPL: 40,
+  retPct: 8, revPct: 5, rugPct: 6, seed: 1
+};
+const CALIB_KEYS = ['T', 'sdVL', 'sdPL', 'vPed', 'tSafe', 'y50', 'ySlope', 'dSurg', 'tReact', 'bEmerg', 'dosVL', 'dosPL', 'trapVL', 'trapPL',
+  'platVL', 'platPL', 'cousVL', 'cousPL', 'retPct', 'revPct', 'rugPct', 'seed'];
+// vitesse désirée moyenne déduite de la V85 mesurée en circulation libre
+function derive(p) { p.vVL = p.v85free - 1.036 * p.sdVL; p.vPL = p.vVL - 5; return p; }
+
+// champs du formulaire : g = groupe, bornes min/max pour les données saisies par la commune
+const FIELDS = [
+  { g: 'site', items: [
+    { k: 'q', fr: 'Débit par sens', ar: 'التدفّق في كل اتجاه', u: ['véh/h', 'عربة/س'], step: 50, min: 100, max: 1800 },
+    { k: 'pPL', fr: 'Poids lourds et bus', ar: 'العربات الثقيلة والحافلات', u: ['%', '%'], step: 1, min: 0, max: 30 },
+    { k: 'v85free', fr: 'V85 mesurée en circulation libre', ar: 'V85 المقاسة في سير حرّ', u: ['km/h', 'كم/س'], step: 1, min: 30, max: 80 },
+    { k: 'qPed', fr: 'Piétons au passage (heure de pointe)', ar: 'المترجّلون عند الممرّ (ساعة الذروة)', u: ['piét./h', 'مترجّل/س'], step: 5, min: 0, max: 600 },
+    { k: 'laneW', fr: 'Largeur de voie existante', ar: 'عرض المسلك الحالي', u: ['m', 'م'], step: 0.05, min: 2.75, max: 3.75 } ] },
+  { g: 'design', items: [
+    { k: 'retLane', fr: 'Rétrécissement : largeur de voie', ar: 'التضييق: عرض المسلك', u: ['m', 'م'], step: 0.05, min: 2.75, max: 3.25 },
+    { k: 'retIsl', fr: 'Rétrécissement : largeur d’îlot', ar: 'التضييق: عرض الجزيرة', u: ['m', 'م'], step: 0.1, min: 1.0, max: 3.0 },
+    { k: 'chOff', fr: 'Chicane : décalage d’axe', ar: 'التعرّج: إزاحة المحور', u: ['m', 'م'], step: 0.1, min: 1.5, max: 4.0 },
+    { k: 'chTrans', fr: 'Chicane : longueur de transition', ar: 'التعرّج: طول الانتقال', u: ['m', 'م'], step: 1, min: 10, max: 30 },
+    { k: 'chLane', fr: 'Chicane : largeur de voie', ar: 'التعرّج: عرض المسلك', u: ['m', 'م'], step: 0.05, min: 3.0, max: 3.5 } ] },
+  { g: 'calib', lock: true, items: [
+    { k: 'T', fr: 'Temps intervéhiculaire', ar: 'الفاصل الزمني بين العربات', u: ['s', 'ث'], step: 0.1 },
+    { k: 'sdVL', fr: 'Dispersion des vitesses VL (écart type)', ar: 'تشتّت سرعات العربات الخفيفة (الانحراف المعياري)', u: ['km/h', 'كم/س'], step: 0.5 },
+    { k: 'sdPL', fr: 'Dispersion des vitesses PL (écart type)', ar: 'تشتّت سرعات العربات الثقيلة (الانحراف المعياري)', u: ['km/h', 'كم/س'], step: 0.5 },
+    { k: 'vPed', fr: 'Vitesse de marche', ar: 'سرعة المشي', u: ['m/s', 'م/ث'], step: 0.05 },
+    { k: 'tSafe', fr: 'Marge du créneau accepté', ar: 'هامش الفجوة المقبولة', u: ['s', 'ث'], step: 0.1 },
+    { k: 'y50', fr: 'Vitesse où 50 % des conducteurs cèdent', ar: 'السرعة التي يُفسح عندها 50 % من السائقين', u: ['km/h', 'كم/س'], step: 1 },
+    { k: 'ySlope', fr: 'Pente de la courbe de cession', ar: 'ميل منحنى الإفساح', u: ['1/(km/h)', '1/(كم/س)'], step: 0.01 },
+    { k: 'dSurg', fr: 'Piéton surgissant à', ar: 'مترجّل يظهر فجأة على بعد', u: ['m', 'م'], step: 1 },
+    { k: 'tReact', fr: 'Temps de réaction', ar: 'زمن ردّ الفعل', u: ['s', 'ث'], step: 0.1 },
+    { k: 'bEmerg', fr: 'Freinage d’urgence', ar: 'فرملة الطوارئ', u: ['m/s²', 'م/ث²'], step: 0.5 },
+    { k: 'dosVL', fr: 'Dos d’âne, VL', ar: 'مطبّ دائري، عربات خفيفة', u: ['km/h', 'كم/س'], step: 1 },
+    { k: 'dosPL', fr: 'Dos d’âne, PL et bus', ar: 'مطبّ دائري، ثقيلة وحافلات', u: ['km/h', 'كم/س'], step: 1 },
+    { k: 'trapVL', fr: 'Trapézoïdal, VL', ar: 'مطبّ شبه منحرف، عربات خفيفة', u: ['km/h', 'كم/س'], step: 1 },
+    { k: 'trapPL', fr: 'Trapézoïdal, PL et bus', ar: 'مطبّ شبه منحرف، ثقيلة وحافلات', u: ['km/h', 'كم/س'], step: 1 },
+    { k: 'platVL', fr: 'Plateau, VL', ar: 'منصّة مرتفعة، عربات خفيفة', u: ['km/h', 'كم/س'], step: 1 },
+    { k: 'platPL', fr: 'Plateau, PL et bus', ar: 'منصّة مرتفعة، ثقيلة وحافلات', u: ['km/h', 'كم/س'], step: 1 },
+    { k: 'cousVL', fr: 'Coussin, VL', ar: 'وسادة، عربات خفيفة', u: ['km/h', 'كم/س'], step: 1 },
+    { k: 'cousPL', fr: 'Coussin, PL et bus (enjambé)', ar: 'وسادة، ثقيلة وحافلات (تعبرها بين عجلاتها)', u: ['km/h', 'كم/س'], step: 1 },
+    { k: 'retPct', fr: 'Rétrécissement : baisse de vitesse', ar: 'التضييق: انخفاض السرعة', u: ['%', '%'], step: 1 },
+    { k: 'revPct', fr: 'Revêtement : baisse de vitesse', ar: 'طبقة السير: انخفاض السرعة', u: ['%', '%'], step: 1 },
+    { k: 'rugPct', fr: 'Bandes rugueuses : baisse de vitesse', ar: 'الأشرطة الاهتزازية: انخفاض السرعة', u: ['%', '%'], step: 1 },
+    { k: 'seed', fr: 'Graine du premier tirage', ar: 'بذرة السحب الأوّل', u: ['', ''], step: 1 } ] }
+];
+
+/* ---------- utilitaires ---------- */
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r) { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+const clampZ = z => Math.max(-2.5, Math.min(2.5, z));
+const smooth = u => (1 - Math.cos(Math.PI * Math.max(0, Math.min(1, u)))) / 2;
+function bell(x, a0, a1, b0, b1) { if (x <= a0 || x >= b1) return 0; if (x < a1) return smooth((x - a0) / (a1 - a0)); if (x <= b0) return 1; return 1 - smooth((x - b0) / (b1 - b0)); }
+// risque de décès d'un piéton heurté par l'avant d'une voiture (Rosén et Sander, 2009), v en km/h
+const rosen = vk => vk <= 0 ? 0 : 1 / (1 + Math.exp(6.9 - 0.090 * vk));
+const pYield = (vk, P) => 1 / (1 + Math.exp(P.ySlope * (vk - P.y50)));
+function pct(arr, p) { if (!arr.length) return NaN; const a = Float64Array.from(arr).sort(); return a[Math.min(a.length - 1, Math.max(0, Math.ceil(p * a.length) - 1))]; }
+const mean = a => { const b = a.filter(Number.isFinite); return b.length ? b.reduce((x, y) => x + y, 0) / b.length : NaN; };
+const nf0 = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+const nf1 = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const nf2 = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nfa = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
+const f0 = v => Number.isFinite(v) ? nf0.format(v) : '–';
+const f1 = v => Number.isFinite(v) ? nf1.format(v) : '–';
+const fm = v => nf2.format(v);
+const sgnTxt = v => !Number.isFinite(v) ? '–' : (v >= 0.5 ? '+' : (v <= -0.5 ? '−' : '')) + nf0.format(Math.abs(v));
+const sgn = v => `<span class="num">${sgnTxt(v)}</span>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function laneY(g, k) { return k === 0 ? g.yc - g.wi / 2 - g.lw / 2 : g.yc + g.wi / 2 + g.lw / 2; }
+function hash32(n) { n = Math.imul(n ^ n >>> 16, 0x45d9f3b); n = Math.imul(n ^ n >>> 16, 0x45d9f3b); return (n ^ n >>> 16) >>> 0; }
+function fingerprint(p) {
+  let h = 2166136261; const s = CALIB_KEYS.map(k => p[k]).join('|');
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(16).padStart(8, '0').slice(0, 6).toUpperCase();
+}
+const FP_REF = fingerprint(DEFAULTS);
+
+/* ---------- textes : français et arabe ---------- */
+const I18N = {
+fr: {
+  eyebrow: 'Sécurité des piétons · traversée urbaine limitée à 50 km/h',
+  h1: 'Huit aménagements, le même trafic',
+  lede: P => `Chaque bande reçoit les mêmes véhicules, aux mêmes instants : ${f0(P.q)} véh/h par sens, ${f0(P.pPL)} % de poids lourds et de bus, ${f0(P.qPed)} piétons/h au passage. Seul l’aménagement change. Vitesses, files, attentes et risques sont calculés par une microsimulation, pas dessinés à la main. Cliquez sur une vignette pour voir l’aménagement en 3D.`,
+  barSub: P => `${f0(P.q)} véh/h par sens · ${f0(P.pPL)} % de PL et bus · ${f0(P.qPed)} piétons/h`,
+  langBtn: 'العربية', presentation: 'Mode présentation', fullPage: 'Page complète', fullscreen: 'Plein écran',
+  pause: 'Pause', play: 'Lecture', speedAria: 'Vitesse de l’animation',
+  view: 'Vue', viewAria: 'Étendue de la vue en plan', viewFull: '500 m', viewZoom: 'Zoom 160 m',
+  colors: 'Couleurs', colorAria: 'Couleur des véhicules', colSpeed: 'Vitesse', colPaint: 'Réalistes',
+  hour: 'Avancer d’une heure', computing: p => `Calcul… ${p} %`, reset: 'Recommencer',
+  simTime: 'temps simulé', clock: (h, m, s) => `${h ? h + ' h ' : ''}${m} min ${s} s`,
+  rampAria: 'Couleur des véhicules selon leur vitesse', ramp60: '60 km/h', pedKey: 'piéton', pedLate: 'attend depuis plus de 20 s',
+  calibFlag: 'Calibrage modifié',
+  kmh: 'km/h', s: 's', m: 'm',
+  kV85: 'V85 au passage', kTT: 'Temps sur 500 m', kQ: 'File max', kPed: 'Attente piéton', kRisk: 'Décès si choc',
+  stFluid: ['Écoulement fluide', 'Fluide'], stFiles: ['Files fréquentes', 'Files'], stSat: ['Saturé : la demande n’est pas écoulée', 'Saturé'],
+  reg: ['Hors cadre réglementaire FR', 'Hors norme'], regTitle: 'Décret 94-447 et NF P 98-300 : moins de 3 000 véh/j, agglomération, 30 km/h',
+  rec: ['Solution recommandée', 'Recommandée'],
+  qLong: (k, pend, q) => { const x = pend ? `file au-delà de l’entrée · ${pend} véh. en attente` : `file de ${f0(q)} m, au-delà de la vue`; return k === 0 ? `◀ sens → : ${x}` : `sens ← : ${x} ▶`; },
+  qShort: (k, pend, q) => { const x = pend ? `${pend} véh. en attente à l’entrée` : `file de ${f0(q)} m`; return k === 0 ? `◀ ${x}` : `${x} ▶`; },
+  chView: (zoom, prof, compact) => (zoom ? 'Vue en plan : 160 m autour du passage piéton' : 'Vue en plan : tronçon de 500 m')
+    + (prof ? (compact ? ' · trait bleu : vitesse moyenne (pointillé : 30 km/h)' : ' · trait bleu : vitesse moyenne selon la position') : '')
+    + ' · chiffres : moyenne de 5 simulations d’une heure',
+  profLabel: 'Vitesse moyenne selon la position, dans le sens de circulation', prof30: '30 km/h',
+  planAria: n => `Vue en plan animée : ${n}`,
+  names: { ref: 'Référence sans aménagement', dos: 'Dos d’âne', trap: 'Ralentisseur trapézoïdal', plat: 'Plateau surélevé', cous: 'Coussins berlinois',
+    ret: 'Rétrécissement avec îlot', chi: 'Chicane à deux voies', rev: 'Changement de revêtement', rug: 'Bandes rugueuses' },
+  short: { ref: 'Référence', dos: 'Dos d’âne', trap: 'Trapézoïdal', plat: 'Plateau surélevé', cous: 'Coussins berlinois',
+    ret: 'Rétrécissement + îlot', chi: 'Chicane 2 voies', rev: 'Revêtement pavé', rug: 'Bandes rugueuses' },
+  desc: {
+    ref: P => `Chaussée de 2 × ${fm(P.laneW)} m et passage piéton marqué. C’est la base de comparaison.`,
+    dos: P => `Deux dos d’âne circulaires (4 m, 10 cm) à 10 m de part et d’autre du passage : la norme ne permet pas de marquer le passage sur un dos d’âne. V85 au franchissement : ${P.dosVL} km/h (VL), ${P.dosPL} km/h (PL).`,
+    trap: P => `Plateau de 4 m et rampes de 1,20 m (10 cm). Le passage piéton est marqué sur le plateau. V85 au franchissement : ${P.trapVL} km/h (VL), ${P.trapPL} km/h (PL).`,
+    plat: P => `Plateau de 8 m, rampes de 1,50 m (pente ≈ 7 %), passage piéton sur le plateau. V85 au franchissement : ${P.platVL} km/h (VL), ${P.platPL} km/h (PL).`,
+    cous: P => `Un coussin par voie à 10 m de part et d’autre du passage. Les voitures montent dessus, les PL et les bus l’enjambent. V85 : ${P.cousVL} km/h (VL), ${P.cousPL} km/h (PL).`,
+    ret: (P, i) => `Voies ramenées de ${fm(P.laneW)} à ${fm(P.retLane)} m autour d’un îlot central de ${fm(P.retIsl)} m${i.island ? ' : la traversée se fait en deux temps' : ' (trop étroit pour servir de refuge)'}. Baisse de vitesse supposée : ${P.retPct} %.`,
+    chi: (P, i) => `Axe décalé de ${fm(P.chOff)} m sur ${f0(P.chTrans)} m, palier de 10 m, voies de ${fm(P.chLane)} m. Trajectoire la plus rapide : R ≈ ${f0(i.R)} m, d’où V85 ≈ ${f0(i.vVL)} km/h (VL) et ${f0(i.vPL)} km/h (PL).`,
+    rev: P => `Pavés sur 40 m autour du passage, sans autre modification. Baisse de vitesse supposée : ${P.revPct} %, à confirmer par des mesures.`,
+    rug: P => `Trois groupes de bandes rugueuses transversales, à 60, 40 et 20 m en amont du passage dans chaque sens. Elles alertent par le bruit et la vibration ; baisse de vitesse supposée : ${P.rugPct} %. Bruit gênant pour les riverains.`
+  },
+  thumbAria: n => `Vue 3D de synthèse : ${n}. Cliquer pour agrandir.`,
+  dlgNote: 'Image de synthèse calculée à partir de la géométrie simulée : dimensions réelles, hauteur des ralentisseurs non exagérée, mêmes bâtiments et mêmes véhicules pour tous les aménagements.',
+  dlgRendering: 'Rendu en 3840 × 2160 px…', dlgReady: '3840 × 2160 px', dlgDownload: 'Télécharger l’image (PNG)', dlgClose: 'Fermer',
+  sumTitle: 'Synthèse',
+  thead: [['Aménagement', ''], ['V85 au passage', 'km/h'], ['Temps sur 500 m', 's'], ['Écart à la référence', 's par véhicule'], ['Débit écoulé', 'véh/h/sens'],
+    ['Véhicules arrêtés', '%'], ['File max', 'm'], ['Attente piéton', 's, moyenne'], ['Conducteurs qui cèdent', '%'], ['Arrêt à temps', 'piéton surgissant'], ['Risque de décès', 'si choc, moyenne']],
+  sumNote: (P, fpTxt) => `Évaluation : ${REPS} simulations d’une heure (tirages ${P.seed} à ${P.seed + REPS - 1}, fixés à l’avance), après 2 min de mise en régime ; moyennes des cinq. « Arrêt à temps » et « risque de décès » : piéton surgissant à ${f0(P.dSurg)} m, réaction en ${f1(P.tReact)} s, freinage à ${f0(P.bEmerg)} m/s². Dans une bande saturée, la file et le temps de parcours dépendent de la durée simulée, ici une heure. ${fpTxt}`,
+  sumRunning: p => `Évaluation en cours : ${p} %. En attendant, le tableau montre les valeurs de l’animation.`,
+  calibRef: fp => `Calibrage de référence, empreinte ${fp}.`, calibMod: fp => `Calibrage modifié, empreinte ${fp} : résultats non comparables au calibrage de référence.`,
+  hypTitle: 'Hypothèses',
+  hypNote: 'Les données du site et les choix de conception se modifient dans les limites indiquées. Le calibrage est verrouillé : il est commun à toutes les communes pour que les résultats restent comparables. « Appliquer » relance l’animation et l’évaluation.',
+  groups: {
+    site: ['Données du site', 'À renseigner par la commune : comptages à l’heure de pointe, part de poids lourds et de bus, vitesse mesurée au radar en circulation libre, piétons au passage, largeur de voie.'],
+    design: ['Choix de conception', 'Dimensions des aménagements, bornées aux valeurs usuelles des guides de conception.'],
+    calib: ['Calibrage du modèle (verrouillé)', 'Comportement des conducteurs et des piétons, effet propre de chaque dispositif, tirages aléatoires. Commun à toutes les communes. Sources : IDM (Treiber et al., 2000) ; risque de décès (Rosén et Sander, 2009) ; chicane V = 8,76 R^0,386 (NCHRP 672). Vitesses de franchissement et courbe de cession : ordres de grandeur à caler sur des mesures locales par l’administration qui diffuse l’outil.']
+  },
+  apply: 'Appliquer et relancer', defaults: 'Valeurs par défaut', unlock: 'Déverrouiller (mode expert)', lock: 'Verrouiller',
+  msgFix: l => `Valeurs à corriger : ${l}.`, msgRange: (l, a, b) => `${l} : entre ${a} et ${b}`, msgLane: 'la largeur de voie du rétrécissement doit être inférieure à la largeur existante',
+  msgApplied: 'Animation et évaluation relancées avec ces valeurs.', msgDefaults: 'Valeurs par défaut rétablies. Cliquez sur « Appliquer et relancer ».',
+  msgUnlocked: 'Calibrage déverrouillé : toute modification sera signalée sur les résultats.', msgLocked: 'Calibrage verrouillé.',
+  methTitle: 'Méthode et sources',
+  vEyebrow: 'Solution la plus adéquate, trafic et sécurité',
+  vNoneTitle: 'Aucune solution ne concilie trafic et sécurité',
+  vNone: 'Aucun aménagement testé n’écoule la demande sans saturer, dans le cadre réglementaire. À ce trafic, un feu piéton à la demande ou une baisse du trafic est à étudier.',
+  vCriteria: 'Règle de choix, dans l’ordre : 1) écouler la demande (débit écoulé ≥ 96 % de la demande) et respecter le cadre réglementaire ; 2) risque de décès le plus faible pour un piéton surgissant, à 0,25 point près ; 3) temps perdu le plus faible ; 4) attente piéton la plus courte.',
+  vMetrics: (e, ref) => `Risque de décès si choc ${f1(e.surgRisk)} % (référence ${f1(ref.surgRisk)} %) · V85 au passage ${f0(e.v85)} km/h · temps sur 500 m ${sgn(e.tt - ref.tt)} s par rapport à la référence · attente piéton ${f0(e.pedW)} s.`,
+  vSafeOk: 'Objectif Système Sûr atteint : V85 au passage ≤ 30 km/h.',
+  vSafeKo: v => `Objectif Système Sûr non atteint : V85 au passage de ${f0(v)} km/h, au-dessus de 30 km/h.`,
+  vSmallGain: 'Gain de sécurité faible par rapport à la référence (moins de 0,1 point).',
+  vExcluded: 'Écartées :', sep: ' ; ',
+  reasonSat: (e, P) => `saturé, ${f0(e.flow)} véh/h écoulés pour ${f0(P.q)} demandés`, reasonReg: 'hors cadre réglementaire',
+  vRunning: p => `Évaluation en cours (${REPS} simulations d’une heure) : ${p} %…`,
+  vCalib: 'Calibrage modifié : ces résultats ne sont pas comparables au calibrage de référence.',
+  method: crit => `
+    <div>
+      <h3>Ce qui est calculé</h3>
+      <ul>
+        <li><strong>Trafic.</strong> Chaque véhicule suit le modèle de poursuite IDM : il accélère vers sa vitesse désirée et freine pour garder un temps intervéhiculaire avec celui qui le précède. Les freinages, les files et leur résorption en découlent.</li>
+        <li><strong>Mêmes arrivées partout.</strong> Les véhicules (instant, type, tempérament du conducteur) et les piétons sont tirés une seule fois, puis injectés à l’identique dans toutes les bandes. Les écarts entre bandes viennent donc de l’aménagement seul.</li>
+        <li><strong>Piétons.</strong> Un piéton traverse quand le créneau suffit (temps de traversée + marge) ou quand un conducteur lui cède le passage. Chaque conducteur qui voit un piéton attendre décide une fois, tant qu’il peut encore s’arrêter à 3 m/s² ; sa probabilité de céder dépend de la vitesse qu’il aurait au passage. S’il voit le piéton trop tard, il ne cède pas. Un conducteur arrêté pour rien repart au bout de 8 s. Sans îlot, un piéton engagé sur la première voie impose l’arrêt sur la seconde si le véhicule peut s’arrêter à 3 m/s². Avec un îlot d’au moins 1,50 m, la traversée se fait en deux temps.</li>
+        <li><strong>Gravité.</strong> Un piéton surgit à <em>D</em> mètres devant chaque véhicule : le conducteur réagit, puis freine à fond. La vitesse restante au moment du choc donne le risque de décès <span class="formula">P = 1 / (1 + e<sup>6,9 − 0,090 v</sup>)</span> (Rosén et Sander, 2009 ; v en km/h).</li>
+        <li><strong>Évaluation.</strong> Les chiffres affichés sont la moyenne de cinq simulations d’une heure, avec des tirages différents mais fixés à l’avance. On ne peut donc pas choisir un tirage favorable.</li>
+        <li><strong>Indicateurs.</strong> V85 mesurée au centre du passage. Temps de parcours compté depuis l’heure d’arrivée prévue, attente à l’entrée comprise. File : véhicules à moins de 8 km/h en amont du dispositif.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Ce qui est donné en entrée</h3>
+      <ul>
+        <li><strong>Vitesse de franchissement des ralentisseurs</strong> (V85 par classe). Aucun modèle de trafic ne la calcule : elle vient des mesures. Les valeurs proposées sont des ordres de grandeur à remplacer par des relevés sur des ouvrages comparables.</li>
+        <li><strong>Chicane.</strong> Sa vitesse est déduite de la géométrie : rayon de la trajectoire la plus rapide <span class="formula">R = L² / (4 e<sub>eff</sub>)</span>, où <em>e<sub>eff</sub></em> est le décalage moins la marge latérale disponible dans la voie, puis <span class="formula">V = 8,76 R<sup>0,386</sup></span>.</li>
+        <li><strong>Rétrécissement, revêtement, bandes rugueuses.</strong> Réduction de la vitesse désirée en pourcentage. Leur effet propre est faible et mal établi.</li>
+        <li><strong>Probabilité de céder le passage.</strong> Elle baisse quand la vitesse monte, comme l’observent les études. La courbe retenue est une hypothèse à caler sur des comptages locaux.</li>
+      </ul>
+      <h3>Solution recommandée</h3>
+      <p>${crit} La règle ne pondère pas les critères : la sécurité passe avant le temps de parcours, mais seulement parmi les solutions qui écoulent le trafic.</p>
+      <h3>Limites</h3>
+      <ul>
+        <li>Tronçon isolé de 500 m : pas de report de trafic vers d’autres rues, pas de deux-roues.</li>
+        <li>Le bruit, les vibrations et le confort des bus ne sont pas évalués.</li>
+        <li>Le calibrage de référence reste un ordre de grandeur : l’administration qui diffuse l’outil doit le caler sur des mesures locales avant tout usage pour décider.</li>
+        <li>En France, dos d’âne et ralentisseurs trapézoïdaux sont réservés aux voies d’agglomération limitées à 30 km/h et portant moins de 3 000 véh/j (décret 94-447, NF P 98-300). Ils figurent ici pour comparaison.</li>
+        <li>Les vues 3D sont calculées par la bibliothèque three.js chargée depuis Internet ; hors connexion, la page fonctionne sans elles.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Sources</h3>
+      <ol>${SOURCES}</ol>
+    </div>`
+},
+ar: {
+  eyebrow: 'سلامة المترجّلين · عبور حضري بسرعة قصوى 50 كم/س',
+  h1: 'ثماني تهيئات، نفس حركة المرور',
+  lede: P => `تستقبل كل شريحة نفس العربات في نفس اللحظات: ${f0(P.q)} عربة/س في كل اتجاه، و${f0(P.pPL)} % من العربات الثقيلة والحافلات، و${f0(P.qPed)} مترجّلًا/س عند الممرّ. التهيئة وحدها هي التي تتغيّر. السرعات والطوابير وأوقات الانتظار والمخاطر محسوبة بمحاكاة مجهرية، وليست مرسومة باليد. اضغط على صورة مصغّرة لرؤية التهيئة ثلاثية الأبعاد.`,
+  barSub: P => `${f0(P.q)} عربة/س في كل اتجاه · ${f0(P.pPL)} % ثقيلة وحافلات · ${f0(P.qPed)} مترجّل/س`,
+  langBtn: 'Français', presentation: 'وضع العرض', fullPage: 'الصفحة الكاملة', fullscreen: 'ملء الشاشة',
+  pause: 'إيقاف مؤقت', play: 'تشغيل', speedAria: 'سرعة الحركة',
+  view: 'العرض', viewAria: 'امتداد المسقط الأفقي', viewFull: '500 م', viewZoom: 'تكبير 160 م',
+  colors: 'الألوان', colorAria: 'لون العربات', colSpeed: 'حسب السرعة', colPaint: 'واقعية',
+  hour: 'تقديم ساعة', computing: p => `جارٍ الحساب… ${p} %`, reset: 'إعادة',
+  simTime: 'الزمن المُحاكى', clock: (h, m, s) => `${h ? h + ' س ' : ''}${m} د ${s} ث`,
+  rampAria: 'لون العربات حسب سرعتها', ramp60: '60 كم/س', pedKey: 'مترجّل', pedLate: 'ينتظر منذ أكثر من 20 ث',
+  calibFlag: 'المعايرة مُعدَّلة',
+  kmh: 'كم/س', s: 'ث', m: 'م',
+  kV85: 'V85 عند الممرّ', kTT: 'زمن قطع 500 م', kQ: 'أقصى طابور', kPed: 'انتظار المترجّل', kRisk: 'خطر الوفاة عند الصدم',
+  stFluid: ['سير انسيابي', 'انسيابي'], stFiles: ['طوابير متكرّرة', 'طوابير'], stSat: ['مُشبَع: لا يُصرَّف الطلب', 'مُشبَع'],
+  reg: ['خارج الإطار الترتيبي الفرنسي', 'خارج المعايير'], regTitle: 'المرسوم الفرنسي 94-447 والمواصفة NF P 98-300: أقلّ من 3000 عربة/يوم، داخل المناطق العمرانية، 30 كم/س',
+  rec: ['الحلّ الموصى به', 'موصى به'],
+  qLong: (k, pend, q) => { const x = pend ? `طابور يتجاوز المدخل · ${pend} عربة في الانتظار` : `طابور بطول ${f0(q)} م خارج مجال العرض`; return k === 0 ? `◀ ${x}` : `${x} ▶`; },
+  qShort: (k, pend, q) => { const x = pend ? `${pend} عربة تنتظر عند المدخل` : `طابور ${f0(q)} م`; return k === 0 ? `◀ ${x}` : `${x} ▶`; },
+  chView: (zoom, prof, compact) => (zoom ? 'مسقط أفقي: 160 م حول ممرّ المترجّلين' : 'مسقط أفقي: مقطع بطول 500 م')
+    + (prof ? (compact ? ' · الخط الأزرق: متوسط السرعة (المنقّط: 30 كم/س)' : ' · الخط الأزرق: متوسط السرعة حسب الموقع') : '')
+    + ' · الأرقام: متوسط 5 محاكاة مدّة كل منها ساعة',
+  profLabel: 'متوسط السرعة حسب الموقع، في اتجاه السير', prof30: '30 كم/س',
+  planAria: n => `مسقط أفقي متحرّك: ${n}`,
+  names: { ref: 'المرجع دون تهيئة', dos: 'مطبّ دائري', trap: 'مطبّ شبه منحرف', plat: 'منصّة مرتفعة', cous: 'وسائد برلينية',
+    ret: 'تضييق مع جزيرة وسطية', chi: 'تعرّج المحور بمسلكين', rev: 'تغيير طبقة السير', rug: 'أشرطة اهتزازية' },
+  short: { ref: 'المرجع', dos: 'مطبّ دائري', trap: 'مطبّ شبه منحرف', plat: 'منصّة مرتفعة', cous: 'وسائد برلينية',
+    ret: 'تضييق + جزيرة', chi: 'تعرّج بمسلكين', rev: 'رصف بالحجارة', rug: 'أشرطة اهتزازية' },
+  desc: {
+    ref: P => `طريق بمسلكين عرض كل منهما ${fm(P.laneW)} م وممرّ مترجّلين مُعلَّم. هذه هي قاعدة المقارنة.`,
+    dos: P => `مطبّان دائريان (طول 4 م، ارتفاع 10 صم) على بعد 10 م من جانبي الممرّ: لا تسمح المواصفة بتعليم الممرّ فوق المطبّ الدائري. V85 عند العبور: ${P.dosVL} كم/س (خفيفة)، ${P.dosPL} كم/س (ثقيلة).`,
+    trap: P => `منصّة بطول 4 م ومنحدرات بطول 1,20 م (ارتفاع 10 صم). ممرّ المترجّلين مُعلَّم فوق المنصّة. V85 عند العبور: ${P.trapVL} كم/س (خفيفة)، ${P.trapPL} كم/س (ثقيلة).`,
+    plat: P => `منصّة بطول 8 م ومنحدرات بطول 1,50 م (انحدار ≈ 7 %)، والممرّ فوق المنصّة. V85 عند العبور: ${P.platVL} كم/س (خفيفة)، ${P.platPL} كم/س (ثقيلة).`,
+    cous: P => `وسادة في كل مسلك على بعد 10 م من جانبي الممرّ. تصعد عليها السيارات، وتعبرها الشاحنات والحافلات بين عجلاتها. V85: ${P.cousVL} كم/س (خفيفة)، ${P.cousPL} كم/س (ثقيلة).`,
+    ret: (P, i) => `تقليص عرض المسلكين من ${fm(P.laneW)} إلى ${fm(P.retLane)} م حول جزيرة وسطية بعرض ${fm(P.retIsl)} م${i.island ? '، فيتمّ العبور على مرحلتين' : ' (ضيّقة جدًّا لتكون ملجأً)'}. الانخفاض المفترض في السرعة: ${P.retPct} %.`,
+    chi: (P, i) => `إزاحة المحور بـ ${fm(P.chOff)} م على طول ${f0(P.chTrans)} م، مع جزء مستقيم بطول 10 م ومسالك بعرض ${fm(P.chLane)} م. المسار الأسرع: نصف قطر ≈ ${f0(i.R)} م، أي V85 ≈ ${f0(i.vVL)} كم/س (خفيفة) و${f0(i.vPL)} كم/س (ثقيلة).`,
+    rev: P => `حجارة رصف على طول 40 م حول الممرّ دون أيّ تغيير آخر. الانخفاض المفترض في السرعة: ${P.revPct} %، ويجب تأكيده بقياسات.`,
+    rug: P => `ثلاث مجموعات من الأشرطة الاهتزازية العرضية على بعد 60 و40 و20 م قبل الممرّ في كل اتجاه. تنبّه السائق بالضجيج والاهتزاز؛ الانخفاض المفترض في السرعة: ${P.rugPct} %. ضجيج مزعج للمتساكنين.`
+  },
+  thumbAria: n => `صورة ثلاثية الأبعاد: ${n}. اضغط للتكبير.`,
+  dlgNote: 'صورة تركيبية محسوبة من الهندسة المُحاكاة: أبعاد حقيقية، وارتفاع المطبّات غير مُضخَّم، ونفس البنايات ونفس العربات لكل التهيئات.',
+  dlgRendering: 'جارٍ العرض بدقّة 3840 × 2160 بكسل…', dlgReady: '3840 × 2160 بكسل', dlgDownload: 'تنزيل الصورة (PNG)', dlgClose: 'إغلاق',
+  sumTitle: 'الخلاصة',
+  thead: [['التهيئة', ''], ['V85 عند الممرّ', 'كم/س'], ['زمن قطع 500 م', 'ث'], ['الفارق مع المرجع', 'ث لكل عربة'], ['التدفّق المُصرَّف', 'عربة/س/اتجاه'],
+    ['العربات المتوقّفة', '%'], ['أقصى طابور', 'م'], ['انتظار المترجّل', 'ث، متوسط'], ['السائقون الذين يُفسحون', '%'], ['التوقّف في الوقت', 'مترجّل يظهر فجأة'], ['خطر الوفاة', 'عند الصدم، متوسط']],
+  sumNote: (P, fpTxt) => `التقييم: ${REPS} محاكاة مدّة كل منها ساعة (السحوبات من ${P.seed} إلى ${P.seed + REPS - 1}، محدّدة مسبقًا)، بعد دقيقتين من الاستقرار؛ القيم متوسّطات المحاكاة الخمس. «التوقّف في الوقت» و«خطر الوفاة»: مترجّل يظهر فجأة على بعد ${f0(P.dSurg)} م، زمن ردّ الفعل ${f1(P.tReact)} ث، فرملة بـ ${f0(P.bEmerg)} م/ث². في شريحة مُشبَعة، يرتبط طول الطابور وزمن القطع بمدّة المحاكاة، وهي هنا ساعة. ${fpTxt}`,
+  sumRunning: p => `جارٍ التقييم: ${p} %. في الأثناء، يعرض الجدول قيم الحركة الجارية.`,
+  calibRef: fp => `المعايرة المرجعية، البصمة ${fp}.`, calibMod: fp => `المعايرة مُعدَّلة، البصمة ${fp}: النتائج غير قابلة للمقارنة مع المعايرة المرجعية.`,
+  hypTitle: 'الفرضيات',
+  hypNote: 'يمكن تعديل معطيات الموقع وخيارات التصميم في الحدود المبيّنة. المعايرة مقفلة: فهي موحّدة بين كل البلديات حتى تبقى النتائج قابلة للمقارنة. زرّ «تطبيق» يعيد تشغيل الحركة والتقييم.',
+  groups: {
+    site: ['معطيات الموقع', 'تُعبّئها البلدية: عمليات العدّ في ساعة الذروة، نسبة العربات الثقيلة والحافلات، السرعة المقاسة بالرادار في سير حرّ، المترجّلون عند الممرّ، عرض المسلك.'],
+    design: ['خيارات التصميم', 'أبعاد التهيئات، محصورة في القيم المعتادة لأدلّة التصميم.'],
+    calib: ['معايرة النموذج (مقفلة)', 'سلوك السائقين والمترجّلين، والأثر الخاص لكل تهيئة، والسحوبات العشوائية. موحّدة بين كل البلديات. المصادر: نموذج IDM (Treiber وآخرون، 2000)؛ خطر الوفاة (Rosén وSander، 2009)؛ التعرّج V = 8,76 R^0,386 (NCHRP 672). سرعات العبور ومنحنى الإفساح: قيم تقريبية تعايرها بقياسات محلية الإدارةُ التي تنشر الأداة.']
+  },
+  apply: 'تطبيق وإعادة التشغيل', defaults: 'القيم الافتراضية', unlock: 'فتح القفل (وضع الخبير)', lock: 'إقفال',
+  msgFix: l => `قيم يجب تصحيحها: ${l}.`, msgRange: (l, a, b) => `${l}: بين ${a} و${b}`, msgLane: 'يجب أن يكون عرض المسلك في التضييق أقلّ من العرض الحالي',
+  msgApplied: 'أُعيد تشغيل الحركة والتقييم بهذه القيم.', msgDefaults: 'أُعيدت القيم الافتراضية. اضغط على «تطبيق وإعادة التشغيل».',
+  msgUnlocked: 'المعايرة مفتوحة: كل تعديل سيُشار إليه على النتائج.', msgLocked: 'المعايرة مقفلة.',
+  methTitle: 'المنهجية والمصادر',
+  vEyebrow: 'الحلّ الأنسب من حيث حركة المرور والسلامة',
+  vNoneTitle: 'لا يوجد حلّ يوفّق بين حركة المرور والسلامة',
+  vNone: 'لا توجد تهيئة مُختبَرة تُصرّف الطلب دون إشباع وفي الإطار الترتيبي. عند هذا الحجم من الحركة، يجب دراسة إشارة ضوئية للمترجّلين عند الطلب أو تخفيض حجم الحركة.',
+  vCriteria: 'قاعدة الاختيار بالترتيب: 1) تصريف الطلب (تدفّق مُصرَّف ≥ 96 % من الطلب) واحترام الإطار الترتيبي؛ 2) أدنى خطر وفاة لمترجّل يظهر فجأة، بفارق لا يتجاوز 0,25 نقطة؛ 3) أقلّ وقت ضائع؛ 4) أقصر انتظار للمترجّل.',
+  vMetrics: (e, ref) => `خطر الوفاة عند الصدم ${f1(e.surgRisk)} % (المرجع ${f1(ref.surgRisk)} %) · V85 عند الممرّ ${f0(e.v85)} كم/س · زمن قطع 500 م ${sgn(e.tt - ref.tt)} ث مقارنةً بالمرجع · انتظار المترجّل ${f0(e.pedW)} ث.`,
+  vSafeOk: 'تمّ بلوغ هدف النظام الآمن: V85 عند الممرّ ≤ 30 كم/س.',
+  vSafeKo: v => `لم يتمّ بلوغ هدف النظام الآمن: V85 عند الممرّ ${f0(v)} كم/س، أي أكثر من 30 كم/س.`,
+  vSmallGain: 'المكسب في السلامة ضعيف مقارنةً بالمرجع (أقلّ من 0,1 نقطة).',
+  vExcluded: 'الحلول المستبعدة:', sep: '؛ ',
+  reasonSat: (e, P) => `مُشبَع، ${f0(e.flow)} عربة/س مُصرَّفة من أصل ${f0(P.q)} مطلوبة`, reasonReg: 'خارج الإطار الترتيبي',
+  vRunning: p => `جارٍ التقييم (${REPS} محاكاة مدّة كل منها ساعة): ${p} %…`,
+  vCalib: 'المعايرة مُعدَّلة: هذه النتائج غير قابلة للمقارنة مع المعايرة المرجعية.',
+  method: crit => `
+    <div>
+      <h3>ما يتمّ حسابه</h3>
+      <ul>
+        <li><strong>حركة المرور.</strong> تتبع كل عربة نموذج التتبّع IDM: تتسارع نحو سرعتها المرغوبة وتفرمل للمحافظة على فاصل زمني مع العربة التي أمامها. ومن ذلك تنتج الفرملة والطوابير وتلاشيها.</li>
+        <li><strong>نفس الوصولات في كل الشرائح.</strong> تُسحب العربات (لحظة الوصول، النوع، طبع السائق) والمترجّلون مرّة واحدة، ثم تُحقن بشكل مطابق في كل الشرائح. وبالتالي فإنّ الفوارق بين الشرائح ناتجة عن التهيئة وحدها.</li>
+        <li><strong>المترجّلون.</strong> يعبر المترجّل عندما تكون الفجوة كافية (زمن العبور مع هامش) أو عندما يُفسح له سائق المرور. كل سائق يرى مترجّلًا ينتظر يقرّر مرّة واحدة ما دام قادرًا على التوقّف بتباطؤ 3 م/ث²، واحتمال إفساحه مرتبط بالسرعة التي سيمرّ بها عند الممرّ. إذا رأى المترجّل متأخّرًا لا يُفسح. والسائق الذي توقّف دون جدوى ينطلق بعد 8 ث. دون جزيرة، يفرض المترجّل الذي شرع في عبور المسلك الأوّل التوقّف على المسلك الثاني إذا كانت العربة قادرة على التوقّف بتباطؤ 3 م/ث². ومع جزيرة لا يقلّ عرضها عن 1,50 م يتمّ العبور على مرحلتين.</li>
+        <li><strong>الخطورة.</strong> يظهر مترجّل فجأة على بعد <em>D</em> متر أمام كل عربة: يتفاعل السائق ثم يفرمل بأقصى قوّة. وتعطي السرعة المتبقّية لحظة الصدم خطر الوفاة <span class="formula">P = 1 / (1 + e<sup>6,9 − 0,090 v</sup>)</span> (Rosén وSander، 2009؛ v بالكم/س).</li>
+        <li><strong>التقييم.</strong> الأرقام المعروضة هي متوسّط خمس محاكاة مدّة كل منها ساعة، بسحوبات مختلفة لكنها محدّدة مسبقًا. ولذلك لا يمكن اختيار سحب ملائم.</li>
+        <li><strong>المؤشّرات.</strong> تُقاس V85 في وسط الممرّ. يُحتسب زمن القطع انطلاقًا من موعد الوصول المتوقّع، بما في ذلك الانتظار عند المدخل. الطابور: العربات التي تقلّ سرعتها عن 8 كم/س قبل التهيئة.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>ما يُعطى كمُدخل</h3>
+      <ul>
+        <li><strong>سرعة عبور المطبّات</strong> (V85 حسب صنف العربة). لا يحسبها أيّ نموذج لحركة المرور، بل مصدرها القياسات. والقيم المقترحة تقريبية ويجب تعويضها بقياسات على منشآت مماثلة.</li>
+        <li><strong>التعرّج.</strong> تُستنتج سرعته من الهندسة: نصف قطر المسار الأسرع <span class="formula">R = L² / (4 e<sub>eff</sub>)</span>، حيث <em>e<sub>eff</sub></em> هي الإزاحة ناقص الهامش الجانبي المتاح داخل المسلك، ثم <span class="formula">V = 8,76 R<sup>0,386</sup></span>.</li>
+        <li><strong>التضييق وطبقة السير والأشرطة الاهتزازية.</strong> تخفيض للسرعة المرغوبة بنسبة مئوية. أثرها الخاص ضعيف وغير مُثبَت جيّدًا.</li>
+        <li><strong>احتمال الإفساح للمترجّل.</strong> ينخفض كلّما ارتفعت السرعة، كما تُبيّنه الدراسات. والمنحنى المعتمد فرضية يجب معايرتها بعمليات عدّ محلية.</li>
+      </ul>
+      <h3>الحلّ الموصى به</h3>
+      <p>${crit} لا تُرجّح القاعدة بين المعايير: السلامة تأتي قبل زمن القطع، ولكن فقط ضمن الحلول التي تُصرّف حركة المرور.</p>
+      <h3>الحدود</h3>
+      <ul>
+        <li>مقطع معزول بطول 500 م: لا يؤخذ في الاعتبار تحويل الحركة نحو أنهج أخرى، ولا الدرّاجات.</li>
+        <li>لا يتمّ تقييم الضجيج والاهتزازات وراحة ركّاب الحافلات.</li>
+        <li>تبقى المعايرة المرجعية تقريبية: يجب أن تعايرها الإدارة التي تنشر الأداة بقياسات محلية قبل أيّ استعمال لاتخاذ القرار.</li>
+        <li>في فرنسا، تقتصر المطبّات الدائرية وشبه المنحرفة على طرقات المناطق العمرانية المحدّدة سرعتها بـ 30 كم/س والتي تقلّ حركتها عن 3000 عربة/يوم (المرسوم 94-447، المواصفة NF P 98-300). وهي معروضة هنا للمقارنة.</li>
+        <li>تُحسب الصور ثلاثية الأبعاد بمكتبة three.js المحمّلة من الإنترنت؛ ودون اتصال تعمل الصفحة بدونها.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>المصادر</h3>
+      <ol dir="ltr">${SOURCES}</ol>
+    </div>`
+}
+};
+const SOURCES = `
+  <li>Treiber M., Hennecke A., Helbing D. (2000). Congested traffic states in empirical observations and microscopic simulations. <em>Physical Review E</em> 62(2), 1805–1824.</li>
+  <li>Rosén E., Sander U. (2009). Pedestrian fatality risk as a function of car impact speed. <em>Accident Analysis &amp; Prevention</em> 41(3), 536–542.</li>
+  <li>Transportation Research Board (2010). <em>NCHRP Report 672: Roundabouts, an Informational Guide</em>, 2nd ed.</li>
+  <li>Décret n° 94-447 du 27 mai 1994 ; norme NF P 98-300 (ralentisseurs de type dos d’âne et trapézoïdal).</li>
+  <li>CERTU (2010). <em>Guide des coussins et plateaux</em>.</li>
+  <li>Bertulis T., Dulaski D. M. (2014). Driver approach speed and its impact on driver yielding to pedestrian behavior. <em>Transportation Research Record</em> 2464.</li>`;
+let lang = 'fr';
+function t(key, ...a) { const d = I18N[lang], v = key in d ? d[key] : I18N.fr[key]; return typeof v === 'function' ? v(...a) : v; }
+
+/* ---------- demande commune ---------- */
+class Demand {
+  constructor(P) {
+    this.P = P; this.nextId = 1;
+    this.lanes = [0, 1].map(k => ({ r: mulberry32(P.seed * 1009 + 11 + k * 7919), list: [], tNext: 0 }));
+    for (const ln of this.lanes) ln.tNext = this.headway(ln.r) * ln.r();
+    this.ped = { r: mulberry32(P.seed * 1009 + 5003), list: [], tNext: 0 };
+    this.ped.tNext = this.pedGap();
+  }
+  headway(r) { const m = 3600 / Math.max(1, this.P.q), hmin = Math.min(1, m); return hmin + (m - hmin) * -Math.log(1 - r()); }
+  pedGap() { return this.P.qPed > 0 ? -Math.log(1 - this.ped.r()) * 3600 / this.P.qPed : Infinity; }
+  veh(k, t) {
+    const ln = this.lanes[k];
+    while (ln.tNext <= t + 1) {
+      const r = ln.r;
+      ln.list.push({ id: this.nextId++, t: ln.tNext, pl: r() < this.P.pPL / 100, z: clampZ(gauss(r)) });
+      ln.tNext += this.headway(r);
+    }
+    return ln.list;
+  }
+  peds(t) {
+    const p = this.ped;
+    while (p.tNext <= t + 1) { p.list.push({ t: p.tNext, side: p.r() < 0.5 ? 0 : 1, xo: (p.r() - 0.5) * 2.6 }); p.tNext += this.pedGap(); }
+    return p.list;
+  }
+}
+
+/* ---------- scénarios (géométrie indépendante de la langue) ---------- */
+function chicaneSpeed(P, wVeh) {
+  const slack = Math.max(0, P.chLane - wVeh - 0.6);
+  const eEff = Math.max(0.3, P.chOff - slack);
+  const R = P.chTrans * P.chTrans / (4 * eEff);
+  return { R, v: 8.76 * Math.pow(R, 0.3861) };
+}
+function buildScenarios(P) {
+  const capZ = (xa, xb, vl, pl) => ({ xa, xb, kind: 'cap', VL: vl / KMH, PL: pl / KMH });
+  const facZ = (xa, xb, p, lane) => ({ xa, xb, kind: 'fac', f: 1 - p / 100, lane });
+  const W = P.laneW, flat = () => ({ yc: 0, lw: W, wi: 0 });
+  const cVL = chicaneSpeed(P, CLS.VL.w), cPL = chicaneSpeed(P, CLS.PL.w), Lt = P.chTrans;
+  const reg = 2 * P.q * 10 > 3000;   // heure de pointe ≈ 10 % du trafic journalier
+  return [
+    { id: 'ref', zones: [], geom: flat, feats: [], info: {} },
+    { id: 'dos', reg, zones: [capZ(XC - 12, XC - 8, P.dosVL, P.dosPL), capZ(XC + 8, XC + 12, P.dosVL, P.dosPL)], geom: flat,
+      feats: [{ t: 'hump', xa: XC - 12, xb: XC - 8 }, { t: 'hump', xa: XC + 8, xb: XC + 12 }], info: {} },
+    { id: 'trap', reg, zones: [capZ(XC - 3.2, XC + 3.2, P.trapVL, P.trapPL)], geom: flat,
+      feats: [{ t: 'table', xa: XC - 3.2, xb: XC + 3.2, ramp: 1.2, raised: false }], info: {} },
+    { id: 'plat', zones: [capZ(XC - 5.5, XC + 5.5, P.platVL, P.platPL)], geom: flat,
+      feats: [{ t: 'table', xa: XC - 5.5, xb: XC + 5.5, ramp: 1.5, raised: true }], info: {} },
+    { id: 'cous', zones: [capZ(XC - 11.5, XC - 8.5, P.cousVL, P.cousPL), capZ(XC + 8.5, XC + 11.5, P.cousVL, P.cousPL)], geom: flat,
+      feats: [{ t: 'cushion', xa: XC - 11.5, xb: XC - 8.5 }, { t: 'cushion', xa: XC + 8.5, xb: XC + 11.5 }], info: {} },
+    { id: 'ret', zones: [facZ(XC - 15, XC + 15, P.retPct)],
+      geom: x => { const r = bell(x, XC - 15, XC - 7, XC + 7, XC + 15); return { yc: 0, lw: W + (P.retLane - W) * r, wi: P.retIsl * r }; },
+      feats: [{ t: 'island' }], info: { island: P.retIsl >= ISLAND_MIN } },
+    { id: 'chi', zones: [capZ(XC - 5 - Lt, XC + 5 + Lt, cVL.v, cPL.v)],
+      geom: x => { const r = bell(x, XC - 5 - Lt, XC - 5, XC + 5, XC + 5 + Lt); return { yc: -P.chOff / 2 + P.chOff * r, lw: W + (P.chLane - W) * r, wi: 0 }; },
+      feats: [], info: { R: cVL.R, vVL: cVL.v, vPL: cPL.v } },
+    { id: 'rev', zones: [facZ(XC - 20, XC + 20, P.revPct)], geom: flat, feats: [{ t: 'pave', xa: XC - 20, xb: XC + 20 }], info: {} },
+    // bandes rugueuses : seulement sur la voie qui s'approche du passage
+    { id: 'rug', zones: [facZ(XC - 62, XC - 2, P.rugPct, 0), facZ(XC + 2, XC + 62, P.rugPct, 1)], geom: flat,
+      feats: [XC - 62, XC - 42, XC - 22].map(x0 => ({ t: 'rumble', lane: 0, x0 })).concat([XC + 18, XC + 38, XC + 58].map(x0 => ({ t: 'rumble', lane: 1, x0 }))), info: {} }
+  ];
+}
+const scName = sc => t('names')[sc.id];
+const scShort = sc => t('short')[sc.id];
+const scDesc = sc => t('desc')[sc.id](P, sc.info);
+
+/* ---------- apparence des véhicules (tirée de l'identifiant : même allure dans toutes les bandes) ---------- */
+const PAINTS = ['#e9eaec', '#c5c9ce', '#8b9198', '#2d3137', '#21457c', '#8f222b', '#3f5e3c', '#d8cfbb', '#b8661f', '#4f6f8f'];
+const CAR_STYLES = {
+  berline:  { w0: 0.35, w1: 0.95, r0: -1.05, r1: 0.35, b0: -1.5, b1: -1.05 },
+  citadine: { w0: 0.5, w1: 1.1, r0: -1.45, r1: 0.5, b0: -1.85, b1: -1.45 },
+  fourgon:  { w0: 1.05, w1: 1.5, r0: -2.1, r1: 1.05, b0: null, b1: null }
+};
+function vehicleLook(rec) {
+  const h = hash32(rec.id), r = h % 100;
+  const style = rec.pl ? (r < 45 ? 'bus' : 'camion') : (r < 50 ? 'berline' : r < 82 ? 'citadine' : 'fourgon');
+  return { style, paint: (h >>> 8) % PAINTS.length };
+}
+
+/* ---------- microsimulation ---------- */
+function aInt(v, gap, vl) {
+  if (gap <= 0.05) return -9;
+  const ss = v.s0 + Math.max(0, v.v * v.T + v.v * (v.v - vl) / (2 * Math.sqrt(v.a * v.b)));
+  const r = ss / gap;
+  return v.a * (1 - r * r);
+}
+
+class Sim {
+  constructor(sc, D, P) {
+    this.sc = sc; this.D = D; this.P = P; this.n = 0; this.t = 0;
+    this.rng = mulberry32(P.seed * 7919 + 17);
+    const g = sc.geom(XC);
+    this.cx = { lw: g.lw, wi: g.wi, W: 2 * g.lw + g.wi, island: g.wi >= ISLAND_MIN, mid: g.lw + g.wi / 2,
+      lanes: [{ y0: 0, y1: g.lw }, { y0: g.lw + g.wi, y1: 2 * g.lw + g.wi }] };
+    this.lanes = [0, 1].map(k => {
+      const zones = sc.zones.map((z, i) => ({ z, i })).filter(o => o.z.lane === undefined || o.z.lane === k)
+        .map(({ z, i }) => k === 0 ? { i, sa: z.xa, sb: z.xb, kind: z.kind } : { i, sa: L - z.xb, sb: L - z.xa, kind: z.kind })
+        .sort((a, b) => a.sa - b.sa);
+      const sZs = XC - ZEBRA_HALF, caps = zones.filter(z => z.kind === 'cap');
+      return { k, zones, veh: [], ptr: 0, pending: [], sZs, sZe: XC + ZEBRA_HALF, sStop: sZs - 0.5,
+        sRef: Math.min(sZs, caps.length ? caps[0].sa : sZs), qNow: 0 };
+    });
+    this.peds = []; this.pedPtr = 0;
+    this.need = [false, false]; this.occT = [Infinity, Infinity]; this.phys = [false, false];
+    this.st = { nOut: 0, nExit: 0, sumTT: 0, nStop: 0, vXp: [], surgN: 0, surgStop: 0, surgP: 0, qInt: 0, qMax: 0,
+      pedN: 0, pedSum: 0, pedMax: 0, yYes: 0, yNo: 0, conflicts: 0, hard: 0,
+      profS: new Float64Array(L / 5), profN: new Uint32Array(L / 5) };
+  }
+
+  makeVeh(rec) {
+    const P = this.P, cls = rec.pl ? 'PL' : 'VL', c = CLS[cls];
+    const vd = Math.max(15, rec.pl ? P.vPL + P.sdPL * rec.z : P.vVL + P.sdVL * rec.z) / KMH;
+    const caps = this.sc.zones.map(z => Math.max(1.5, z.kind === 'cap'
+      ? Math.min(vd, z[cls] * (1 + CVAR * rec.z) / (1 + 1.036 * CVAR))
+      : vd * z.f));
+    return { id: rec.id, cls, look: vehicleLook(rec), len: c.len, w: c.w, a: c.a, b: c.b, s0: c.s0, T: P.T + c.dT, bAnt: c.bAnt, vd, caps,
+      s: 0, v: 0, acc: 0, tArr: rec.t, tL: NaN, yd: 0, yT: 0, stopT: -1, stopped: false, hb: false, pb: false };
+  }
+
+  // vitesse désirée locale : vitesse du conducteur, bornée par les dispositifs anticipés à décélération constante
+  vLim(v, ln, s) {
+    let v0 = v.vd;
+    for (const z of ln.zones) {
+      if (s > z.sb + v.len) continue;
+      const cap = v.caps[z.i];
+      const lim = s >= z.sa ? cap : Math.sqrt(cap * cap + 2 * v.bAnt * (z.sa - s));
+      if (lim < v0) v0 = lim;
+    }
+    return v0;
+  }
+  v0(v, ln) { return this.vLim(v, ln, v.s); }
+
+  tryInsert(ln) {
+    const rec = ln.pending[0], back = ln.veh[ln.veh.length - 1];
+    const v = this.makeVeh(rec);
+    let sp = Math.min(v.vd, this.v0(v, ln)), s = 0;
+    if (back) {
+      const rear = back.s - back.len;
+      if (rear < v.s0 + sp * v.T) {
+        // trop près du dernier : il arrive en peloton derrière lui, à sa vitesse, juste en amont de l'entrée
+        sp = Math.min(sp, back.v);
+        s = Math.min(0, rear - v.s0 - sp * v.T);
+        if (s < -20) return;               // la file remonte jusqu'à l'entrée : il attend hors tronçon
+      }
+    }
+    v.s = s; v.v = sp; ln.veh.push(v); ln.pending.shift();
+  }
+
+  nextStage(p) {
+    const cx = this.cx;
+    if (p.st === 0) {
+      if (p.side === 0) return cx.island ? { lanes: [0], yTo: cx.mid, toIsland: true, y: 0, dir: 1 } : { lanes: [0, 1], yTo: cx.W, toIsland: false, y: 0, dir: 1 };
+      return cx.island ? { lanes: [1], yTo: cx.mid, toIsland: true, y: cx.W, dir: -1 } : { lanes: [1, 0], yTo: 0, toIsland: false, y: cx.W, dir: -1 };
+    }
+    return p.dir > 0 ? { lanes: [1], yTo: cx.W, toIsland: false, y: cx.mid, dir: 1 } : { lanes: [0], yTo: 0, toIsland: false, y: cx.mid, dir: -1 };
+  }
+
+  flags() {
+    const need = this.need, occT = this.occT, phys = this.phys, vp = this.P.vPed;
+    need[0] = need[1] = phys[0] = phys[1] = false; occT[0] = occT[1] = Infinity;
+    for (const p of this.peds) {
+      if (p.st === 0 || p.st === 2) { for (const k of this.nextStage(p).lanes) need[k] = true; }
+      else if (p.st === 1) {
+        for (const k of p.stage.lanes) {
+          const Ls = this.cx.lanes[k];
+          const cleared = p.dir > 0 ? p.y > Ls.y1 + 0.3 : p.y < Ls.y0 - 0.3;
+          if (cleared) continue;
+          const dist = ((p.dir > 0 ? Ls.y0 : Ls.y1) - p.y) * p.dir;
+          const tE = dist > 0 ? dist / vp : 0;
+          if (tE < occT[k]) occT[k] = tE;
+          if (p.y >= Ls.y0 && p.y <= Ls.y1) phys[k] = true;
+        }
+      }
+    }
+  }
+
+  accel(ln) {
+    const P = this.P, t = this.t, vs = ln.veh, need = this.need[ln.k], occT = this.occT[ln.k], occ = occT < Infinity;
+    for (let i = 0; i < vs.length; i++) {
+      const v = vs[i];
+      const v0 = this.v0(v, ln);
+      let a;
+      if (v.v <= v0) { const r = v.v / v0, r2 = r * r; a = v.a * (1 - r2 * r2); }
+      else a = -Math.min(4, 3 * (v.v - v0));
+      if (i > 0) { const l = vs[i - 1]; a = Math.min(a, aInt(v, l.s - l.len - v.s, l.v)); }
+      v.pb = false;
+      if (v.s < ln.sStop + 0.3) {
+        const d = ln.sStop - v.s;
+        // décision de céder : chaque conducteur, une seule fois, quand il voit un piéton attendre et peut encore
+        // s'arrêter sans brusquer. La probabilité dépend de la vitesse qu'il aurait au passage.
+        const dComf = v.v * P.tReact + v.v * v.v / (2 * B_YIELD);
+        if (v.yd === 0 && need && d <= Math.max(D_DEC, dComf + 10)) {
+          const feasible = v.v < 1.5 || dComf <= d;
+          const vPlan = Math.min(v.v, this.vLim(v, ln, XC));
+          v.yd = feasible && this.rng() < pYield(vPlan * KMH, P) ? 1 : 2;
+          v.yT = t; v.stopT = -1;
+          if (t >= WARMUP) { if (v.yd === 1) this.st.yYes++; else this.st.yNo++; }
+        }
+        if (v.yd === 1) {
+          if (!need && !occ) { if (t - v.yT > 1) v.yd = 3; }
+          else if (v.v < 0.5) { if (v.stopT < 0) v.stopT = t; if (!occ && t - v.stopT > YIELD_PATIENCE) v.yd = 3; }
+        }
+        let stop = v.yd === 1;
+        if (!stop && occ && d > 0.05) {
+          const clears = v.v > 1 && (d + 0.5 + 2 * ZEBRA_HALF + v.len) / v.v < occT - 0.3;
+          if (!clears && v.v * v.v / (2 * d) <= 8) stop = true;
+        }
+        if (stop) { const as = aInt(v, Math.max(0.05, d + 1), 0); if (as < a) { a = as; v.pb = true; } }
+      }
+      v.acc = Math.max(-9, a);
+    }
+  }
+
+  // piéton surgissant à dSurg mètres : réaction à vitesse constante, puis freinage d'urgence ; risque à la vitesse du choc
+  surg(v) {
+    const P = this.P, st = this.st, dr = v * P.tReact;
+    let vi;
+    if (dr >= P.dSurg) vi = v; else { const w = v * v - 2 * P.bEmerg * (P.dSurg - dr); vi = w > 0 ? Math.sqrt(w) : 0; }
+    st.surgN++; if (vi === 0) st.surgStop++; st.surgP += rosen(vi * KMH);
+  }
+
+  move(ln, meas) {
+    const st = this.st, phys = this.phys[ln.k], sD = ln.sZs - this.P.dSurg, tNext = this.t + DT;
+    for (const v of ln.veh) {
+      const s0 = v.s, a = v.acc;
+      let vn = v.v + a * DT, sn;
+      if (vn < 0) { sn = s0 - v.v * v.v / (2 * a); vn = 0; } else sn = s0 + v.v * DT + 0.5 * a * DT * DT;
+      if (meas && phys && s0 < ln.sZs && sn >= ln.sZs) st.conflicts++;
+      if (s0 < L && sn >= L) v.tL = tNext;
+      if (meas && v.tArr >= WARMUP) {
+        if (s0 < XC && sn >= XC) st.vXp.push(v.v * KMH);
+        if (s0 < sD && sn >= sD) this.surg(v.v);
+        const b0 = Math.floor(s0 / 5), b1 = Math.min(st.profN.length - 1, Math.floor(sn / 5));
+        for (let b = Math.max(0, b0 + 1); b <= b1; b++) { st.profS[b] += v.v; st.profN[b]++; }
+      }
+      if (vn < 1) v.stopped = true;
+      if (v.pb && a < -3.5 && !v.hb) { v.hb = true; if (meas) st.hard++; }
+      v.s = sn; v.v = vn;
+    }
+    while (ln.veh.length && ln.veh[0].s - ln.veh[0].len > L) {
+      const v = ln.veh.shift();
+      if (meas) st.nOut++;
+      if (v.tArr >= WARMUP) { st.nExit++; st.sumTT += v.tL - v.tArr; if (v.stopped) st.nStop++; }
+    }
+  }
+
+  queue(meas) {
+    let qs = 0;
+    for (const ln of this.lanes) {
+      // file continue depuis le dispositif : chaîne de véhicules lents (< 20 km/h) serrés (< 25 m),
+      // dont on retient le dernier véhicule presque à l'arrêt (< 8 km/h)
+      let q = 0, prevRear = ln.sRef, chain = false;
+      for (const v of ln.veh) {
+        if (v.s >= ln.sRef) continue;
+        if (prevRear - v.s > (chain ? 25 : 30) || v.v >= 20 / KMH) break;
+        chain = true; prevRear = v.s - v.len;
+        if (v.v < 8 / KMH) q = ln.sRef - prevRear;
+      }
+      if (ln.pending.length) q = Math.max(q, ln.sRef) + ln.pending.length * 7;
+      ln.qNow = q; qs += q;
+      if (meas && q > this.st.qMax) this.st.qMax = q;
+    }
+    if (meas) this.st.qInt += qs / 2 * DT;
+  }
+
+  laneOK(k, tEnter, tExit, allowForce) {
+    const ln = this.lanes[k], P = this.P;
+    for (const v of ln.veh) {
+      if (v.s - v.len > ln.sZe + 0.3) continue;            // déjà passé
+      const d = ln.sZs - v.s;
+      if (d < 0.3) return false;                            // sur le passage
+      if (v.yd === 1 && (v.v < 1 || v.v * v.v / (2 * d) < 4)) return true;
+      if (v.v < 0.5) return true;                           // arrêté : les suivants sont bloqués derrière
+      if (d / v.v > tExit + P.tSafe) return true;           // créneau suffisant
+      if (allowForce && v.v * P.tReact + v.v * v.v / (2 * B_ENGAGE) <= d) return true;
+      if ((d + 2 * ZEBRA_HALF + v.len) / v.v < tEnter - 0.5) continue;  // passe avant que le piéton n'arrive sur la voie
+      return false;
+    }
+    return true;
+  }
+
+  stageOK(sg) {
+    const vp = this.P.vPed;
+    for (let j = 0; j < sg.lanes.length; j++) {
+      const k = sg.lanes[j], Ls = this.cx.lanes[k];
+      const yN = sg.dir > 0 ? Ls.y0 : Ls.y1, yF = sg.dir > 0 ? Ls.y1 : Ls.y0;
+      const tEnter = Math.max(0, (yN - sg.y) * sg.dir) / vp, tExit = Math.max(0, (yF - sg.y) * sg.dir) / vp;
+      if (!this.laneOK(k, tEnter, tExit, j > 0)) return false;
+    }
+    return true;
+  }
+
+  stepPeds(meas) {
+    const t = this.t, P = this.P, st = this.st;
+    const groups = new Map();
+    for (const p of this.peds) {
+      if (p.st !== 0 && p.st !== 2) continue;
+      const key = p.st === 0 ? 'c' + p.side : 'i' + p.dir;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(p);
+    }
+    for (const g of groups.values()) {
+      const sg = this.nextStage(g[0]);
+      if (!this.stageOK(sg)) continue;
+      for (const p of g) { p.wait += t - p.tW; p.stage = sg; p.st = 1; p.y = sg.y; p.dir = sg.dir; }
+    }
+    for (const p of this.peds) {
+      if (p.st !== 1) continue;
+      p.y += p.dir * P.vPed * DT;
+      if ((p.y - p.stage.yTo) * p.dir >= 0) {
+        p.y = p.stage.yTo;
+        if (p.stage.toIsland) { p.st = 2; p.tW = t; }
+        else {
+          p.st = 3;
+          if (meas && p.t >= WARMUP) { st.pedN++; st.pedSum += p.wait; if (p.wait > st.pedMax) st.pedMax = p.wait; }
+        }
+      }
+    }
+    if (this.peds.some(p => p.st === 3)) this.peds = this.peds.filter(p => p.st !== 3);
+  }
+
+  step() {
+    const t = this.t, meas = t >= WARMUP;
+    for (const ln of this.lanes) {
+      const list = this.D.veh(ln.k, t);
+      while (ln.ptr < list.length && list[ln.ptr].t <= t) ln.pending.push(list[ln.ptr++]);
+      if (ln.pending.length) this.tryInsert(ln);
+    }
+    const pl = this.D.peds(t);
+    while (this.pedPtr < pl.length && pl[this.pedPtr].t <= t) {
+      const r = pl[this.pedPtr++];
+      this.peds.push({ side: r.side, t: r.t, xo: r.xo, st: 0, y: r.side ? this.cx.W : 0, dir: r.side ? -1 : 1, wait: 0, tW: r.t, stage: null });
+    }
+    this.flags();
+    for (const ln of this.lanes) this.accel(ln);
+    for (const ln of this.lanes) this.move(ln, meas);
+    this.queue(meas);
+    this.stepPeds(meas);
+    this.n++; this.t = this.n * DT;
+  }
+}
+
+function stats(sim) {
+  const st = sim.st, tm = Math.max(DT, sim.t - WARMUP);
+  const flow = st.nOut / tm * 3600 / 2, pending = sim.lanes[0].pending.length + sim.lanes[1].pending.length;
+  return {
+    v85: pct(st.vXp, 0.85),
+    tt: st.nExit ? st.sumTT / st.nExit : NaN,
+    flow, pending,
+    sat: flow < 0.96 * sim.P.q && pending >= 5,
+    stopPct: st.nExit ? 100 * st.nStop / st.nExit : NaN,
+    qAvg: st.qInt / tm, qMax: st.qMax,
+    pedW: st.pedN ? st.pedSum / st.pedN : NaN,
+    yieldPct: st.yYes + st.yNo ? 100 * st.yYes / (st.yYes + st.yNo) : NaN,
+    surgStop: st.surgN ? 100 * st.surgStop / st.surgN : NaN,
+    surgRisk: st.surgN ? 100 * st.surgP / st.surgN : NaN,
+    nVeh: st.nExit, conflicts: st.conflicts, hard: st.hard
+  };
+}
+function aggregate(acc) {
+  return acc.map(list => {
+    const m = k => mean(list.map(s => s[k]));
+    const satN = list.filter(s => s.sat).length;
+    return { v85: m('v85'), tt: m('tt'), flow: m('flow'), stopPct: m('stopPct'), qAvg: m('qAvg'), qMax: m('qMax'), pedW: m('pedW'),
+      yieldPct: m('yieldPct'), surgStop: m('surgStop'), surgRisk: m('surgRisk'), sat: satN * 2 > list.length, satN, pending: 0,
+      nVeh: list.reduce((a, s) => a + s.nVeh, 0) };
+  });
+}
+
+/* ---------- recommandation : règle lexicographique, sans pondération ---------- */
+function recommend(E, scs) {
+  const excluded = [], cands = [];
+  E.forEach((e, i) => {
+    if (i === 0) return;
+    const why = [];
+    if (e.sat) why.push('sat');
+    if (scs[i].reg) why.push('reg');
+    if (why.length) excluded.push({ i, why }); else cands.push({ i, e });
+  });
+  if (!cands.length) return { best: -1, excluded };
+  const rMin = Math.min(...cands.map(c => c.e.surgRisk));
+  const pool = cands.filter(c => c.e.surgRisk <= rMin + 0.25);
+  pool.sort((a, b) => Math.abs(a.e.tt - b.e.tt) > 2 ? a.e.tt - b.e.tt : a.e.pedW - b.e.pedW);
+  return { best: pool[0].i, excluded };
+}
+
+/* ---------- couleurs ---------- */
+let C = {}, SPEED = [], FONT = 'sans-serif';
+function hexToRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function readColors() {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  C = { verge: g('--verge'), walk: g('--walk'), curb: g('--curb'), asphalt: g('--asphalt'), mark: g('--mark'),
+    bump: g('--bump'), bumpRamp: g('--bump-ramp'), raised: g('--raised'), raisedRamp: g('--raised-ramp'),
+    pave: g('--pave'), paveJoint: g('--pave-joint'), island: g('--island'), ped: g('--ped'), pedRing: g('--ped-ring'),
+    brake: g('--brake'), surface: g('--surface'), line: g('--line'), muted: g('--muted'),
+    accent: g('--accent'), bad: g('--bad'), zone: g('--zone'),
+    shadow: g('--shadow'), glass: g('--glass'), roof: g('--roof'), roofUnit: g('--roof-unit'), headlight: g('--headlight'),
+    tail: g('--tail'), rib: g('--rib'), shade: g('--shade'), box: g('--box') };
+  SPEED = ['--sp1', '--sp2', '--sp3', '--sp4', '--sp5'].map(n => hexToRgb(g(n)));
+  FONT = g('--font-display') || 'sans-serif';
+}
+function speedColor(vk) {
+  const x = (Math.max(20, Math.min(60, vk)) - 20) / 10, i = Math.min(3, Math.floor(x)), f = x - i;
+  const a = SPEED[i], b = SPEED[i + 1];
+  return `rgb(${Math.round(a[0] + (b[0] - a[0]) * f)},${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)})`;
+}
+
+/* ---------- dessin des véhicules, vue de dessus, en mètres dans le repère du véhicule ---------- */
+let colorMode = 'speed';
+function rr(c, x, y, w, h, r) { c.beginPath(); if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h); }
+function trap(c, x0, x1, h0, h1) { c.beginPath(); c.moveTo(x0, -h0); c.lineTo(x1, -h1); c.lineTo(x1, h1); c.lineTo(x0, h0); c.closePath(); c.fill(); }
+function rearLights(c, L2, W2, braking, m) {
+  const lw = Math.max(0.14, 1.5 * m.x), lh = Math.max(0.38, 1.5 * m.y);
+  c.fillStyle = braking ? C.brake : C.tail;
+  c.fillRect(-L2, -W2 + 0.1, lw, lh); c.fillRect(-L2, W2 - 0.1 - lh, lw, lh);
+}
+function headLights(c, L2, W2) { c.fillStyle = C.headlight; c.fillRect(L2 - 0.1, -W2 + 0.15, 0.1, 0.36); c.fillRect(L2 - 0.1, W2 - 0.51, 0.1, 0.36); }
+function drawCar(c, veh, paint, detail, braking, m) {
+  const L2 = veh.len / 2, W2 = veh.w / 2, S = CAR_STYLES[veh.look.style];
+  c.fillStyle = C.shadow; rr(c, -L2 + 0.12, -W2 + 0.16, veh.len, veh.w, 0.5); c.fill();
+  c.fillStyle = paint; rr(c, -L2, -W2, veh.len, veh.w, 0.5); c.fill();
+  if (detail) {
+    c.fillStyle = C.roof; rr(c, S.r0, -W2 + 0.3, S.r1 - S.r0, veh.w - 0.6, 0.2); c.fill();
+    c.fillStyle = C.glass;
+    trap(c, S.w0, S.w1, W2 - 0.3, W2 - 0.2);
+    if (S.b0 !== null) trap(c, S.b0, S.b1, W2 - 0.24, W2 - 0.32);
+    c.fillRect(S.r0, -W2 + 0.16, S.r1 - S.r0, 0.12); c.fillRect(S.r0, W2 - 0.28, S.r1 - S.r0, 0.12);
+    c.fillStyle = paint; c.fillRect(S.w0 + 0.05, -W2 - 0.14, 0.22, 0.16); c.fillRect(S.w0 + 0.05, W2 - 0.02, 0.22, 0.16);
+    headLights(c, L2, W2);
+  } else { c.fillStyle = C.glass; c.fillRect(S.w0, -W2 + 0.25, S.w1 - S.w0, veh.w - 0.5); }
+  rearLights(c, L2, W2, braking, m);
+}
+function drawBus(c, veh, paint, detail, braking, m) {
+  const L2 = veh.len / 2, W2 = veh.w / 2;
+  c.fillStyle = C.shadow; rr(c, -L2 + 0.15, -W2 + 0.2, veh.len, veh.w, 0.45); c.fill();
+  c.fillStyle = paint; rr(c, -L2, -W2, veh.len, veh.w, 0.45); c.fill();
+  if (detail) {
+    c.fillStyle = C.glass;
+    c.fillRect(-L2 + 0.7, -W2 + 0.05, veh.len - 1.5, 0.16); c.fillRect(-L2 + 0.7, W2 - 0.21, veh.len - 1.5, 0.16);
+    c.fillRect(L2 - 0.5, -W2 + 0.12, 0.42, veh.w - 0.24);
+    c.fillRect(-L2 + 0.06, -W2 + 0.4, 0.16, veh.w - 0.8);
+    c.fillStyle = C.roof; rr(c, -L2 + 0.5, -W2 + 0.3, veh.len - 1.2, veh.w - 0.6, 0.25); c.fill();
+    c.fillStyle = C.roofUnit; rr(c, -1.4, -0.55, 2.2, 1.1, 0.15); c.fill(); rr(c, -4.8, -0.45, 1.3, 0.9, 0.12); c.fill();
+    headLights(c, L2, W2);
+  } else { c.fillStyle = C.glass; c.fillRect(L2 - 0.6, -W2 + 0.2, 0.5, veh.w - 0.4); }
+  rearLights(c, L2, W2, braking, m);
+}
+function drawTruck(c, veh, boxPaint, cabPaint, shadeCab, detail, braking, m) {
+  const L2 = veh.len / 2, W2 = veh.w / 2, cab = 2.3, cab0 = L2 - cab;
+  c.fillStyle = C.shadow; rr(c, -L2 + 0.15, -W2 + 0.2, veh.len, veh.w, 0.3); c.fill();
+  c.fillStyle = boxPaint; rr(c, -L2, -W2, veh.len - cab - 0.15, veh.w, 0.12); c.fill();
+  if (detail) { c.fillStyle = C.rib; for (let x = -L2 + 1.2; x < cab0 - 0.6; x += 1.2) c.fillRect(x, -W2 + 0.08, 0.07, veh.w - 0.16); }
+  c.fillStyle = cabPaint; rr(c, cab0, -W2 + 0.06, cab, veh.w - 0.12, 0.45); c.fill();
+  if (shadeCab) { c.fillStyle = C.shade; rr(c, cab0, -W2 + 0.06, cab, veh.w - 0.12, 0.45); c.fill(); }
+  if (detail) {
+    c.fillStyle = C.roof; rr(c, cab0 + 0.2, -W2 + 0.35, 1.5, veh.w - 0.7, 0.2); c.fill();
+    c.fillStyle = C.glass; c.fillRect(L2 - 0.42, -W2 + 0.2, 0.32, veh.w - 0.4);
+    c.fillStyle = cabPaint; c.fillRect(L2 - 0.75, -W2 - 0.2, 0.2, 0.22); c.fillRect(L2 - 0.75, W2 - 0.02, 0.2, 0.22);
+    headLights(c, L2, W2);
+  }
+  rearLights(c, L2, W2, braking, m);
+}
+
+/* ---------- rendu de la vue en plan ---------- */
+let viewMode = 'full';
+class View {
+  constructor(idx, art) {
+    this.idx = idx; this.art = art;
+    this.canvas = art.querySelector('canvas'); this.ctx = this.canvas.getContext('2d');
+    this.bg = document.createElement('canvas'); this.bctx = this.bg.getContext('2d');
+    this.visible = true;
+  }
+  get sim() { return sims[this.idx]; }
+  layout() {
+    const v = VIEWS[viewMode], compact = isCompact();
+    const w = Math.max(200, Math.floor(compact ? this.canvas.getBoundingClientRect().width : this.canvas.parentElement.clientWidth));
+    let sy = v.sy, profH = 42;
+    if (compact) { const H = Math.max(40, compactRowH); profH = H >= 72 ? 14 : 0; sy = (H - profH) / (Y1 - Y0); }
+    this.view = v; this.cw = w; this.sx = w / (v.x1 - v.x0); this.sy = sy;
+    this.roadH = (Y1 - Y0) * this.sy; this.profH = profH; this.ch = Math.round(this.roadH + this.profH);
+    this.art.style.height = compact ? (this.ch + 7) + 'px' : '';
+    this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    for (const c of [this.canvas, this.bg]) { c.width = Math.round(w * this.dpr); c.height = Math.round(this.ch * this.dpr); }
+    this.canvas.style.height = this.ch + 'px';
+    this.drawStatic();
+  }
+  X(x) { return (x - this.view.x0) * this.sx; }
+  Y(y) { return (Y1 - y) * this.sy; }
+
+  drawStatic() {
+    const c = this.bctx, sc = this.sim.sc, v = this.view, X = x => this.X(x), Y = y => this.Y(y);
+    c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    c.clearRect(0, 0, this.cw, this.ch);
+    c.fillStyle = C.verge; c.fillRect(0, 0, this.cw, this.roadH);
+    const step = Math.max(0.25, 1.5 / this.sx), xs = [];
+    for (let x = v.x0 - 2; x <= v.x1 + 2 + 1e-9; x += step) xs.push(x);
+    const G = xs.map(x => { const g = sc.geom(x); g.s = g.yc - g.wi / 2 - g.lw; g.n = g.yc + g.wi / 2 + g.lw; return g; });
+    const band = (fa, fb, fill) => {
+      c.beginPath();
+      for (let i = 0; i < xs.length; i++) { const px = X(xs[i]), py = Y(fa(G[i])); if (i) c.lineTo(px, py); else c.moveTo(px, py); }
+      for (let i = xs.length - 1; i >= 0; i--) c.lineTo(X(xs[i]), Y(fb(G[i])));
+      c.closePath(); c.fillStyle = fill; c.fill();
+    };
+    const edge = f => { c.beginPath(); for (let i = 0; i < xs.length; i++) { const px = X(xs[i]), py = Y(f(G[i])); if (i) c.lineTo(px, py); else c.moveTo(px, py); } c.strokeStyle = C.curb; c.lineWidth = 1; c.stroke(); };
+    band(g => g.s, g => g.s - 2.5, C.walk);
+    band(g => g.n + 2.5, g => g.n, C.walk);
+    band(g => g.n, g => g.s, C.asphalt);
+    for (const f of sc.feats) this.feature(c, f, sc);
+    edge(g => g.s); edge(g => g.n);
+    // axe discontinu (3 m / 3,5 m), interrompu au droit du passage et des dispositifs
+    c.strokeStyle = C.mark; c.lineWidth = Math.max(1, 0.15 * this.sy);
+    const busy = sc.feats.filter(f => f.xa !== undefined);
+    for (let x = Math.floor(v.x0 / 6.5) * 6.5; x < v.x1; x += 6.5) {
+      const xe = x + 3;
+      if (xe > XC - ZEBRA_HALF - 2 && x < XC + ZEBRA_HALF + 2) continue;
+      if (busy.some(f => xe > f.xa - 0.5 && x < f.xb + 0.5)) continue;
+      const ga = sc.geom(x), gm = sc.geom(x + 1.5), gb = sc.geom(xe);
+      if (ga.wi > 0.05 || gb.wi > 0.05) continue;
+      c.beginPath(); c.moveTo(X(x), Y(ga.yc)); c.lineTo(X(x + 1.5), Y(gm.yc)); c.lineTo(X(xe), Y(gb.yc)); c.stroke();
+    }
+    this.zebra(c, sc);
+    c.strokeStyle = C.mark; c.globalAlpha = 0.55; c.lineWidth = 1.2;
+    const arrow = (x, k, dir) => {
+      const g = sc.geom(x), px = X(x), py = Y(laneY(g, k)), h = 12;
+      c.beginPath(); c.moveTo(px - dir * h / 2, py); c.lineTo(px + dir * h / 2, py);
+      c.moveTo(px + dir * h / 2, py); c.lineTo(px + dir * (h / 2 - 4), py - 3);
+      c.moveTo(px + dir * h / 2, py); c.lineTo(px + dir * (h / 2 - 4), py + 3); c.stroke();
+    };
+    arrow(v.x0 + 26 / this.sx, 0, 1); arrow(v.x1 - 26 / this.sx, 1, -1);
+    c.globalAlpha = 1;
+    this.profileFrame(c, sc);
+  }
+
+  teeth(c, xa, xb, s, n, mid) {
+    const X = x => this.X(x), Y = y => this.Y(y);
+    c.fillStyle = C.mark;
+    for (let y = s + 0.6; y < mid - 0.3; y += 1.0) { c.beginPath(); c.moveTo(X(xa), Y(y - 0.3)); c.lineTo(X(xa + 0.8), Y(y)); c.lineTo(X(xa), Y(y + 0.3)); c.closePath(); c.fill(); }
+    for (let y = mid + 0.6; y < n - 0.3; y += 1.0) { c.beginPath(); c.moveTo(X(xb), Y(y - 0.3)); c.lineTo(X(xb - 0.8), Y(y)); c.lineTo(X(xb), Y(y + 0.3)); c.closePath(); c.fill(); }
+  }
+
+  feature(c, f, sc) {
+    const X = x => this.X(x), Y = y => this.Y(y);
+    if (f.t === 'island') { this.island(c, sc); return; }
+    if (f.t === 'rumble') {
+      const g = sc.geom(f.x0), ya = f.lane === 0 ? g.yc - g.wi / 2 - g.lw : g.yc + g.wi / 2;
+      c.fillStyle = C.mark; c.globalAlpha = 0.85;
+      for (let j = 0; j < 6; j++) c.fillRect(X(f.x0 + j * 0.8), Y(ya + g.lw - 0.15), Math.max(1, 0.25 * this.sx), (g.lw - 0.3) * this.sy);
+      c.globalAlpha = 1;
+      return;
+    }
+    const g = sc.geom((f.xa + f.xb) / 2), s = g.yc - g.lw, n = g.yc + g.lw;
+    const rect = (xa, xb, ya, yb, fill) => { c.fillStyle = fill; c.fillRect(X(xa), Y(yb), X(xb) - X(xa), Y(ya) - Y(yb)); };
+    if (f.t === 'hump') { rect(f.xa, f.xb, s, n, C.bump); this.teeth(c, f.xa, f.xb, s, n, g.yc); }
+    else if (f.t === 'table') {
+      rect(f.xa, f.xb, s, n, f.raised ? C.raisedRamp : C.bumpRamp);
+      rect(f.xa + f.ramp, f.xb - f.ramp, s, n, f.raised ? C.raised : C.bump);
+      this.teeth(c, f.xa, f.xb, s, n, g.yc);
+    } else if (f.t === 'cushion') {
+      for (const k of [0, 1]) {
+        const yc = laneY(g, k);
+        rect(f.xa, f.xb, yc - 0.9, yc + 0.9, C.raised);
+        if (k === 0) this.teeth(c, f.xa, f.xb, yc - 0.9, yc + 0.9, yc + 0.9);
+        else this.teeth(c, f.xa, f.xb, yc - 0.9, yc + 0.9, yc - 0.9);
+      }
+    } else if (f.t === 'pave') {
+      rect(f.xa, f.xb, s, n, C.pave);
+      c.strokeStyle = C.paveJoint; c.lineWidth = 0.6;
+      const stepX = Math.max(1, 5 / this.sx), stepY = Math.max(0.6, 4 / this.sy);
+      c.beginPath();
+      for (let x = f.xa + stepX; x < f.xb; x += stepX) { c.moveTo(X(x), Y(n)); c.lineTo(X(x), Y(s)); }
+      for (let y = s + stepY; y < n; y += stepY) { c.moveTo(X(f.xa), Y(y)); c.lineTo(X(f.xb), Y(y)); }
+      c.stroke();
+    }
+  }
+
+  island(c, sc) {
+    const X = x => this.X(x), Y = y => this.Y(y);
+    const seg = (xa, xb) => {
+      const pts = []; for (let x = xa; x <= xb + 1e-9; x += 0.5) pts.push([x, sc.geom(x)]);
+      c.beginPath();
+      pts.forEach(([x, g], i) => { const px = X(x), py = Y(g.yc + g.wi / 2); if (i) c.lineTo(px, py); else c.moveTo(px, py); });
+      for (let i = pts.length - 1; i >= 0; i--) { const [x, g] = pts[i]; c.lineTo(X(x), Y(g.yc - g.wi / 2)); }
+      c.closePath(); c.fillStyle = C.island; c.fill(); c.strokeStyle = C.curb; c.lineWidth = 1; c.stroke();
+    };
+    seg(XC - 15, XC - ZEBRA_HALF); seg(XC + ZEBRA_HALF, XC + 15);
+    const g = sc.geom(XC);
+    if (g.wi > 0.05) { c.fillStyle = C.walk; c.fillRect(X(XC - ZEBRA_HALF), Y(g.yc + g.wi / 2), X(XC + ZEBRA_HALF) - X(XC - ZEBRA_HALF), g.wi * this.sy); }
+  }
+
+  zebra(c, sc) {
+    const g = sc.geom(XC), s = g.yc - g.wi / 2 - g.lw, n = g.yc + g.wi / 2 + g.lw, ia = g.yc - g.wi / 2, ib = g.yc + g.wi / 2;
+    const x0 = this.X(XC - ZEBRA_HALF), w = this.X(XC + ZEBRA_HALF) - x0, h = Math.max(1, 0.5 * this.sy);
+    c.fillStyle = C.mark;
+    for (let y = s + 0.3; y + 0.5 <= n - 0.2; y += 1.0) {
+      if (g.wi > 0.05 && y + 0.5 > ia && y < ib) continue;
+      c.fillRect(x0, this.Y(y + 0.5), w, h);
+    }
+  }
+
+  profileFrame(c, sc) {
+    const top = this.roadH, h = this.profH;
+    if (h < 10) return;
+    c.fillStyle = C.surface; c.fillRect(0, top, this.cw, h);
+    c.fillStyle = C.zone;
+    for (const z of sc.zones) if (z.lane === undefined || z.lane === 0) c.fillRect(this.X(z.xa), top, Math.max(1, this.X(z.xb) - this.X(z.xa)), h);
+    const vy = vk => top + h - 4 - (vk / 60) * (h - 8);
+    c.strokeStyle = C.line; c.lineWidth = 1; c.setLineDash([3, 3]);
+    for (const vk of h >= 30 ? [30, 50] : [30]) { c.beginPath(); c.moveTo(0, vy(vk)); c.lineTo(this.cw, vy(vk)); c.stroke(); }
+    c.setLineDash([]);
+    c.beginPath(); c.moveTo(this.X(XC), top); c.lineTo(this.X(XC), top + h); c.strokeStyle = C.muted; c.stroke();
+    if (h >= 30) {
+      const ar = lang === 'ar';
+      c.fillStyle = C.muted; c.font = `500 10px ${FONT}`; c.textBaseline = 'alphabetic';
+      if ('direction' in c) c.direction = ar ? 'rtl' : 'ltr';
+      c.textAlign = ar ? 'left' : 'right';
+      const xr = ar ? 4 : this.cw - 4;
+      c.fillText('50', xr, vy(50) - 2); c.fillText(t('prof30'), xr, vy(30) - 2);
+      c.textAlign = ar ? 'right' : 'left'; c.fillText(t('profLabel'), ar ? this.cw - 6 : 6, top + 11);
+      if ('direction' in c) c.direction = 'ltr';
+    }
+  }
+
+  draw() {
+    const c = this.ctx, sim = this.sim, sc = sim.sc, v = this.view, st = sim.st;
+    c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(this.bg, 0, 0);
+    c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    const top = this.roadH, h = this.profH, vy = vk => top + h - 4 - Math.min(1, vk / 60) * (h - 8);
+    c.strokeStyle = C.accent; c.lineWidth = 1.6; c.beginPath();
+    let on = false;
+    for (let b = 0; h >= 10 && b < st.profN.length; b++) {
+      const x = b * 5 + 2.5;
+      if (st.profN[b] < 3 || x < v.x0 - 5 || x > v.x1 + 5) { on = false; continue; }
+      const px = this.X(x), py = vy(st.profS[b] / st.profN[b] * KMH);
+      if (on) c.lineTo(px, py); else { c.moveTo(px, py); on = true; }
+    }
+    c.stroke();
+    for (const ln of sim.lanes) for (const veh of ln.veh) this.vehicle(c, ln.k, veh, sc);
+    this.pedestrians(c);
+  }
+
+  queueText(k) {
+    const ln = this.sim.lanes[k], v = this.view, q = ln.qNow, pend = ln.pending.length;
+    if (q < 5 || !v) return '';
+    const backS = ln.sRef - q, xBack = k === 0 ? backS : L - backS;
+    const outside = k === 0 ? xBack < v.x0 + 4 : xBack > v.x1 - 4;
+    if (!outside && !pend) return '';
+    return isCompact() ? t('qShort', k, pend, q) : t('qLong', k, pend, q);
+  }
+
+  vehicle(c, k, veh, sc) {
+    const sCen = veh.s - veh.len / 2, x = k === 0 ? sCen : L - sCen, v = this.view;
+    if (x < v.x0 - 15 || x > v.x1 + 15) return;
+    const y = laneY(sc.geom(x), k), y1 = laneY(sc.geom(x - 1), k), y2 = laneY(sc.geom(x + 1), k);
+    let ang = Math.atan2(this.Y(y2) - this.Y(y1), this.X(x + 1) - this.X(x - 1));
+    if (k === 1) ang += Math.PI;
+    // largeur des véhicules : exagération latérale limitée pour garder des proportions crédibles
+    const kx = this.sx, ky = Math.min(this.sy, this.sx * 1.5), m = { x: 1 / kx, y: 1 / ky };
+    const detail = veh.len * kx >= 16, braking = veh.acc < -1;
+    const speedMode = colorMode === 'speed', paint = speedMode ? speedColor(veh.v * KMH) : PAINTS[veh.look.paint];
+    c.save(); c.translate(this.X(x), this.Y(y)); c.rotate(ang); c.scale(kx, ky);
+    if (veh.cls === 'VL') drawCar(c, veh, paint, detail, braking, m);
+    else if (veh.look.style === 'bus') drawBus(c, veh, paint, detail, braking, m);
+    else drawTruck(c, veh, speedMode ? paint : C.box, paint, speedMode, detail, braking, m);
+    c.restore();
+  }
+
+  pedestrians(c) {
+    const sim = this.sim, cx = sim.cx, g = sim.sc.geom(XC), ys = g.yc - g.wi / 2 - g.lw;
+    const r = this.sy >= 6 ? 3.3 : 2.7, rank = [0, 0];
+    for (const p of sim.peds) {
+      let y;
+      if (p.st === 0) { const i = rank[p.side]++; const off = 0.8 + (i % 3) * 0.75; y = p.side ? ys + cx.W + off : ys - off; }
+      else if (p.st === 2) y = ys + cx.mid + (p.dir > 0 ? -0.35 : 0.35);
+      else y = ys + p.y;
+      const px = this.X(XC + p.xo * 0.85), py = this.Y(y);
+      const waited = p.st === 0 || p.st === 2 ? p.wait + (sim.t - p.tW) : 0;
+      c.beginPath(); c.arc(px, py, r, 0, Math.PI * 2);
+      c.fillStyle = C.ped; c.fill();
+      c.lineWidth = waited > 20 ? 2 : 1; c.strokeStyle = waited > 20 ? C.bad : C.pedRing; c.stroke();
+    }
+  }
+}
+
+/* ---------- vues 3D de synthèse (three.js), construites sur la même géométrie que la simulation ---------- */
+const V3D = (() => {
+  let R = null;
+  const ok = () => typeof THREE !== 'undefined';
+  // couleurs d'une photo de jour, identiques dans les deux thèmes
+  const COL = { asphalt: 0x3b3e43, mark: 0xf3f3ef, walk: 0xc4beb2, curb: 0xa29d93, ground: 0x8f9a6a, resin: 0xa24b39, bump: 0x505357,
+    pave: 0x8d8478, island: 0x6f8f4e, trunk: 0x5b4733, leaf: 0x4d7a3c, glass: 0x1b232c, tyre: 0x161616, skin: 0xc99a76, bollard: 0xf4f4f4, red: 0xc0392b };
+  const PAINT3 = [0xe9eaec, 0xc5c9ce, 0x2d3137, 0x21457c, 0x8f222b, 0xd8cfbb];
+  const FACADES = [0xefe9df, 0xe6dccb, 0xd9cbb3, 0xf3efe8, 0xdfe3e2, 0xe8d6bd];
+  const mats = new Map();
+  function mat(hex, extra) {
+    const key = hex + JSON.stringify(extra || {});
+    if (!mats.has(key)) mats.set(key, new THREE.MeshStandardMaterial(Object.assign({ color: new THREE.Color(hex).convertSRGBToLinear(), roughness: 0.92, metalness: 0 }, extra || {})));
+    return mats.get(key);
+  }
+  function renderer() {
+    if (!R) {
+      R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      R.setPixelRatio(1);
+      R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap;
+      R.outputEncoding = THREE.sRGBEncoding;
+      R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.05;
+    }
+    return R;
+  }
+  let texCache = null;
+  function textures() {
+    if (texCache) return texCache;
+    const mk = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const tx = new THREE.CanvasTexture(c); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.encoding = THREE.sRGBEncoding; tx.anisotropy = 8; return tx; };
+    const pave = mk(256, 256, (g, w, h) => {
+      g.fillStyle = '#8d8478'; g.fillRect(0, 0, w, h);
+      const rnd = mulberry32(5);
+      for (let row = 0; row < 8; row++) for (let col = -1; col < 6; col++) {
+        const x = col * 48 + (row % 2) * 24, y = row * 32;
+        const v = 120 + Math.floor(rnd() * 40); g.fillStyle = `rgb(${v + 20},${v + 12},${v})`;
+        g.fillRect(x + 2, y + 2, 44, 28);
+      }
+    });
+    const facade = mk(256, 256, (g, w, h) => {
+      g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#56616b';
+      for (let fy = 0; fy < 2; fy++) for (let fx = 0; fx < 2; fx++) g.fillRect(fx * 128 + 34, fy * 128 + 30, 60, 74);
+      g.fillStyle = '#d9d3c7'; for (let fy = 0; fy < 2; fy++) g.fillRect(0, fy * 128 + 118, w, 10);
+    });
+    const sky = mk(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#8fb6dc'); gr.addColorStop(0.65, '#cfe0ee'); gr.addColorStop(1, '#e9eef0'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+    sky.wrapS = sky.wrapT = THREE.ClampToEdgeWrapping;
+    texCache = { pave, facade, sky };
+    return texCache;
+  }
+
+  // ruban le long de l'axe : bord a(x) et b(x) (a < b, coordonnée y de la simulation), hauteur h(x)
+  function ribbon(xs, fa, fb, fh, material, uvScale) {
+    const pos = [], uv = [], idx = [];
+    xs.forEach((x, i) => {
+      const a = fa(x), b = fb(x), h = fh(x);
+      pos.push(x - XC, h, -a, x - XC, h, -b);
+      uv.push((x - XC) * (uvScale || 1), a * (uvScale || 1), (x - XC) * (uvScale || 1), b * (uvScale || 1));
+      if (i) { const k = 2 * i; idx.push(k - 2, k, k - 1, k - 1, k, k + 1); }
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, material); m.receiveShadow = true; return m;
+  }
+  // face verticale (bordure) le long d'un bord y = f(x), du bas hb(x) au haut ht(x)
+  function wall(xs, f, hb, ht, material) {
+    const pos = [], idx = [];
+    xs.forEach((x, i) => { const y = f(x); pos.push(x - XC, hb(x), -y, x - XC, ht(x), -y); if (i) { const k = 2 * i; idx.push(k - 2, k, k - 1, k - 1, k, k + 1); } });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, material.clone()); m.material.side = THREE.DoubleSide; m.receiveShadow = true; return m;
+  }
+  function box(w, h, d, material, x, y, z, rotY) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material); m.position.set(x, y, z); if (rotY) m.rotation.y = rotY; m.castShadow = true; m.receiveShadow = true; return m;
+  }
+  function flatQuad(w, d, material, x, y, z, rotY) {
+    const g = new THREE.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(g, material); m.position.set(x, y, z); if (rotY) m.rotation.y = rotY; m.receiveShadow = true; return m;
+  }
+  function roadHeight(sc) {
+    const fs = sc.feats.filter(f => f.t === 'hump' || f.t === 'table');
+    return x => {
+      let h = 0;
+      for (const f of fs) {
+        if (x <= f.xa || x >= f.xb) continue;
+        if (f.t === 'hump') { const c = (f.xa + f.xb) / 2, Rr = 20.05, d = x - c; h = Math.max(h, Math.sqrt(Rr * Rr - d * d) - (Rr - 0.10)); }
+        else { const u = Math.min(x - f.xa, f.xb - x); h = Math.max(h, u >= f.ramp ? 0.10 : 0.10 * u / f.ramp); }
+      }
+      return h;
+    };
+  }
+  function car(paint, x, z, heading, kind) {
+    const g = new THREE.Group();
+    if (kind === 'bus') {
+      g.add(box(12, 2.5, 2.5, mat(paint), 0, 1.65, 0));
+      g.add(box(10.6, 0.95, 2.52, mat(COL.glass, { roughness: 0.25, metalness: 0.3 }), -0.2, 2.15, 0));
+      g.add(box(0.06, 1.3, 2.3, mat(COL.glass, { roughness: 0.25, metalness: 0.3 }), 6.0, 1.95, 0));
+      for (const wx of [-3.6, 4.0]) for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.3, 20), mat(COL.tyre)); w.rotation.x = Math.PI / 2; w.position.set(wx, 0.5, s * 1.1); g.add(w); }
+    } else {
+      g.add(box(4.3, 0.7, 1.75, mat(paint, { roughness: 0.45, metalness: 0.2 }), 0, 0.62, 0));
+      g.add(box(2.3, 0.62, 1.58, mat(paint, { roughness: 0.45, metalness: 0.2 }), -0.25, 1.28, 0));
+      g.add(box(2.36, 0.46, 1.6, mat(COL.glass, { roughness: 0.2, metalness: 0.4 }), -0.25, 1.3, 0));
+      for (const wx of [-1.35, 1.35]) for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.24, 18), mat(COL.tyre)); w.rotation.x = Math.PI / 2; w.position.set(wx, 0.32, s * 0.8); g.add(w); }
+    }
+    g.position.set(x, 0, z); g.rotation.y = heading;
+    g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return g;
+  }
+  function person(x, z, y0, shirt) {
+    const g = new THREE.Group();
+    const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 0.85, 12), mat(0x2f3a4a)); legs.position.y = 0.43; g.add(legs);
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.23, 0.62, 14), mat(shirt)); torso.position.y = 1.16; g.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 12), mat(COL.skin)); head.position.y = 1.6; g.add(head);
+    g.position.set(x, y0, z);
+    g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return g;
+  }
+  function tree(x, z, h) {
+    const g = new THREE.Group();
+    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.17, h * 0.55, 10), mat(COL.trunk)); tr.position.y = h * 0.275; g.add(tr);
+    const cr = new THREE.Mesh(new THREE.IcosahedronGeometry(h * 0.33, 1), mat(COL.leaf, { flatShading: true })); cr.position.y = h * 0.68; g.add(cr);
+    g.position.set(x, 0.15, z);
+    g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return g;
+  }
+
+  function buildScene(sc) {
+    const T = textures(), scene = new THREE.Scene();
+    scene.background = T.sky;
+    scene.fog = new THREE.Fog(0xdbe6ee, 85, 230);
+    const hR = roadHeight(sc), X0 = XC - 75, X1 = XC + 75;
+    const xs = []; for (let x = X0; x <= X1 + 1e-9; x += 0.25) xs.push(x);
+    const G = x => { const g = sc.geom(x); g.s = g.yc - g.wi / 2 - g.lw; g.n = g.yc + g.wi / 2 + g.lw; return g; };
+    const KERB = 0.15;
+    // sol, trottoirs, chaussée
+    scene.add(ribbon(xs, () => -70, x => G(x).s - 2.5, () => KERB, mat(COL.ground)));
+    scene.add(ribbon(xs, x => G(x).n + 2.5, () => 70, () => KERB, mat(COL.ground)));
+    scene.add(ribbon(xs, x => G(x).s - 2.5, x => G(x).s, () => KERB, mat(COL.walk)));
+    scene.add(ribbon(xs, x => G(x).n, x => G(x).n + 2.5, () => KERB, mat(COL.walk)));
+    const plateau = sc.feats.find(f => f.t === 'table' && f.raised);
+    scene.add(ribbon(xs, x => G(x).s, x => G(x).n, hR, mat(COL.asphalt, { roughness: 0.96 })));
+    if (plateau) {
+      const xp = xs.filter(x => x >= plateau.xa && x <= plateau.xb);
+      scene.add(ribbon(xp, x => G(x).s, x => G(x).n, x => hR(x) + 0.004, mat(COL.resin, { roughness: 0.8 })));
+    }
+    scene.add(wall(xs, x => G(x).s, hR, () => KERB, mat(COL.curb)));
+    scene.add(wall(xs, x => G(x).n, hR, () => KERB, mat(COL.curb)));
+    const markMat = mat(COL.mark, { roughness: 0.6 });
+    // passage piéton
+    const gz = G(XC), hz = hR(XC) + 0.006;
+    for (let y = gz.s + 0.3; y + 0.5 <= gz.n - 0.2; y += 1.0) {
+      if (gz.wi > 0.05 && y + 0.5 > gz.yc - gz.wi / 2 && y < gz.yc + gz.wi / 2) continue;
+      scene.add(flatQuad(2 * ZEBRA_HALF, 0.5, markMat, 0, hz, -(y + 0.25)));
+    }
+    // axe discontinu
+    const busy = sc.feats.filter(f => f.xa !== undefined);
+    for (let x = X0; x < X1; x += 6.5) {
+      const xe = x + 3;
+      if (xe > XC - ZEBRA_HALF - 2 && x < XC + ZEBRA_HALF + 2) continue;
+      if (busy.some(f => xe > f.xa - 0.5 && x < f.xb + 0.5)) continue;
+      if (G(x).wi > 0.05 || G(xe).wi > 0.05) continue;
+      const sub = [x, x + 1, x + 2, xe];
+      scene.add(ribbon(sub, xx => G(xx).yc - 0.075, xx => G(xx).yc + 0.075, xx => hR(xx) + 0.005, markMat));
+    }
+    // dispositifs
+    for (const f of sc.feats) {
+      if (f.t === 'hump' || (f.t === 'table' && !f.raised)) {
+        const xh = xs.filter(x => x >= f.xa && x <= f.xb).concat([f.xb]);
+        scene.add(ribbon(xh, x => G(x).s + 0.02, x => G(x).n - 0.02, x => hR(x) + 0.003, mat(COL.bump, { roughness: 0.95 })));
+      }
+      if (f.t === 'hump' || f.t === 'table') {
+        // triangles blancs sur les rampes, face à la circulation
+        const g = G((f.xa + f.xb) / 2), hTri = x => hR(x) + 0.008;
+        for (let y = g.s + 0.6; y < g.yc - 0.3; y += 1.0) addTri(scene, markMat, f.xa + 0.05, f.xa + 0.85, y, hTri);
+        for (let y = g.yc + 0.6; y < g.n - 0.3; y += 1.0) addTri(scene, markMat, f.xb - 0.05, f.xb - 0.85, y, hTri);
+      } else if (f.t === 'cushion') {
+        const g = G((f.xa + f.xb) / 2);
+        for (const k of [0, 1]) {
+          const yc = laneY(g, k), sh = new THREE.Shape();
+          sh.moveTo(0, 0); sh.lineTo(0.8, 0.07); sh.lineTo(2.2, 0.07); sh.lineTo(3.0, 0); sh.lineTo(0, 0);
+          const geo = new THREE.ExtrudeGeometry(sh, { depth: 1.8, bevelEnabled: false });
+          const m = new THREE.Mesh(geo, mat(COL.resin, { roughness: 0.8 })); m.position.set(f.xa - XC, 0, -yc - 0.9); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+        }
+      } else if (f.t === 'pave') {
+        const xpv = xs.filter(x => x >= f.xa && x <= f.xb);
+        const pm = new THREE.MeshStandardMaterial({ map: T.pave, roughness: 0.9 });
+        scene.add(ribbon(xpv, x => G(x).s, x => G(x).n, () => 0.004, pm, 1));
+      } else if (f.t === 'rumble') {
+        const g = G(f.x0), ya = f.lane === 0 ? g.s : g.yc;
+        for (let j = 0; j < 6; j++) scene.add(box(0.25, 0.012, g.lw - 0.3, markMat, f.x0 + j * 0.8 + 0.125 - XC, 0.006, -(ya + g.lw / 2)));
+      } else if (f.t === 'island') {
+        const islandTop = mat(COL.island), xa = XC - 15, xb = XC + 15;
+        for (const [a, b] of [[xa + 0.5, XC - ZEBRA_HALF], [XC + ZEBRA_HALF, xb - 0.5]]) {
+          const xi = xs.filter(x => x >= a && x <= b);
+          scene.add(ribbon(xi, x => G(x).yc - G(x).wi / 2, x => G(x).yc + G(x).wi / 2, () => KERB, islandTop));
+          scene.add(wall(xi, x => G(x).yc - G(x).wi / 2, () => 0, () => KERB, mat(COL.curb)));
+          scene.add(wall(xi, x => G(x).yc + G(x).wi / 2, () => 0, () => KERB, mat(COL.curb)));
+        }
+        const gi = G(XC);
+        scene.add(flatQuad(2 * ZEBRA_HALF, gi.wi, mat(COL.walk), 0, 0.02, -gi.yc));
+        for (const xb2 of [XC - 12, XC + 12]) {   // balises en tête d'îlot
+          const b = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.0, 12), mat(COL.bollard)); b.position.set(xb2 - XC, KERB + 0.5, -G(xb2).yc); b.castShadow = true; scene.add(b);
+          const band = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.18, 12), mat(COL.red)); band.position.set(xb2 - XC, KERB + 0.82, -G(xb2).yc); scene.add(band);
+        }
+      }
+    }
+    // façades : mêmes bâtiments pour tous les aménagements
+    const rnd = mulberry32(42), facadeTex = T.facade;
+    for (const side of [-1, 1]) {
+      let x = X0 - 5;
+      while (x < X1 + 5) {
+        const w = 9 + rnd() * 7, h = 6 + Math.floor(rnd() * 4) * 3, d = 12, col = FACADES[Math.floor(rnd() * FACADES.length)];
+        const tex = facadeTex.clone(); tex.needsUpdate = true; tex.repeat.set(w / 6, h / 6);
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w - 0.4, h, d), new THREE.MeshStandardMaterial({ color: new THREE.Color(col).convertSRGBToLinear(), map: tex, roughness: 0.95 }));
+        m.position.set(x + w / 2 - XC, KERB + h / 2, -side * (11 + d / 2)); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+        x += w;
+      }
+    }
+    // arbres d'alignement, hors abords immédiats du passage
+    for (let x = X0 + 4; x < X1; x += 13) {
+      if (Math.abs(x - XC) < 9 || x - XC < -24) continue;   // ni sur le passage, ni au premier plan de la caméra
+      scene.add(tree(x - XC, -(G(x).s - 1.8), 5.5 + (hash32(Math.round(x)) % 100) / 60));
+      scene.add(tree(x + 6 - XC, -(G(x + 6).n + 1.8), 5.5 + (hash32(Math.round(x) + 7) % 100) / 60));
+    }
+    // véhicules et piétons (mêmes positions partout)
+    // cap : avant du modèle vers +x ; sens ← = demi-tour, même pente latérale
+    const onLane = (x, k) => { const g = G(x), y = laneY(g, k), y2 = laneY(G(x + 1), k); return { z: -y, head: Math.atan2(y2 - y, 1) + (k === 0 ? 0 : Math.PI), h: hR(x) }; };
+    const place = (x, k, paint, kind) => { const p = onLane(x, k); const v = car(paint, x - XC, p.z, p.head, kind); v.position.y = p.h; scene.add(v); };
+    place(XC - 16, 0, PAINT3[3]); place(XC - 31, 0, PAINT3[0]); place(XC - 47, 0, PAINT3[4]);
+    place(XC + 14, 1, PAINT3[1]); place(XC + 33, 1, 0xf2f2f2, 'bus'); place(XC + 52, 1, PAINT3[2]);
+    const gp = G(XC);
+    scene.add(person(-0.6, -(gp.s + gp.lw * 0.45), hR(XC), 0xf2b51d));
+    scene.add(person(0.9, -(gp.n + 0.8), KERB, 0x2e6fb0));
+    if (gp.wi >= ISLAND_MIN) scene.add(person(0.2, -gp.yc, 0.02, 0xb03a2e));
+    // lumière : ciel, sol, soleil d'après-midi avec ombres
+    scene.add(new THREE.HemisphereLight(0xdfeaf5, 0x7b7663, 0.55));
+    const sun = new THREE.DirectionalLight(0xfff1dc, 1.15);
+    sun.position.set(-45, 70, 40); sun.target.position.set(0, 0, 0); scene.add(sun.target);
+    sun.castShadow = true;
+    const sc2 = sun.shadow.camera; sc2.left = -70; sc2.right = 70; sc2.top = 50; sc2.bottom = -50; sc2.near = 1; sc2.far = 220;
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.5, 400);
+    // vue de drone basse, dans l'axe de la rue (entre les façades), en amont du passage
+    camera.position.set(-36, 11, 4.5); camera.lookAt(4, 0, -0.5);
+    return { scene, camera, sun };
+  }
+  function addTri(scene, material, xBase, xTip, y, fh) {
+    const geo = new THREE.BufferGeometry();
+    const p = [xBase - XC, fh(xBase), -(y - 0.3), xTip - XC, fh(xTip), -y, xBase - XC, fh(xBase), -(y + 0.3)];
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, material.clone()); m.material.side = THREE.DoubleSide; m.receiveShadow = true; scene.add(m);
+  }
+  function dispose(scene) {
+    scene.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material && !Array.from(mats.values()).includes(o.material)) { if (o.material.map && o.material.map !== textures().pave) o.material.map.dispose(); o.material.dispose(); }
+    });
+  }
+  // rendu dans le canevas du moteur ; renvoie ce canevas (à copier aussitôt)
+  function render(sc, w, h, shadowSize) {
+    const r = renderer(); r.setSize(w, h, false);
+    const { scene, camera, sun } = buildScene(sc);
+    sun.shadow.mapSize.set(shadowSize, shadowSize);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+    r.render(scene, camera);
+    if (sun.shadow.map) sun.shadow.map.dispose();
+    dispose(scene);
+    return r.domElement;
+  }
+  return { ok, render };
+})();
+
+/* ---------- état global ---------- */
+let P = derive({ ...DEFAULTS }), scenarios = [], sims = [], views = [];
+let playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let speed = 1, busy = false, accT = 0, last = performance.now(), lastKpi = 0;
+let calibUnlocked = false, calibModified = false;
+let evalRes = null, evalJob = 0, evalProg = 0, evalP = null;
+const thumbs = new Map();          // id → image (data URL), pour la géométrie courante
+let thumbKey = '', thumbJob = 0;
+const $ = s => document.querySelector(s);
+const stripsEl = $('#strips');
+let io = null;
+
+function buildStrips() {
+  stripsEl.textContent = '';
+  if (io) io.disconnect();
+  views = scenarios.map((sc, i) => {
+    const art = document.createElement('article');
+    art.className = 'strip' + (sc.id === 'ref' ? ' ref' : '');
+    art.id = 'bande-' + sc.id;
+    const lg = (a, b) => `<span class="lg">${a}</span><span class="sh">${b}</span>`;
+    art.innerHTML = `
+      <div class="strip-head">
+        <button class="thumb" type="button" data-k="thumb" aria-label="${esc(t('thumbAria', scName(sc)))}"><img alt=""></button>
+        <div class="strip-title">
+          <h3>${lg(scName(sc), scShort(sc))}<span class="pill rec" data-k="rec" hidden>${lg(...t('rec'))}</span><span class="pill ok" data-k="state">${lg(...t('stFluid'))}</span>${sc.reg ? `<span class="pill warn" title="${esc(t('regTitle'))}">${lg(...t('reg'))}</span>` : ''}</h3>
+          <p class="desc">${scDesc(sc)}</p>
+        </div>
+        <dl class="kpis">
+          <div><dt>${t('kV85')}</dt><dd data-k="v85">–</dd></div>
+          <div><dt>${t('kTT')}</dt><dd data-k="tt">–</dd></div>
+          <div><dt>${t('kQ')}</dt><dd data-k="q">–</dd></div>
+          <div><dt>${t('kPed')}</dt><dd data-k="ped">–</dd></div>
+          <div><dt>${t('kRisk')}</dt><dd data-k="risk">–</dd></div>
+        </dl>
+      </div>
+      <div class="qrow"><span data-k="q0"></span><span data-k="q1"></span></div>
+      <canvas class="plan" role="img" aria-label="${esc(t('planAria', scName(sc)))}"></canvas>`;
+    const img = art.querySelector('.thumb img');
+    if (thumbs.has(sc.id)) img.src = thumbs.get(sc.id);
+    art.querySelector('.thumb').addEventListener('click', () => open3D(sc));
+    stripsEl.appendChild(art);
+    return new View(i, art);
+  });
+  io = new IntersectionObserver(es => { for (const e of es) { const vw = views.find(v => v.art === e.target); if (vw) vw.visible = e.isIntersecting; } });
+  views.forEach(v => io.observe(v.art));
+}
+
+// noms courts, ligne de légende du mode présentation
+function layoutAll() {
+  for (const v of views) v.layout();
+  const prof = views.length && views[0].profH >= 10;
+  $('#ch-view').textContent = t('chView', viewMode === 'zoom', prof, isCompact());
+}
+
+/* mode présentation : hauteur de chaque bande = (hauteur d'écran − barre − en-tête) / nombre de bandes */
+let compactRowH = 100;
+const isCompact = () => document.body.classList.contains('compact');
+function computeCompactRowH() {
+  const bar = document.querySelector('.bar').getBoundingClientRect().height;
+  const head = $('#compact-head').getBoundingClientRect().height;
+  compactRowH = Math.floor((window.innerHeight - bar - head - 4) / Math.max(1, scenarios.length)) - 7;
+  document.documentElement.style.setProperty('--rowh', Math.max(40, compactRowH) + 'px');
+}
+function setHash() {
+  const tok = [isCompact() ? 'presentation' : '', lang === 'ar' ? 'ar' : ''].filter(Boolean).join('-');
+  try { history.replaceState(null, '', tok ? '#' + tok : location.href.split('#')[0]); } catch (e) { /* adresse non modifiable : sans effet */ }
+}
+function setCompact(on) {
+  document.body.classList.toggle('compact', on);
+  $('#btn-compact').setAttribute('aria-pressed', String(on));
+  $('#btn-compact').textContent = on ? t('fullPage') : t('presentation');
+  setHash();
+  if (on) { window.scrollTo(0, 0); computeCompactRowH(); }
+  layoutAll();
+  if (!busy) updateKpis();
+}
+
+function build() {
+  scenarios = buildScenarios(P);
+  const D = new Demand(P);
+  sims = scenarios.map(sc => new Sim(sc, D, P));
+  buildStrips();
+  if (isCompact()) computeCompactRowH();
+  layoutAll();
+  $('#bar-sub').textContent = t('barSub', P);
+  $('#lede').textContent = t('lede', P);
+}
+
+/* ---------- évaluation : cinq simulations d'une heure, tirages fixés, en tâche de fond ---------- */
+function startEvaluation() {
+  const job = ++evalJob, Pe = P, scs = buildScenarios(Pe), acc = scs.map(() => []);
+  evalRes = null; evalProg = 0; evalP = Pe;
+  let rep = 0, cur = null;
+  const tick = () => {
+    if (job !== evalJob) return;
+    const t0 = performance.now();
+    while (performance.now() - t0 < 22) {
+      if (!cur) { const Pr = { ...Pe, seed: Pe.seed + rep }; const D = new Demand(Pr); cur = scs.map(sc => new Sim(sc, D, Pr)); }
+      for (let n = 0; n < 40; n++) for (const s of cur) s.step();
+      if (cur[0].t >= EVAL_T - 1e-6) {
+        cur.forEach((s, i) => acc[i].push(stats(s)));
+        cur = null; rep++;
+        if (rep >= REPS) { evalRes = aggregate(acc); evalProg = 1; if (!busy) updateKpis(); return; }
+      }
+    }
+    evalProg = (rep + (cur ? cur[0].t / EVAL_T : 0)) / REPS;
+    setTimeout(tick, 0);
+  };
+  setTimeout(tick, 0);
+}
+
+/* ---------- affichage des chiffres ---------- */
+function setClass(el, cls) { el.classList.remove('ok-t', 'warn-t', 'bad-t'); if (cls) el.classList.add(cls); }
+const lvl = (v, good, mid, lowerIsBetter = true) => !Number.isFinite(v) ? '' : lowerIsBetter ? (v <= good ? 'ok-t' : v <= mid ? 'warn-t' : 'bad-t') : (v >= good ? 'ok-t' : v >= mid ? 'warn-t' : 'bad-t');
+let verdictHTML = '', lastTable = '';
+
+function updateKpis() {
+  const S = evalRes || sims.map(stats), ref = S[0], rec = evalRes ? recommend(evalRes, scenarios) : null;
+  const u = k => t(k);
+  S.forEach((s, i) => {
+    const art = views[i].art, q = k => art.querySelector(`[data-k="${k}"]`);
+    const e1 = q('v85'); e1.innerHTML = `${f0(s.v85)} <small>${u('kmh')}</small>`; setClass(e1, lvl(s.v85, 30, 40));
+    q('tt').innerHTML = `${f0(s.tt)} ${u('s')}` + (i ? ` <small>${sgn(s.tt - ref.tt)}</small>` : '');
+    q('q').innerHTML = `${f0(s.qMax)} <small>${u('m')}</small>`;
+    const e4 = q('ped'); e4.innerHTML = `${f0(s.pedW)} <small>${u('s')}</small>`; setClass(e4, lvl(s.pedW, 10, 30));
+    const e5 = q('risk'); e5.innerHTML = `${f1(s.surgRisk)} <small>%</small>`; setClass(e5, lvl(s.surgRisk, 0.5, 2));
+    for (const k of [0, 1]) { const el = q('q' + k), txt = views[i].queueText(k); if (el.textContent !== txt) el.textContent = txt; }
+    const state = s.sat ? ['bad', t('stSat')] : (s.qAvg >= 15 || s.qMax >= 100) ? ['warn', t('stFiles')] : ['ok', t('stFluid')];
+    const pill = q('state'), html = `<span class="lg">${state[1][0]}</span><span class="sh">${state[1][1]}</span>`;
+    if (pill.innerHTML !== html) { pill.className = 'pill ' + state[0]; pill.innerHTML = html; }
+    const isBest = !!rec && rec.best === i;
+    q('rec').hidden = !isBest; art.classList.toggle('best', isBest);
+  });
+  const rows = S.map((s, i) => {
+    const c = (v, cls) => `<td class="${cls}">${v}</td>`;
+    const cl = [i ? '' : 'ref', rec && rec.best === i ? 'best' : ''].join(' ');
+    return `<tr class="${cl}"><td class="name">${scName(scenarios[i])}</td>`
+      + c(f0(s.v85), lvl(s.v85, 30, 40))
+      + c(f0(s.tt), '')
+      + c(i ? sgn(s.tt - ref.tt) : '–', '')
+      + c(f0(s.flow), lvl(s.flow, 0.97 * P.q, 0.9 * P.q, false))
+      + c(f0(s.stopPct), lvl(s.stopPct, 20, 50))
+      + c(f0(s.qMax), lvl(s.qMax, 50, 150))
+      + c(f1(s.pedW), lvl(s.pedW, 10, 30))
+      + c(f0(s.yieldPct), lvl(s.yieldPct, 70, 40, false))
+      + c(f0(s.surgStop) + ' %', lvl(s.surgStop, 90, 60, false))
+      + c(f1(s.surgRisk) + ' %', lvl(s.surgRisk, 0.5, 2)) + '</tr>';
+  }).join('');
+  if (rows !== lastTable) { lastTable = rows; $('#summary tbody').innerHTML = rows; }
+  const fp = fingerprint(P), fpTxt = calibModified ? t('calibMod', fp) : t('calibRef', fp);
+  $('#summary-note').textContent = evalRes ? t('sumNote', P, fpTxt) : t('sumRunning', Math.round(evalProg * 100));
+  renderVerdict();
+  const flag = $('#calib-flag'); flag.hidden = !calibModified; flag.textContent = t('calibFlag');
+}
+
+function renderVerdict() {
+  let h = '';
+  if (calibModified) h += `<p class="v-warn">${t('vCalib')}</p>`;
+  if (!evalRes) h += `<p class="eyebrow">${t('vEyebrow')}</p><p>${t('vRunning', Math.round(evalProg * 100))}</p>`;
+  else {
+    const r = recommend(evalRes, scenarios), ref = evalRes[0];
+    if (r.best < 0) h += `<p class="eyebrow">${t('vEyebrow')}</p><h2>${t('vNoneTitle')}</h2><p>${t('vNone')}</p>`;
+    else {
+      const e = evalRes[r.best];
+      h += `<p class="eyebrow">${t('vEyebrow')}</p><h2>${scName(scenarios[r.best])}</h2><p>${t('vMetrics', e, ref)}</p>`;
+      h += `<p class="${e.v85 <= 30 ? 'ok-t' : 'warn-t'}">${e.v85 <= 30 ? t('vSafeOk') : t('vSafeKo', e.v85)}</p>`;
+      if (ref.surgRisk - e.surgRisk < 0.1) h += `<p class="warn-t">${t('vSmallGain')}</p>`;
+    }
+    if (r.excluded.length) {
+      const why = x => x.why.map(w => w === 'sat' ? t('reasonSat', evalRes[x.i], evalP) : t('reasonReg')).join(t('sep'));
+      h += `<p class="v-excl"><strong>${t('vExcluded')}</strong> ${r.excluded.map(x => `${scName(scenarios[x.i])} (${why(x)})`).join(' · ')}</p>`;
+    }
+    h += `<p class="v-rule">${t('vCriteria')}</p>`;
+  }
+  if (h !== verdictHTML) { verdictHTML = h; $('#verdict').innerHTML = h; }
+}
+
+function clock() {
+  const tt = sims.length ? sims[0].t : 0, h = Math.floor(tt / 3600), m = Math.floor(tt % 3600 / 60), s = String(Math.floor(tt % 60)).padStart(2, '0');
+  $('#clock').innerHTML = `${t('clock', h, m, s)}<small>${t('simTime')}</small>`;
+}
+
+function advance(seconds, btn) {
+  busy = true;
+  const target = sims[0].t + seconds, start = sims[0].t;
+  document.querySelectorAll('.bar button, #params button').forEach(b => { b.disabled = b !== $('#btn-play') && !b.dataset.speed && !b.dataset.view && !b.dataset.color && !b.dataset.free; });
+  const chunk = () => {
+    const t0 = performance.now();
+    while (performance.now() - t0 < 35 && sims[0].t < target - 1e-6) for (const s of sims) s.step();
+    if (btn) btn.textContent = t('computing', Math.round(100 * (sims[0].t - start) / seconds));
+    if (sims[0].t < target - 1e-6) setTimeout(chunk, 0);
+    else {
+      busy = false;
+      if (btn) btn.textContent = t('hour');
+      document.querySelectorAll('.bar button, #params button').forEach(b => { b.disabled = false; });
+      updateKpis();
+    }
+  };
+  chunk();
+}
+
+function frame(now) {
+  const dtReal = Math.min(0.1, (now - last) / 1000); last = now;
+  if (playing && !busy) {
+    accT += dtReal * speed;
+    let n = 0;
+    while (accT >= DT && n < 400) { for (const s of sims) s.step(); accT -= DT; n++; }
+    if (n >= 400) accT = 0;
+  }
+  for (const v of views) if (v.visible) v.draw();
+  if (now - lastKpi > 400) { lastKpi = now; clock(); if (!busy) updateKpis(); }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- formulaire : site et conception modifiables, calibrage verrouillé ---------- */
+function buildForm() {
+  const form = $('#params'), G = t('groups'), ui = lang === 'ar' ? 1 : 0;
+  form.innerHTML = FIELDS.map(grp => {
+    const locked = grp.lock && !calibUnlocked;
+    const fields = grp.items.map(f => `<div class="field"><label for="p-${f.k}">${f[lang]}</label><input id="p-${f.k}" name="${f.k}" type="number" step="${f.step}"${f.min !== undefined ? ` min="${f.min}" max="${f.max}"` : ''} inputmode="decimal" value="${P[f.k]}"${locked ? ' readonly' : ''}><span class="unit">${f.u[ui]}</span></div>`).join('');
+    return `<fieldset class="${grp.lock ? 'calib' : ''}"><legend>${G[grp.g][0]}</legend><div class="fields">${fields}</div><p class="src">${G[grp.g][1]}</p>${grp.lock ? `<button class="btn" type="button" id="btn-unlock">${calibUnlocked ? t('lock') : t('unlock')}</button>` : ''}</fieldset>`;
+  }).join('') + `<div class="form-actions"><button class="btn primary" type="submit">${t('apply')}</button><button class="btn" type="button" id="btn-defaults">${t('defaults')}</button><span class="msg" id="form-msg"></span></div>`;
+}
+$('#params').addEventListener('click', e => {
+  const id = e.target && e.target.id;
+  if (id === 'btn-unlock') {
+    calibUnlocked = !calibUnlocked;
+    document.querySelectorAll('fieldset.calib input').forEach(i => { i.readOnly = !calibUnlocked; });
+    e.target.textContent = calibUnlocked ? t('lock') : t('unlock');
+    $('#form-msg').textContent = calibUnlocked ? t('msgUnlocked') : t('msgLocked');
+  } else if (id === 'btn-defaults') {
+    for (const grp of FIELDS) for (const f of grp.items) if (!grp.lock || calibUnlocked) $('#p-' + f.k).value = DEFAULTS[f.k];
+    $('#form-msg').textContent = t('msgDefaults');
+  }
+});
+$('#params').addEventListener('submit', e => {
+  e.preventDefault();
+  const next = { ...P }, bad = [];
+  for (const grp of FIELDS) for (const f of grp.items) {
+    if (grp.lock && !calibUnlocked) continue;
+    const val = parseFloat(String($('#p-' + f.k).value).replace(',', '.'));
+    if (!Number.isFinite(val) || val < 0) { bad.push(f[lang]); continue; }
+    if (f.min !== undefined && (val < f.min || val > f.max)) { bad.push(t('msgRange', f[lang], nfa.format(f.min), nfa.format(f.max))); continue; }
+    next[f.k] = val;
+  }
+  if (next.retLane >= next.laneW) bad.push(t('msgLane'));
+  if (next.vPed < 0.3) bad.push(FIELDS[2].items[3][lang]);
+  if (bad.length) { $('#form-msg').textContent = t('msgFix', bad.join(t('sep'))); return; }
+  P = derive(next);
+  calibModified = fingerprint(P) !== FP_REF;
+  $('#form-msg').textContent = t('msgApplied');
+  restart(true);
+});
+
+function restart(paramsChanged) {
+  build();
+  advance(PRERUN, null);
+  if (paramsChanged) { startEvaluation(); renderThumbs(); }
+}
+
+/* ---------- vignettes 3D et agrandissement ---------- */
+function geomKey() { return ['laneW', 'retLane', 'retIsl', 'chOff', 'chTrans', 'chLane'].map(k => P[k]).join('|'); }
+function renderThumbs() {
+  if (!V3D.ok()) { document.body.classList.add('no3d'); return; }
+  document.body.classList.remove('no3d');
+  const key = geomKey();
+  if (key === thumbKey && thumbs.size === scenarios.length) return;
+  thumbKey = key; thumbs.clear();
+  const job = ++thumbJob, list = scenarios.slice();
+  let i = 0;
+  const next = () => {
+    if (job !== thumbJob || i >= list.length) return;
+    const sc = list[i++];
+    try {
+      const url = V3D.render(sc, 768, 432, 2048).toDataURL('image/jpeg', 0.9);
+      thumbs.set(sc.id, url);
+      const img = document.querySelector(`#bande-${sc.id} .thumb img`); if (img) img.src = url;
+    } catch (err) { document.body.classList.add('no3d'); return; }
+    setTimeout(next, 30);
+  };
+  setTimeout(next, 30);
+}
+let dlgUrl = null;
+function open3D(sc) {
+  const dlg = $('#dlg3d');
+  $('#dlg-cap').textContent = scName(sc);
+  $('#dlg-note').textContent = t('dlgNote');
+  $('#dlg-close').textContent = t('dlgClose');
+  $('#dlg-img').src = thumbs.get(sc.id) || '';
+  $('#dlg-img').alt = scName(sc);
+  const dl = $('#dlg-dl'); dl.hidden = true;
+  $('#dlg-status').textContent = t('dlgRendering');
+  if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+  setTimeout(() => {
+    try {
+      V3D.render(sc, 3840, 2160, 4096).toBlob(blob => {
+        if (!blob) return;
+        if (dlgUrl) URL.revokeObjectURL(dlgUrl);
+        dlgUrl = URL.createObjectURL(blob);
+        $('#dlg-img').src = dlgUrl;
+        dl.href = dlgUrl; dl.download = `vue-3d-${sc.id}.png`; dl.textContent = t('dlgDownload'); dl.hidden = false;
+        $('#dlg-status').textContent = t('dlgReady');
+      }, 'image/png');
+    } catch (err) { $('#dlg-status').textContent = ''; }
+  }, 60);
+}
+$('#dlg-close').addEventListener('click', () => { const d = $('#dlg3d'); if (d.close) d.close(); else d.removeAttribute('open'); });
+$('#dlg3d').addEventListener('click', e => { if (e.target === e.currentTarget && e.currentTarget.close) e.currentTarget.close(); });
+
+/* ---------- langue ---------- */
+function setLang(l) {
+  lang = l === 'ar' ? 'ar' : 'fr';
+  document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  const bl = $('#btn-lang'); bl.textContent = t('langBtn'); bl.lang = lang === 'ar' ? 'fr' : 'ar';
+  $('#btn-compact').textContent = isCompact() ? t('fullPage') : t('presentation');
+  $('#btn-fs').textContent = t('fullscreen');
+  $('#btn-hour').textContent = t('hour');
+  setPlaying(playing);
+  $('#summary thead').innerHTML = '<tr>' + t('thead').map(([a, b]) => `<th>${a}${b ? `<span>${b}</span>` : ''}</th>`).join('') + '</tr>';
+  $('#method-body').innerHTML = t('method', t('vCriteria'));
+  $('#bar-sub').textContent = t('barSub', P);
+  $('#lede').textContent = t('lede', P);
+  try { localStorage.setItem('mv-lang', lang); } catch (e) { /* stockage indisponible */ }
+  setHash();
+  readColors();
+  if (sims.length) {
+    buildStrips();
+    if (isCompact()) computeCompactRowH();
+    layoutAll();
+    verdictHTML = ''; lastTable = '';
+    updateKpis(); clock();
+  }
+  buildForm();
+}
+
+/* ---------- commandes ---------- */
+function setPlaying(on) {
+  playing = on; const b = $('#btn-play');
+  b.textContent = on ? t('pause') : t('play'); b.setAttribute('aria-pressed', String(on));
+}
+$('#btn-play').addEventListener('click', () => setPlaying(!playing));
+$('#btn-lang').addEventListener('click', () => setLang(lang === 'ar' ? 'fr' : 'ar'));
+document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => {
+  speed = +b.dataset.speed;
+  document.querySelectorAll('[data-speed]').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+  if (!playing) setPlaying(true);
+}));
+function setView(mode) {
+  viewMode = mode;
+  document.querySelectorAll('[data-view]').forEach(o => o.setAttribute('aria-pressed', String(o.dataset.view === mode)));
+  layoutAll();
+}
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+document.querySelectorAll('[data-color]').forEach(b => b.addEventListener('click', () => {
+  colorMode = b.dataset.color;
+  document.querySelectorAll('[data-color]').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+  $('#legend-speed').hidden = colorMode !== 'speed';
+}));
+$('#btn-compact').addEventListener('click', () => setCompact(!isCompact()));
+$('#btn-fs').addEventListener('click', () => {
+  const d = document;
+  if (d.fullscreenElement) { if (d.exitFullscreen) d.exitFullscreen().catch(() => {}); }
+  else if (d.documentElement.requestFullscreen) d.documentElement.requestFullscreen().catch(() => {});
+});
+$('#btn-hour').addEventListener('click', e => advance(3600, e.currentTarget));
+$('#btn-reset').addEventListener('click', () => restart(false));
+
+let rz = 0;
+const relayout = () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { if (isCompact()) computeCompactRowH(); layoutAll(); }); };
+new ResizeObserver(relayout).observe(stripsEl);
+window.addEventListener('resize', relayout);
+const relayoutTheme = () => { readColors(); layoutAll(); };
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', relayoutTheme);
+new MutationObserver(relayoutTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+/* ---------- démarrage ---------- */
+const hashTok = location.hash.slice(1).split('-');
+let startLang = hashTok.includes('ar') ? 'ar' : 'fr';
+if (!hashTok.includes('ar')) { try { if (localStorage.getItem('mv-lang') === 'ar') startLang = 'ar'; } catch (e) { /* stockage indisponible */ } }
+lang = startLang;
+document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+readColors();
+viewMode = stripsEl.clientWidth >= 900 ? 'full' : 'zoom';
+document.querySelectorAll('[data-view]').forEach(o => o.setAttribute('aria-pressed', String(o.dataset.view === viewMode)));
+build();
+for (let i = 0; i < PRERUN / DT; i++) for (const s of sims) s.step();   // dix minutes déjà simulées à l'ouverture
+setLang(lang);
+setView(viewMode);
+if (hashTok.includes('presentation')) setCompact(true);
+updateKpis(); clock();
+startEvaluation();
+requestAnimationFrame(frame);
+// les vignettes 3D attendent three.js (chargé en différé)
+if (document.readyState === 'complete') renderThumbs(); else window.addEventListener('load', renderThumbs);
+
+// accès console pour vérification
+window.__mv = { stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P };
+})();
+</script>
+</body>
+</html>

@@ -46,6 +46,7 @@
   --box: #e2e5e8;
   --sp1: #23b5a5; --sp2: #74c45a; --sp3: #f1c232; --sp4: #f08a2c; --sp5: #e5414b;
   --sig-g: #2fd16f; --sig-a: #f5b301; --sig-r: #ef3b34;
+  --day-ok: #cfe9d6; --day-files: #f7dfae; --day-sat: #f2b8b8; --day-ink: #17212b;
   --font-display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", sans-serif;
   --font-body: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
   --leftcol: clamp(290px, 22vw, 390px);
@@ -137,6 +138,37 @@ main { padding-block: 6px 48px; }
 .ptable td { text-align: start; }
 .ptable td:nth-child(2) { width: 130px; }
 .ptable input { text-align: right; direction: ltr; }
+.site-map { margin-bottom: 18px; padding: 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.site-map h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.map-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.map-tools input { flex: 1 1 220px; min-width: 0; font: 500 14px/1.2 var(--font-body); padding: 7px 9px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); }
+.map-tools input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#map { height: 360px; border-radius: 4px; border: 1px solid var(--line); direction: ltr; background: var(--verge); }
+.map-msg { font-size: 13px; color: var(--muted); }
+#site-info { margin-top: 12px; display: grid; gap: 10px; font-size: 14px; }
+#site-info:empty { display: none; }
+#site-info h4 { margin: 6px 0 2px; font: 600 13px/1.3 var(--font-display); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+#site-info ul { margin: 0; padding-inline-start: 20px; }
+#site-info .warn { color: var(--warn); }
+#site-info .reco { padding: 10px 12px; border: 1px solid var(--accent); border-radius: 6px; }
+.day-in { margin-top: 18px; padding: 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.day-in h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.day-in .modes { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 8px 0; font-size: 14px; }
+table.dayin { min-width: 900px; font-size: 12.5px; }
+table.dayin th, table.dayin td { padding: 4px 5px; text-align: center; }
+table.dayin th:first-child, table.dayin td:first-child { text-align: start; white-space: nowrap; }
+table.dayin input { width: 52px; font: 500 12.5px/1.2 var(--font-display); padding: 3px 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); color: var(--ink); text-align: right; direction: ltr; }
+table.dayin input:disabled { opacity: .45; }
+table.dayres { min-width: 1000px; font-size: 12px; }
+table.dayres th, table.dayres td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--line); }
+table.dayres td:first-child, table.dayres th:first-child { text-align: start; white-space: nowrap; padding-inline: 8px; }
+table.dayres td:last-child { text-align: start; white-space: nowrap; padding-inline: 8px; }
+table.dayres td.c-ok { background: var(--day-ok); color: var(--day-ink); }
+table.dayres td.c-files { background: var(--day-files); color: var(--day-ink); }
+table.dayres td.c-sat { background: var(--day-sat); color: var(--day-ink); font-weight: 600; }
+table.dayres tr.focus td:first-child { font-weight: 700; }
+#day-reco { margin-top: 10px; font-size: 14px; }
+#day-reco ul { margin: 4px 0; padding-inline-start: 20px; }
 details.prices { margin-bottom: 14px; }
 details.prices summary { cursor: pointer; font: 600 13px/1.4 var(--font-display); color: var(--accent); padding-block: 4px; }
 .verdict p { margin: 4px 0; max-width: 110ch; font-size: 14px; }
@@ -254,6 +286,9 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
 </style>
 <!-- three.js, pour les vues 3D de synthèse seulement. Sans connexion, la page fonctionne sans les vignettes. -->
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Leaflet, pour situer le lieu sur la carte (OpenStreetMap). -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
 
@@ -268,7 +303,20 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
 <section class="wrap block-top" id="donnees">
   <h2 data-i18n="donTitle"></h2>
   <p class="note" data-i18n="donNote"></p>
+  <div class="site-map" id="site-map">
+    <h3 data-i18n="siteTitle"></h3>
+    <p class="note" data-i18n="siteNote"></p>
+    <div class="map-tools">
+      <input id="map-search" type="search" autocomplete="off" data-i18n-ph="searchPh">
+      <button class="btn" id="btn-search" type="button" data-i18n="searchBtn"></button>
+      <button class="btn primary" id="btn-analyse" type="button" disabled data-i18n="analyse"></button>
+    </div>
+    <div id="map"></div>
+    <p class="map-msg" id="map-msg"></p>
+    <div id="site-info"></div>
+  </div>
   <form id="params" novalidate></form>
+  <div class="day-in" id="day-input"></div>
 </section>
 
 <div class="bar">
@@ -334,6 +382,10 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
     <div class="table-wrap">
       <table id="summary"><thead></thead><tbody></tbody></table>
     </div>
+    <h3 class="sum-title" data-i18n="dayResTitle"></h3>
+    <p class="note" id="day-note"></p>
+    <div class="table-wrap"><table class="dayres" id="day-table"></table></div>
+    <div id="day-reco"></div>
   </section>
 
   <section class="block" id="note-gen"></section>
@@ -480,7 +532,7 @@ fr: {
   donTitle: 'Données de la rue et de l’aménagement',
   donNote: 'Renseignez les données de votre rue, puis cliquez sur « Appliquer et relancer ». Les simulations et les résultats qui suivent sont alors recalculés.',
   stripsAria: 'Vues en plan animées', resTitle: 'Résultats',
-  calibTitle: 'Calibrage du modèle', calibNote: 'Ces valeurs sont communes à toutes les communes et verrouillées, pour que les résultats restent comparables.',
+  calibTitle: 'Calibrage du modèle', calibNote: 'Ces valeurs sont communes à toutes les communes et verrouillées, pour que les résultats restent comparables. Le code de contrôle (6 caractères) résume toutes ces valeurs : deux notes qui portent le même code ont été calculées avec les mêmes hypothèses ; si une seule valeur change, le code change.',
   applyCalib: 'Appliquer le calibrage',
   noteTitle: 'Variante retenue et note de calcul',
   noteIntro: 'Choisissez la variante que la commune retient. La note de calcul s’ouvre dans un nouvel onglet, dans la langue de la page : résultats expliqués simplement, conditions d’utilisation, plan coté au format A4 paysage, implantation, visibilité, signalisation, éclairage, trottoirs, coût sommaire et plan d’action. Elle s’imprime ou s’enregistre en PDF.',
@@ -536,7 +588,7 @@ fr: {
     ['Véhicules arrêtés', '%'], ['File max', 'm'], ['Attente piéton', 's, moyenne'], ['Conducteurs qui cèdent', '%'], ['Arrêt à temps', 'piéton surgissant'], ['Risque de décès', 'si choc, moyenne']],
   sumNote: (P, fpTxt) => `Évaluation : ${REPS} simulations d’une heure (tirages ${P.seed} à ${P.seed + REPS - 1}, fixés à l’avance), après 2 min de mise en régime ; moyennes des cinq. « Arrêt à temps » et « risque de décès » : piéton surgissant à ${f0(P.dSurg)} m, réaction en ${f1(P.tReact)} s, freinage à ${f0(P.bEmerg)} m/s². Dans une bande saturée, la file et le temps de parcours dépendent de la durée simulée, ici une heure. ${fpTxt}`,
   sumRunning: p => `Évaluation en cours : ${p} %. En attendant, le tableau montre les valeurs de l’animation.`,
-  calibRef: fp => `Calibrage de référence, empreinte ${fp}.`, calibMod: fp => `Calibrage modifié, empreinte ${fp} : résultats non comparables au calibrage de référence.`,
+  calibRef: fp => `Calibrage de référence, code de contrôle ${fp}.`, calibMod: fp => `Calibrage modifié, code de contrôle ${fp} : résultats non comparables au calibrage de référence.`,
   hypTitle: 'Hypothèses',
   hypNote: 'Les données du site et les choix de conception se modifient dans les limites indiquées. Le calibrage est verrouillé : il est commun à toutes les communes pour que les résultats restent comparables. « Appliquer » relance l’animation et l’évaluation.',
   groups: {
@@ -604,7 +656,7 @@ ar: {
   donTitle: 'معطيات النهج والتهيئة',
   donNote: 'أدخل معطيات النهج ثم اضغط على «تطبيق وإعادة التشغيل». تُعاد عندها المحاكاة وحساب النتائج التي تليها.',
   stripsAria: 'مساقط أفقية متحرّكة', resTitle: 'النتائج',
-  calibTitle: 'معايرة النموذج', calibNote: 'هذه القيم موحّدة بين كل البلديات ومقفلة، حتى تبقى النتائج قابلة للمقارنة.',
+  calibTitle: 'معايرة النموذج', calibNote: 'هذه القيم موحّدة بين كل البلديات ومقفلة، حتى تبقى النتائج قابلة للمقارنة. يلخّص رمز التحقّق (6 رموز) كل هذه القيم: المذكّرتان اللتان تحملان نفس الرمز حُسبتا بنفس الفرضيات، وإذا تغيّرت قيمة واحدة يتغيّر الرمز.',
   applyCalib: 'تطبيق المعايرة',
   noteTitle: 'التهيئة المعتمدة ومذكّرة الحساب',
   noteIntro: 'اختر التهيئة التي تعتمدها البلدية. تُفتح مذكّرة الحساب في علامة تبويب جديدة، بلغة الصفحة: نتائج مشروحة ببساطة، شروط الاستعمال، مخطّط بالأبعاد بقياس A4 أفقي، التركيز، الرؤية، الإشارات، الإنارة، الأرصفة، الكلفة التقديرية وخطّة العمل. ويمكن طباعتها أو حفظها بصيغة PDF.',
@@ -660,7 +712,7 @@ ar: {
     ['العربات المتوقّفة', '%'], ['أقصى طابور', 'م'], ['انتظار المترجّل', 'ث، متوسط'], ['السائقون الذين يُفسحون', '%'], ['التوقّف في الوقت', 'مترجّل يظهر فجأة'], ['خطر الوفاة', 'عند الصدم، متوسط']],
   sumNote: (P, fpTxt) => `التقييم: ${REPS} محاكاة مدّة كل منها ساعة (السحوبات من ${P.seed} إلى ${P.seed + REPS - 1}، محدّدة مسبقًا)، بعد دقيقتين من الاستقرار؛ القيم متوسّطات المحاكاة الخمس. «التوقّف في الوقت» و«خطر الوفاة»: مترجّل يظهر فجأة على بعد ${f0(P.dSurg)} م، زمن ردّ الفعل ${f1(P.tReact)} ث، فرملة بـ ${f0(P.bEmerg)} م/ث². في شريحة مُشبَعة، يرتبط طول الطابور وزمن القطع بمدّة المحاكاة، وهي هنا ساعة. ${fpTxt}`,
   sumRunning: p => `جارٍ التقييم: ${p} %. في الأثناء، يعرض الجدول قيم الحركة الجارية.`,
-  calibRef: fp => `المعايرة المرجعية، البصمة ${fp}.`, calibMod: fp => `المعايرة مُعدَّلة، البصمة ${fp}: النتائج غير قابلة للمقارنة مع المعايرة المرجعية.`,
+  calibRef: fp => `المعايرة المرجعية، رمز التحقّق ${fp}.`, calibMod: fp => `المعايرة مُعدَّلة، رمز التحقّق ${fp}: النتائج غير قابلة للمقارنة مع المعايرة المرجعية.`,
   hypTitle: 'الفرضيات',
   hypNote: 'يمكن تعديل معطيات الموقع وخيارات التصميم في الحدود المبيّنة. المعايرة مقفلة: فهي موحّدة بين كل البلديات حتى تبقى النتائج قابلة للمقارنة. زرّ «تطبيق» يعيد تشغيل الحركة والتقييم.',
   groups: {
@@ -738,24 +790,32 @@ class Demand {
   constructor(P) {
     this.P = P; this.nextId = 1;
     this.lanes = [0, 1].map(k => ({ r: mulberry32(P.seed * 1009 + 11 + k * 7919), list: [], tNext: 0 }));
-    for (const ln of this.lanes) ln.tNext = this.headway(ln.r) * ln.r();
+    for (const ln of this.lanes) ln.tNext = this.headway(ln.r, 0) * ln.r();
     this.ped = { r: mulberry32(P.seed * 1009 + 5003), list: [], tNext: 0 };
-    this.ped.tNext = this.pedGap();
+    this.ped.tNext = this.pedGap(0);
   }
-  headway(r) { const m = 3600 / Math.max(1, this.P.q), hmin = Math.min(1, m); return hmin + (m - hmin) * -Math.log(1 - r()); }
-  pedGap() { return this.P.qPed > 0 ? -Math.log(1 - this.ped.r()) * 3600 / this.P.qPed : Infinity; }
+  // débit éventuellement variable dans le temps (journée simulée : P.qAt, P.pedAt)
+  headway(r, t) { const q = this.P.qAt ? this.P.qAt(t) : this.P.q, m = 3600 / Math.max(1, q), hmin = Math.min(1, m); return hmin + (m - hmin) * -Math.log(1 - r()); }
+  pedGap(t) {
+    const q = this.P.pedAt ? this.P.pedAt(t) : this.P.qPed;
+    return q > 0 ? -Math.log(1 - this.ped.r()) * 3600 / q : (this.P.pedAt ? 600 : Infinity);
+  }
   veh(k, t) {
     const ln = this.lanes[k];
     while (ln.tNext <= t + 1) {
       const r = ln.r;
       ln.list.push({ id: this.nextId++, t: ln.tNext, pl: r() < this.P.pPL / 100, z: clampZ(gauss(r)) });
-      ln.tNext += this.headway(r);
+      ln.tNext += this.headway(r, ln.tNext);
     }
     return ln.list;
   }
   peds(t) {
     const p = this.ped;
-    while (p.tNext <= t + 1) { p.list.push({ t: p.tNext, side: p.r() < 0.5 ? 0 : 1, xo: (p.r() - 0.5) * 2.6 }); p.tNext += this.pedGap(); }
+    while (p.tNext <= t + 1) {
+      const q = this.P.pedAt ? this.P.pedAt(p.tNext) : this.P.qPed;
+      if (q > 0) p.list.push({ t: p.tNext, side: p.r() < 0.5 ? 0 : 1, xo: (p.r() - 0.5) * 2.6 });
+      p.tNext += this.pedGap(p.tNext);
+    }
     return p.list;
   }
 }
@@ -840,6 +900,8 @@ class Sim {
     this.peds = []; this.pedPtr = 0;
     this.need = [false, false]; this.occT = [Infinity, Infinity]; this.phys = [false, false];
     this.sig = sc.signal ? { st: 'G', t0: 0, demand: false, clear: Math.ceil(this.cx.W / SIG.vClear) } : null;
+    this.measFrom = WARMUP;    // journée simulée : 0, et relevés heure par heure dans this.hourly
+    this.hourly = null;
     this.st = { nOut: 0, nExit: 0, sumTT: 0, nStop: 0, vXp: [], surgN: 0, surgStop: 0, surgP: 0, qInt: 0, qMax: 0,
       pedN: 0, pedSum: 0, pedMax: 0, yYes: 0, yNo: 0, conflicts: 0, hard: 0,
       profS: new Float64Array(L / 5), profN: new Uint32Array(L / 5) };
@@ -935,7 +997,7 @@ class Sim {
             const vPlan = Math.min(v.v, this.vLim(v, ln, XC));
             v.yd = feasible && this.rng() < pYield(vPlan * KMH, P) ? 1 : 2;
             v.yT = t; v.stopT = -1;
-            if (t >= WARMUP) { if (v.yd === 1) this.st.yYes++; else this.st.yNo++; }
+            if (t >= this.measFrom) { if (v.yd === 1) this.st.yYes++; else this.st.yNo++; }
           }
           if (v.yd === 1) {
             if (!need && !occ) { if (t - v.yT > 1) v.yd = 3; }
@@ -988,7 +1050,7 @@ class Sim {
       if (vn < 0) { sn = s0 - v.v * v.v / (2 * a); vn = 0; } else sn = s0 + v.v * DT + 0.5 * a * DT * DT;
       if (meas && phys && s0 < ln.sZs && sn >= ln.sZs) st.conflicts++;
       if (s0 < L && sn >= L) v.tL = tNext;
-      if (meas && v.tArr >= WARMUP) {
+      if (meas && v.tArr >= this.measFrom) {
         if (s0 < XC && sn >= XC) st.vXp.push(v.v * KMH);
         if (s0 < sD && sn >= sD) this.surg(v.v);
         const b0 = Math.floor(s0 / 5), b1 = Math.min(st.profN.length - 1, Math.floor(sn / 5));
@@ -1001,7 +1063,12 @@ class Sim {
     while (ln.veh.length && ln.veh[0].s - ln.veh[0].len > L) {
       const v = ln.veh.shift();
       if (meas) st.nOut++;
-      if (v.tArr >= WARMUP) { st.nExit++; st.sumTT += v.tL - v.tArr; if (v.stopped) st.nStop++; }
+      if (v.tArr >= this.measFrom) { st.nExit++; st.sumTT += v.tL - v.tArr; if (v.stopped) st.nStop++; }
+      if (this.hourly) {
+        const ho = this.hourly[Math.floor(this.t / 3600)], ha = this.hourly[Math.floor(v.tArr / 3600)];
+        if (ho) ho.out++;
+        if (ha) { ha.nTT++; ha.sumTT += v.tL - v.tArr; }
+      }
     }
   }
 
@@ -1022,6 +1089,10 @@ class Sim {
       if (meas && q > this.st.qMax) this.st.qMax = q;
     }
     if (meas) this.st.qInt += qs / 2 * DT;
+    if (this.hourly) {
+      const hb = this.hourly[Math.floor(this.t / 3600)];
+      if (hb) { const qm = Math.max(this.lanes[0].qNow, this.lanes[1].qNow); if (qm > hb.qMax) hb.qMax = qm; hb.pend = this.lanes[0].pending.length + this.lanes[1].pending.length; }
+    }
   }
 
   laneOK(k, tEnter, tExit, allowForce) {
@@ -1073,7 +1144,8 @@ class Sim {
         if (p.stage.toIsland) { p.st = 2; p.tW = t; }
         else {
           p.st = 3;
-          if (meas && p.t >= WARMUP) { st.pedN++; st.pedSum += p.wait; if (p.wait > st.pedMax) st.pedMax = p.wait; }
+          if (meas && p.t >= this.measFrom) { st.pedN++; st.pedSum += p.wait; if (p.wait > st.pedMax) st.pedMax = p.wait; }
+          if (this.hourly) { const hb = this.hourly[Math.floor(p.t / 3600)]; if (hb) { hb.pedN++; hb.pedSum += p.wait; } }
         }
       }
     }
@@ -1081,7 +1153,7 @@ class Sim {
   }
 
   step() {
-    const t = this.t, meas = t >= WARMUP;
+    const t = this.t, meas = t >= this.measFrom;
     for (const ln of this.lanes) {
       const list = this.D.veh(ln.k, t);
       while (ln.ptr < list.length && list[ln.ptr].t <= t) ln.pending.push(list[ln.ptr++]);
@@ -1950,8 +2022,8 @@ fr: {
     ['Système Sûr', 'Approche de la sécurité routière qui vise à ce qu’aucune erreur ne soit mortelle. Là où voitures et piétons se croisent, elle retient 30 km/h au plus.'],
     ['Microsimulation', 'Calcul qui fait rouler chaque véhicule et marcher chaque piéton, dixième de seconde par dixième de seconde, selon des règles de comportement publiées.'],
     ['Plan de principe', 'Plan qui fixe les dimensions et l’emplacement des éléments. Il ne remplace pas le plan d’exécution établi sur un levé du site.']],
-  s: { brief: '1. En bref', change: '2. Ce que la variante change', cond: '3. Conditions d’utilisation', dims: '4. Dimensions', implant: '5. Implantation', visib: '6. Visibilité',
-    signs: '7. Signalisation', light: '8. Éclairage', walks: '9. Trottoirs et accessibilité', water: '10. Eaux pluviales et entretien', cost: '11. Estimation sommaire du coût', plan: '12. Plan d’action',
+  s: { brief: 'En bref', site: 'Le lieu et ses abords', change: 'Ce que la variante change', day: 'Trafic sur la journée', cond: 'Conditions d’utilisation', dims: 'Dimensions', implant: 'Implantation', visib: 'Visibilité',
+    signs: 'Signalisation', light: 'Éclairage', walks: 'Trottoirs et accessibilité', water: 'Eaux pluviales et entretien', cost: 'Estimation sommaire du coût', plan: 'Plan d’action',
     annA: 'Annexe A — Toutes les variantes simulées', annB: 'Annexe B — Méthode et hypothèses', annC: 'Annexe C — Sources' },
   brief: {
     site: c => `La commune étudie un passage piéton sur une rue où passent ${f0(c.P.q)} véhicules par heure et par sens à l’heure de pointe, dont ${f0(c.P.pPL)} % de poids lourds et de bus, et ${f0(c.P.qPed)} piétons par heure.`,
@@ -1961,7 +2033,9 @@ fr: {
     ped: c => `Un piéton attend en moyenne ${f0(c.e.pedW)} s avant de traverser (aujourd’hui : ${f0(c.r.pedW)} s).`,
     traffic: c => c.e.sat ? `Attention : à ce trafic, la variante sature. Il passe ${f0(c.e.flow)} véhicules par heure au lieu de ${f0(c.P.q)}, et la file d’attente grandit sans cesse à l’heure de pointe.` : `Le trafic reste écoulé. Le temps pour parcourir 500 m change de ${sgn(c.e.tt - c.r.tt)} s par véhicule.`,
     cost: c => `Coût sommaire : ${f0(c.cost.total)} dinars hors taxes (environ ${f0(c.cost.eur)} €), à ±30 % près.`,
-    cond: c => c.nKo ? `${c.nKo} condition(s) d’utilisation ne sont pas respectées : voir la section 3 avant toute décision.` : `Aucune condition d’utilisation bloquante n’a été détectée ; ${c.nCheck} point(s) restent à vérifier sur place.`,
+    cond: c => c.nKo ? `${c.nKo} condition(s) d’utilisation ne sont pas respectées : voir la section ${c.condNo} avant toute décision.` : `Aucune condition d’utilisation bloquante n’a été détectée ; ${c.nCheck} point(s) restent à vérifier sur place.`,
+    day: c => c.daySat ? `Sur la journée, la variante sature ${c.daySat}.` : 'Sur la journée, la variante écoule le trafic à toute heure.',
+    school: c => `Une école (« ${c.school.name || 'sans nom'} ») est à ${f0(c.school.dist)} m du passage : voir la section « Le lieu et ses abords ».`,
     rec: c => c.rec < 0 ? 'L’outil n’a trouvé aucune solution qui concilie trafic et sécurité à ce débit.' : c.rec === c.i ? 'C’est aussi la solution que l’outil recommande pour concilier trafic et sécurité.' : `L’outil recommandait plutôt : ${c.recName}. La commune a retenu une autre variante ; les écarts sont détaillés ci-dessous.`
   },
   changeIntro: 'Comparaison avec la situation actuelle, sans aménagement, sous le même trafic. Chaque valeur est la moyenne de cinq simulations d’une heure.',
@@ -2003,7 +2077,7 @@ fr: {
   costNote: r => `Prix unitaires indicatifs, hors taxes, valeur 2026, à remplacer par le bordereau des prix de la commune. Taux de change retenu : 1 € = ${nf2.format(r)} TND.`,
   planCols: ['Priorité', 'Action', 'Qui', 'Quand'],
   actions: {
-    ko: ['Lever les conditions non respectées (section 3) ou choisir une autre variante.', 'Services techniques', 'Avant la décision'],
+    ko: ['Lever les conditions d’utilisation non respectées, ou choisir une autre variante.', 'Services techniques', 'Avant la décision'],
     sat: ['Réduire le trafic de transit ou choisir une variante qui écoule le trafic : la variante retenue sature à ce débit.', 'Commune', 'Avant la décision'],
     count: ['Mesurer la vitesse au radar et compter piétons et véhicules à l’heure de pointe, puis relancer la simulation avec ces valeurs.', 'Services techniques', 'Avant la décision'],
     exec: ['Faire établir le plan d’exécution (géomètre, bureau d’études) à partir du plan de principe, et vérifier la giration des bus et poids lourds.', 'Bureau d’études', 'Avant les travaux'],
@@ -2038,8 +2112,8 @@ ar: {
     ['النظام الآمن', 'مقاربة للسلامة المرورية تهدف إلى ألّا يكون أيّ خطأ قاتلًا. وحيث تلتقي العربات بالمترجّلين، تعتمد 30 كم/س كحدّ أقصى.'],
     ['المحاكاة المجهرية', 'حساب يُسيّر كل عربة ويُمشّي كل مترجّل، عُشرًا من الثانية بعد عُشر، وفق قواعد سلوك منشورة.'],
     ['المخطّط المبدئي', 'مخطّط يحدّد أبعاد العناصر ومواقعها، ولا يُغني عن مخطّط التنفيذ المُنجز على أساس رفع للموقع.']],
-  s: { brief: '1. باختصار', change: '2. ما الذي تغيّره التهيئة', cond: '3. شروط الاستعمال', dims: '4. الأبعاد', implant: '5. التركيز', visib: '6. الرؤية',
-    signs: '7. الإشارات', light: '8. الإنارة', walks: '9. الأرصفة وإمكانية النفاذ', water: '10. مياه الأمطار والصيانة', cost: '11. التقدير الأوّلي للكلفة', plan: '12. خطّة العمل',
+  s: { brief: 'باختصار', site: 'الموقع ومحيطه', change: 'ما الذي تغيّره التهيئة', day: 'حركة المرور على مدار اليوم', cond: 'شروط الاستعمال', dims: 'الأبعاد', implant: 'التركيز', visib: 'الرؤية',
+    signs: 'الإشارات', light: 'الإنارة', walks: 'الأرصفة وإمكانية النفاذ', water: 'مياه الأمطار والصيانة', cost: 'التقدير الأوّلي للكلفة', plan: 'خطّة العمل',
     annA: 'الملحق أ — كل التهيئات المُحاكاة', annB: 'الملحق ب — المنهجية والفرضيات', annC: 'الملحق ج — المصادر' },
   brief: {
     site: c => `تدرس البلدية ممرّ مترجّلين على نهج تمرّ به في ساعة الذروة ${f0(c.P.q)} عربة في الساعة وفي كل اتجاه، منها ${f0(c.P.pPL)} % من العربات الثقيلة والحافلات، و${f0(c.P.qPed)} مترجّلًا في الساعة.`,
@@ -2049,7 +2123,9 @@ ar: {
     ped: c => `ينتظر المترجّل في المتوسّط ${f0(c.e.pedW)} ث قبل العبور (حاليًا: ${f0(c.r.pedW)} ث).`,
     traffic: c => c.e.sat ? `تنبيه: عند هذا الحجم من الحركة، تُشبَع التهيئة. يمرّ ${f0(c.e.flow)} عربة في الساعة بدل ${f0(c.P.q)}، ويطول الطابور دون توقّف طيلة الذروة.` : `تبقى حركة المرور مُصرَّفة. ويتغيّر زمن قطع 500 م بـ ${sgn(c.e.tt - c.r.tt)} ث لكل عربة.`,
     cost: c => `الكلفة التقديرية: ${f0(c.cost.total)} دينار دون أداءات (حوالي ${f0(c.cost.eur)} يورو)، بهامش ±30 %.`,
-    cond: c => c.nKo ? `${c.nKo} من شروط الاستعمال غير محترمة: انظر القسم 3 قبل أيّ قرار.` : `لم يُكتشف أيّ شرط استعمال مانع؛ ويبقى ${c.nCheck} عنصرًا للتثبّت منه على عين المكان.`,
+    cond: c => c.nKo ? `${c.nKo} من شروط الاستعمال غير محترمة: انظر القسم ${c.condNo} قبل أيّ قرار.` : `لم يُكتشف أيّ شرط استعمال مانع؛ ويبقى ${c.nCheck} عنصرًا للتثبّت منه على عين المكان.`,
+    day: c => c.daySat ? `على مدار اليوم، تُشبَع التهيئة ${c.daySat}.` : 'على مدار اليوم، تُصرّف التهيئة حركة المرور في كل الساعات.',
+    school: c => `توجد مدرسة («${c.school.name || 'دون اسم'}») على بعد ${f0(c.school.dist)} م من الممرّ: انظر قسم «الموقع ومحيطه».`,
     rec: c => c.rec < 0 ? 'لم تجد الأداة أيّ حلّ يوفّق بين حركة المرور والسلامة عند هذا الحجم من الحركة.' : c.rec === c.i ? 'وهو أيضًا الحلّ الذي توصي به الأداة للتوفيق بين حركة المرور والسلامة.' : `كانت الأداة توصي بالأحرى بـ: ${c.recName}. اعتمدت البلدية تهيئة أخرى، والفوارق مفصّلة أدناه.`
   },
   changeIntro: 'مقارنة مع الوضع الحالي دون تهيئة، تحت نفس حركة المرور. كل قيمة هي متوسّط خمس محاكاة مدّة كل منها ساعة.',
@@ -2091,7 +2167,7 @@ ar: {
   costNote: r => `أسعار أحادية تقريبية دون أداءات، قيمة 2026، يجب تعويضها بجدول أسعار البلدية. سعر الصرف المعتمد: 1 يورو = ${nf2.format(r)} دينار.`,
   planCols: ['الأولوية', 'الإجراء', 'الجهة', 'الموعد'],
   actions: {
-    ko: ['رفع الشروط غير المحترمة (القسم 3) أو اختيار تهيئة أخرى.', 'المصالح الفنية', 'قبل القرار'],
+    ko: ['رفع شروط الاستعمال غير المحترمة، أو اختيار تهيئة أخرى.', 'المصالح الفنية', 'قبل القرار'],
     sat: ['تخفيض حركة العبور أو اختيار تهيئة تُصرّف حركة المرور: التهيئة المعتمدة تُشبَع عند هذا الحجم.', 'البلدية', 'قبل القرار'],
     count: ['قياس السرعة بالرادار وعدّ المترجّلين والعربات في ساعة الذروة، ثم إعادة المحاكاة بهذه القيم.', 'المصالح الفنية', 'قبل القرار'],
     exec: ['إعداد مخطّط التنفيذ (مهندس مساح، مكتب دراسات) انطلاقًا من المخطّط المبدئي، والتثبّت من دوران الحافلات والشاحنات.', 'مكتب الدراسات', 'قبل الأشغال'],
@@ -2394,11 +2470,30 @@ function buildNote(id) {
   const li = arr => '<ul>' + arr.map(s => `<li>${esc(s)}</li>`).join('') + '</ul>';
   const u = N.u, B = N.brief;
   const tbl = (cols, rows) => `<table><thead><tr>${cols.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
-  // 1-4
+  // sections facultatives : le lieu (carte analysée) et la journée (simulée)
+  const hasSite = !!SITE.data, hasDay = !!DAY.res;
+  c.condNo = 3 + (hasSite ? 1 : 0) + (hasDay ? 1 : 0);
+  if (hasDay) { const sat = DAY.res[i].filter(r => r.state === 'sat').map(r => r.h); c.daySat = sat.length ? hourRanges(sat) : ''; }
+  if (hasSite && SITE.data.school && SITE.data.school.dist <= 300) c.school = SITE.data.school;
+  let sn = 0; const H2 = key => `<h2>${++sn}. ${esc(N.s[key])}</h2>`;
   let h1 = `<h1>${esc(N.title)}</h1><p class="sub">${esc(N.sub)}</p>`;
   h1 += `<table class="cover"><tbody>${N.cover.map(([k2, l]) => `<tr><td>${esc(l)}</td><td>${esc(meta[k2])}</td></tr>`).join('')}</tbody></table>`;
   h1 += `<h3>${esc(N.glossTitle)}</h3><table class="gloss"><tbody>${N.gloss.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table>`;
-  h1 += `<h2>${esc(N.s.brief)}</h2><ul class="brief">${['site', 'variant', 'speed', 'risk', 'ped', 'traffic', 'cost', 'cond', 'rec'].map(k2 => `<li>${B[k2](c)}</li>`).join('')}</ul>`;
+  const briefKeys = ['site', 'variant', 'speed', 'risk', 'ped', 'traffic'].concat(hasDay ? ['day'] : [], ['cost', 'cond', 'rec']);
+  const briefItems = briefKeys.map(k2 => `<li>${B[k2](c)}</li>`);
+  if (c.school) briefItems.splice(1, 0, `<li>${esc(B.school(c))}</li>`);
+  h1 += `${H2('brief')}<ul class="brief">${briefItems.join('')}</ul>`;
+  if (hasSite) {
+    const d = SITE.data, F = siteFacts(d), K = t('poiKind'), osm = `https://www.openstreetmap.org/?mlat=${d.lat.toFixed(5)}&mlon=${d.lon.toFixed(5)}#map=18/${d.lat.toFixed(5)}/${d.lon.toFixed(5)}`;
+    h1 += `${H2('site')}<p>${esc(N.siteCoords(d.lat, d.lon))} <a href="${osm}">${esc(N.osmLink)}</a></p>`;
+    if (F.roadTitle) h1 += `<h3>${esc(t('hRoad'))}</h3><p>${esc(F.roadTitle)}</p>${li(F.road)}`;
+    if (F.warn.length) h1 += li(F.warn);
+    if (F.pop) h1 += `<h3>${esc(t('hPop'))}</h3><p>${esc(F.pop)}</p>`;
+    h1 += `<h3>${esc(t('hPoi'))}</h3>` + (d.pois.length ? tbl(t('poiCols'), d.pois.map((p, j) => `<tr><td class="n">${j + 1}</td><td>${esc(p.name || t('unnamed'))}</td><td>${esc(K[p.kind] || p.kind)}</td><td class="n">${f0(p.dist)} m</td></tr>`)) : `<p>${esc(t('poiNone'))}</p>`);
+    h1 += `<h3>${esc(t('hAround'))}</h3>${li(F.around)}`;
+    if (F.recos.length) h1 += `<h3>${esc(t('hReco'))}</h3>${li(F.recos)}${F.measures ? `<p>${esc(t('schoolMeasuresTitle'))}</p>${li(t('schoolMeasures'))}` : ''}`;
+    h1 += `<figure style="margin:3mm 0;break-inside:avoid">${siteSVG(d)}<figcaption class="small">${esc(N.siteFig)} ${esc(t('osmCredit'))}</figcaption></figure>`;
+  }
   const M = N.mean, ind = N.ind;
   const rows2 = [
     ['v85', `${f0(r.v85)} ${u.kmh}`, `${f0(e.v85)} ${u.kmh}`, M.v85(r, e)],
@@ -2410,18 +2505,26 @@ function buildNote(id) {
     ['stop', `${f0(r.surgStop)} %`, `${f0(e.surgStop)} %`, M.stop(r, e)],
     ['risk', `${f1(r.surgRisk)} %`, `${f1(e.surgRisk)} %`, M.risk(r, e)]
   ].map(([k2, a, b, m]) => `<tr><td>${esc(ind[k2])}</td><td class="n">${esc(a)}</td><td class="n">${esc(b)}</td><td>${esc(m)}</td></tr>`);
-  h1 += `<h2>${esc(N.s.change)}</h2><p>${esc(N.changeIntro)}</p>${tbl(N.changeCols, rows2)}`;
-  h1 += `<h2>${esc(N.s.cond)}</h2><p>${esc(N.condIntro)}</p>${tbl(N.condCols, conds.map(x => `<tr><td>${esc(x.txt)}</td><td class="st st-${x.st}">${esc(N.st[x.st])}</td></tr>`))}`;
-  h1 += `<h2>${esc(N.s.dims)}</h2><p>${esc(N.dimsIntro)}</p>${tbl(N.dimCols, dims(sc).map(([k2, v]) => `<tr><td>${esc(N.dim[k2])}</td><td class="n">${esc(v)}</td></tr>`))}`;
+  h1 += `${H2('change')}<p>${esc(N.changeIntro)}</p>${tbl(N.changeCols, rows2)}`;
+  if (hasDay) {
+    // journée : référence, variante retenue et, si elle diffère, variante recommandée
+    const pick = [0, i].concat(R.best > 0 && R.best !== i ? [R.best] : []), cell = 'text-align:center;padding:1mm 0.5mm';
+    const head = `<tr><th></th>${DAY.res[0].map(r => `<th style="${cell}">${r.h}</th>`).join('')}</tr>`
+      + `<tr><th>${esc(t('dayDemand'))}</th>${DAY.res[0].map(r => `<th style="${cell};font-weight:400">${f0(r.demand)}</th>`).join('')}</tr>`;
+    const body = pick.map(j => `<tr><td>${esc(scShort(scenarios[j]))}</td>${dayCells(DAY.res[j], true)}</tr>`).join('');
+    h1 += `${H2('day')}<p>${esc(t('dayResNote', DAY.src === 'counts' ? t('srcCounts') : t('srcProfile', P)))}</p><table style="font-size:7.5pt">${head}${body}</table>${li(dayReco(i))}`;
+  }
+  h1 += `${H2('cond')}<p>${esc(N.condIntro)}</p>${tbl(N.condCols, conds.map(x => `<tr><td>${esc(x.txt)}</td><td class="st st-${x.st}">${esc(N.st[x.st])}</td></tr>`))}`;
+  h1 += `${H2('dims')}<p>${esc(N.dimsIntro)}</p>${tbl(N.dimCols, dims(sc).map(([k2, v]) => `<tr><td>${esc(N.dim[k2])}</td><td class="n">${esc(v)}</td></tr>`))}`;
   // 5-12
   let h2 = '';
   if (V) {
-    h2 += `<h2>${esc(N.s.implant)}</h2>${li(V.implant)}`;
-    h2 += `<h2>${esc(N.s.visib)}</h2><p>${esc(N.visib(c))}</p>${li(N.visibList)}`;
-    h2 += `<h2>${esc(N.s.signs)}</h2><h3>${esc(N.signV)}</h3>${li(V.signs)}<h3>${esc(N.marks)}</h3>${li(V.marks)}<p class="small">${esc(N.signNote)}</p>`;
-    h2 += `<h2>${esc(N.s.light)}</h2>${li(N.light)}`;
-    h2 += `<h2>${esc(N.s.walks)}</h2>${li(N.walks.concat(V.walks))}<p class="small">${esc(N.walksNote)}</p>`;
-    h2 += `<h2>${esc(N.s.water)}</h2>${li(N.water.concat(V.water))}`;
+    h2 += `${H2('implant')}${li(V.implant)}`;
+    h2 += `${H2('visib')}<p>${esc(N.visib(c))}</p>${li(N.visibList)}`;
+    h2 += `${H2('signs')}<h3>${esc(N.signV)}</h3>${li(V.signs)}<h3>${esc(N.marks)}</h3>${li(V.marks)}<p class="small">${esc(N.signNote)}</p>`;
+    h2 += `${H2('light')}${li(N.light)}`;
+    h2 += `${H2('walks')}${li(N.walks.concat(V.walks))}<p class="small">${esc(N.walksNote)}</p>`;
+    h2 += `${H2('water')}${li(N.water.concat(V.water))}`;
   }
   const C2 = c.cost, nfp = v => nf0.format(v), nq = v => (Number.isInteger(v) ? nf0 : nf1).format(v);
   const crow = C2.rows.map(x => `<tr><td>${esc(x.p[lang])}</td><td class="n">${nq(x.qty)}</td><td>${esc(x.p.u[ui])}</td><td class="n">${nfp(PRICES[x.p.k])}</td><td class="n">${nfp(x.amount)}</td></tr>`);
@@ -2430,12 +2533,12 @@ function buildNote(id) {
   crow.push(`<tr><th colspan="4">${esc(N.costTotal)}</th><th class="n">${nfp(C2.total)}</th></tr>`);
   crow.push(`<tr><td colspan="4">${esc(N.costRange)}</td><td class="n"><span class="num">${nfp(C2.low)} – ${nfp(C2.high)}</span></td></tr>`);
   crow.push(`<tr><td colspan="4">${esc(N.costEur)}</td><td class="n">≈ ${nfp(C2.eur)} €</td></tr>`);
-  h2 += `<h2>${esc(N.s.cost)}</h2>${tbl(N.costCols, crow)}<p class="small">${esc(N.costNote(RATE))}</p>`;
+  h2 += `${H2('cost')}${tbl(N.costCols, crow)}<p class="small">${esc(N.costNote(RATE))}</p>`;
   const A = N.actions, acts = [];
   if (c.nKo) acts.push([1, A.ko]);
   if (e.sat) acts.push([1, A.sat]);
   acts.push([1, A.count], [2, A.exec], [2, A.market], [2, A.inform], [3, A.after], [3, A.maint]);
-  h2 += `<h2>${esc(N.s.plan)}</h2>${tbl(N.planCols, acts.map(([p, [a, w, q]]) => `<tr><td class="prio p${p}">P${p}</td><td>${esc(a)}</td><td>${esc(w)}</td><td>${esc(q)}</td></tr>`))}`;
+  h2 += `${H2('plan')}${tbl(N.planCols, acts.map(([p, [a, w, q]]) => `<tr><td class="prio p${p}">P${p}</td><td>${esc(a)}</td><td>${esc(w)}</td><td>${esc(q)}</td></tr>`))}`;
   // annexes
   const st = x => x.sat ? N.stateTxt.sat : N.stateTxt.ok;
   h2 += `<section class="annex"><h2>${esc(N.s.annA)}</h2><div class="box">${esc(N.annexBox)}</div>`;
@@ -2540,6 +2643,7 @@ function build() {
   $('#bar-sub').textContent = t('barSub', P);
   $('#lede').textContent = t('lede', P);
   $('#eyebrow').textContent = t('eyebrow', P);
+  buildDayInput();
 }
 
 /* ---------- évaluation : cinq simulations d'une heure, tirages fixés, en tâche de fond ---------- */
@@ -2556,7 +2660,7 @@ function startEvaluation() {
       if (cur[0].t >= EVAL_T - 1e-6) {
         cur.forEach((s, i) => acc[i].push(stats(s)));
         cur = null; rep++;
-        if (rep >= REPS) { evalRes = aggregate(acc); evalProg = 1; if (!busy) updateKpis(); buildNoteUI(); return; }
+        if (rep >= REPS) { evalRes = aggregate(acc); evalProg = 1; if (!busy) updateKpis(); buildNoteUI(); startDay(); return; }
       }
     }
     evalProg = (rep + (cur ? cur[0].t / EVAL_T : 0)) / REPS;
@@ -2774,6 +2878,482 @@ function open3D(sc) {
 $('#dlg-close').addEventListener('click', () => { const d = $('#dlg3d'); if (d.close) d.close(); else d.removeAttribute('open'); });
 $('#dlg3d').addEventListener('click', e => { if (e.target === e.currentTarget && e.currentTarget.close) e.currentTarget.close(); });
 
+/* =====================================================================================================
+   LIEU (carte, OpenStreetMap, WorldPop) ET TRAFIC SUR LA JOURNÉE
+   ===================================================================================================== */
+Object.assign(I18N.fr, {
+  siteTitle: 'Situer le lieu',
+  siteNote: 'Cliquez sur la carte à l’endroit du passage piéton, ou cherchez une adresse, puis cliquez sur « Analyser le lieu ». Les données viennent d’OpenStreetMap et de WorldPop ; elles complètent la note de calcul.',
+  searchPh: 'Adresse, rue, ville…', searchBtn: 'Chercher', analyse: 'Analyser le lieu', mapPlan: 'Plan', mapSat: 'Satellite',
+  mapClick: 'Cliquez sur la carte pour placer le passage piéton.',
+  mapPoint: (la, lo) => `Passage placé en ${la.toFixed(5)}, ${lo.toFixed(5)}. Cliquez sur « Analyser le lieu ».`,
+  notFound: 'Adresse introuvable.', searching: 'Recherche…', analysing: 'Analyse du lieu (OpenStreetMap)…', analysed: 'Lieu analysé. Les résultats figurent ci-dessous et dans la note de calcul.',
+  mapOffline: 'La carte demande une connexion Internet.', osmFail: 'OpenStreetMap n’a pas répondu. Réessayez dans un instant.',
+  popRun: 'calcul en cours chez WorldPop (10 à 40 s)…', popOffline: 'disponible sur le site en ligne seulement', popFail: 'WorldPop n’a pas répondu',
+  colon: ' : ', hRoad: 'Rue', roadNone: 'Aucune rue trouvée à moins de 35 m du point : placez-le sur la chaussée.',
+  roadLine: (n, ty) => `${n || 'Rue sans nom'} (${ty})`,
+  kLanes: 'Voies', kOneway: 'Sens unique', kMaxspeed: 'Vitesse limite', kWidth: 'Largeur', notTagged: 'non renseigné dans OSM', yes: 'oui', no: 'non',
+  roadTypes: { motorway: 'autoroute', trunk: 'voie rapide', primary: 'route principale', secondary: 'route secondaire', tertiary: 'rue de liaison', unclassified: 'voie non classée', residential: 'rue de quartier', living_street: 'zone de rencontre', service: 'voie de desserte' },
+  hPop: 'Population', popLine: (d, p, lv) => `${f0(d)} habitants par hectare dans un rayon de 300 m (${f0(p)} habitants, WorldPop 2020) : ${lv}.`,
+  popLevels: ['peu dense', 'moyennement dense', 'dense', 'très dense'],
+  hPoi: 'Écoles et établissements de santé à moins de 400 m', poiNone: 'Aucun établissement de ce type dans OpenStreetMap à moins de 400 m.',
+  poiCols: ['N°', 'Établissement', 'Type', 'Distance au passage'], unnamed: 'sans nom',
+  poiKind: { school: 'école', kindergarten: 'jardin d’enfants', college: 'établissement secondaire', university: 'université', hospital: 'hôpital', clinic: 'clinique, dispensaire' },
+  hAround: 'Autour du passage (150 m)',
+  aroundStops: (n, d) => n ? `Arrêts de bus : ${n}, le plus proche à ${f0(d)} m.` : 'Aucun arrêt de bus.',
+  aroundCross: (n, d) => n ? `Passages piétons existants : ${n}, le plus proche à ${f0(d)} m.` : 'Aucun passage piéton existant.',
+  aroundSig: (n, d) => n ? `Feux : ${n}, le plus proche à ${f0(d)} m.` : 'Aucun feu.',
+  hReco: 'Recommandations liées au lieu',
+  recoSchoolMove: (n, d, m) => `L’école « ${n} » est à ${f0(d)} m. Le passage doit se trouver sur le chemin des élèves, au plus près de l’entrée. Proposition : le déplacer d’environ ${f0(m)} m vers l’école (repère orange sur la carte), après avoir repéré l’entrée réelle sur place.`,
+  recoSchoolHere: (n, d) => `L’école « ${n} » est à ${f0(d)} m : le passage est déjà sur ses abords.`,
+  recoSchoolOther: (n, d) => `L’école « ${n} » est à ${f0(d)} m mais n’a pas d’accès sur cette rue : vérifier sur place le chemin des élèves.`,
+  schoolMeasuresTitle: 'Aménagements complémentaires aux abords de l’école :',
+  schoolMeasures: ['Abords d’école limités à 30 km/h sur au moins 150 m de part et d’autre de l’entrée.', 'Panneau A13a « endroit fréquenté par les enfants » dans chaque sens.', 'Barrières de canalisation sur le trottoir devant la sortie, pour guider les enfants vers le passage.', 'Plateau surélevé devant l’entrée si le trafic le permet (voir les résultats).', 'Interdiction de stationner devant l’entrée et sur 5 m avant le passage.', 'Présence d’un agent ou d’un accompagnateur aux heures d’entrée et de sortie.'],
+  recoHealth: (n, d) => `L’établissement de santé « ${n} » est à ${f0(d)} m. Sur l’itinéraire des ambulances, éviter dos d’âne et ralentisseurs trapézoïdaux ; préférer coussins berlinois, rétrécissement avec îlot ou feu piéton. Prévoir un temps de traversée plus long pour les personnes à mobilité réduite.`,
+  recoDense: 'Quartier dense : les traversées seront nombreuses ; vérifier par un comptage le nombre de piétons saisi.',
+  warnLanes: n => `OpenStreetMap indique ${n} voies : le modèle simule une voie par sens. Ses résultats ne valent que pour une rue à deux voies ; au-delà, prévoir une étude de trafic.`,
+  warnOneway: 'OpenStreetMap indique une rue à sens unique : le modèle simule deux sens de circulation. Interprétez les résultats avec prudence.',
+  applySite: 'Reporter dans les données', applied: l => `Reporté dans le formulaire : ${l}. Cliquez sur « Appliquer et relancer ».`, nothingToApply: 'OpenStreetMap ne renseigne ni la vitesse limite ni la largeur de cette rue.',
+  osmCredit: 'Données © contributeurs OpenStreetMap (ODbL) ; population WorldPop 2020.', proposalTip: 'Position proposée',
+  dayTitle: 'Trafic sur la journée',
+  dayNote: 'Choisissez le profil horaire type, ou saisissez vos comptages : véhicules par heure dans le sens le plus chargé. Le modèle simule la journée de 5 h à 23 h pour chaque variante et indique quand les files se forment.',
+  dayProfile: 'Profil type urbain (hypothèse)', dayCounts: 'Mes comptages', dayHour: 'Heure', dayRowP: 'Profil type (véh/h)', dayRowC: 'Comptage (véh/h)',
+  dayCalc: 'Calculer la journée', dayResTitle: 'Trafic sur la journée',
+  dayRunning: p => `Simulation de la journée en cours : ${p} %.`, dayWait: 'La journée sera simulée après l’évaluation.',
+  dayResNote: src => `Une simulation continue de 5 h à 23 h, avec les mêmes arrivées pour toutes les variantes. Trafic : ${src}. Les piétons suivent le même profil que les véhicules (hypothèse). Vert : fluide ; orange : files de plus de 100 m ; rouge : saturé, la demande n’est pas écoulée. Le nombre indique la file la plus longue de l’heure, en mètres.`,
+  srcProfile: P => `profil type urbain appliqué au débit de pointe saisi (${f0(P.q)} véh/h)`, srcCounts: 'comptages de la commune (profil type pour les heures non renseignées)',
+  dayDemand: 'Demande (véh/h)', daySatCol: 'Heures saturées', dayNoneSat: 'aucune',
+  hRange: (a, b) => `de ${a} h à ${b} h`, rangeSep: ' et ',
+  dayOk: (n, q) => `${n} écoule le trafic toute la journée ; la file la plus longue atteint ${f0(q)} m.`,
+  dayFiles: (n, r, q, h) => `${n} écoule le trafic, mais des files de plus de 100 m se forment ${r} (jusqu’à ${f0(q)} m vers ${h} h). Vérifier qu’elles n’atteignent pas le carrefour situé en amont.`,
+  daySat: (n, r, q, h) => `${n} sature ${r} : la file atteint ${f0(q)} m vers ${h} h et la demande n’est pas écoulée.`,
+  dayAlt: l => `Variantes qui écoulent le trafic toute la journée : ${l}.`,
+  dayAltNone: 'Aucune variante n’écoule le trafic toute la journée à ce niveau de trafic : un plan de circulation (délestage, sens uniques) est à étudier.',
+  dayKeep: 'Si la variante est maintenue : réduire le trafic de transit aux heures de pointe (itinéraire de délestage, plan de circulation).',
+  daySig: 'Feu : programmer un vert plus long pour les véhicules aux heures de pointe.',
+  dayVert: 'Dispositif surélevé : il ralentit chaque véhicule ; il ne convient qu’aux rues où le trafic reste modéré aux heures de pointe.',
+  dayMeasure: 'Mesurer la file réelle aux heures de pointe après la mise en service.',
+  dayFocus: n => `Lecture pour la variante : ${n}`
+});
+Object.assign(I18N.ar, {
+  siteTitle: 'تحديد الموقع',
+  siteNote: 'اضغط على الخريطة في مكان ممرّ المترجّلين، أو ابحث عن عنوان، ثم اضغط على «تحليل الموقع». المعطيات مأخوذة من OpenStreetMap وWorldPop، وهي تُكمّل مذكّرة الحساب.',
+  searchPh: 'عنوان، نهج، مدينة…', searchBtn: 'بحث', analyse: 'تحليل الموقع', mapPlan: 'مخطّط', mapSat: 'صورة جوية',
+  mapClick: 'اضغط على الخريطة لوضع ممرّ المترجّلين.',
+  mapPoint: (la, lo) => `وُضع الممرّ في ${la.toFixed(5)}، ${lo.toFixed(5)}. اضغط على «تحليل الموقع».`,
+  notFound: 'العنوان غير موجود.', searching: 'جارٍ البحث…', analysing: 'جارٍ تحليل الموقع (OpenStreetMap)…', analysed: 'تمّ تحليل الموقع. النتائج أدناه وفي مذكّرة الحساب.',
+  mapOffline: 'تتطلّب الخريطة اتصالًا بالإنترنت.', osmFail: 'لم يستجب OpenStreetMap. أعد المحاولة بعد لحظات.',
+  popRun: 'الحساب جارٍ لدى WorldPop (من 10 إلى 40 ث)…', popOffline: 'متاحة على الموقع الإلكتروني فقط', popFail: 'لم يستجب WorldPop',
+  colon: ': ', hRoad: 'النهج', roadNone: 'لم يُعثر على أيّ نهج على أقلّ من 35 م من النقطة: ضعها على المعبّد.',
+  roadLine: (n, ty) => `${n || 'نهج دون اسم'} (${ty})`,
+  kLanes: 'عدد المسالك', kOneway: 'اتجاه واحد', kMaxspeed: 'السرعة القصوى', kWidth: 'العرض', notTagged: 'غير مُدرَج في OSM', yes: 'نعم', no: 'لا',
+  roadTypes: { motorway: 'طريق سيارة', trunk: 'طريق سريعة', primary: 'طريق رئيسية', secondary: 'طريق ثانوية', tertiary: 'نهج ربط', unclassified: 'طريق غير مصنّفة', residential: 'نهج سكني', living_street: 'منطقة لقاء', service: 'طريق خدمات' },
+  hPop: 'السكّان', popLine: (d, p, lv) => `${f0(d)} ساكنًا في الهكتار في دائرة شعاعها 300 م (${f0(p)} ساكنًا، WorldPop 2020): ${lv}.`,
+  popLevels: ['قليل الكثافة', 'متوسّط الكثافة', 'كثيف', 'كثيف جدًّا'],
+  hPoi: 'المدارس والمؤسّسات الصحّية على أقلّ من 400 م', poiNone: 'لا توجد مؤسّسة من هذا النوع في OpenStreetMap على أقلّ من 400 م.',
+  poiCols: ['ع/ر', 'المؤسّسة', 'النوع', 'المسافة إلى الممرّ'], unnamed: 'دون اسم',
+  poiKind: { school: 'مدرسة', kindergarten: 'روضة أطفال', college: 'مؤسّسة تعليم ثانوي', university: 'جامعة', hospital: 'مستشفى', clinic: 'مصحّة، مستوصف' },
+  hAround: 'حول الممرّ (150 م)',
+  aroundStops: (n, d) => n ? `محطّات الحافلات: ${n}، أقربها على بعد ${f0(d)} م.` : 'لا توجد محطّة حافلات.',
+  aroundCross: (n, d) => n ? `ممرّات مترجّلين موجودة: ${n}، أقربها على بعد ${f0(d)} م.` : 'لا يوجد ممرّ مترجّلين.',
+  aroundSig: (n, d) => n ? `إشارات ضوئية: ${n}، أقربها على بعد ${f0(d)} م.` : 'لا توجد إشارة ضوئية.',
+  hReco: 'توصيات مرتبطة بالموقع',
+  recoSchoolMove: (n, d, m) => `تقع المدرسة «${n}» على بعد ${f0(d)} م. يجب أن يكون الممرّ على طريق التلاميذ، أقرب ما يمكن من المدخل. المقترح: نقله بحوالي ${f0(m)} م نحو المدرسة (العلامة البرتقالية على الخريطة)، بعد تحديد المدخل الفعلي على عين المكان.`,
+  recoSchoolHere: (n, d) => `تقع المدرسة «${n}» على بعد ${f0(d)} م: الممرّ موجود بعدُ في محيطها.`,
+  recoSchoolOther: (n, d) => `تقع المدرسة «${n}» على بعد ${f0(d)} م لكن ليس لها مدخل على هذا النهج: يجب التثبّت على عين المكان من طريق التلاميذ.`,
+  schoolMeasuresTitle: 'تهيئات تكميلية في محيط المدرسة:',
+  schoolMeasures: ['تحديد السرعة بـ 30 كم/س في محيط المدرسة على 150 م على الأقلّ من جانبي المدخل.', 'لافتة A13a «مكان يرتاده الأطفال» في كل اتجاه.', 'حواجز توجيه على الرصيف أمام المخرج لتوجيه الأطفال نحو الممرّ.', 'منصّة مرتفعة أمام المدخل إذا سمحت حركة المرور بذلك (انظر النتائج).', 'منع الوقوف أمام المدخل وعلى 5 م قبل الممرّ.', 'حضور عون أو مرافق عند أوقات الدخول والخروج.'],
+  recoHealth: (n, d) => `تقع المؤسّسة الصحّية «${n}» على بعد ${f0(d)} م. على مسلك سيارات الإسعاف، يجب تجنّب المطبّات الدائرية وشبه المنحرفة، وتفضيل الوسائد البرلينية أو التضييق مع جزيرة أو الإشارة الضوئية، مع توقّع زمن عبور أطول للأشخاص ذوي الحركة المحدودة.`,
+  recoDense: 'حيّ كثيف: سيكون العبور كثيرًا؛ يجب التثبّت بعملية عدّ من عدد المترجّلين المُدخل.',
+  warnLanes: n => `يشير OpenStreetMap إلى ${n} مسالك: يحاكي النموذج مسلكًا واحدًا في كل اتجاه. نتائجه صالحة فقط لنهج بمسلكين، وما زاد عن ذلك يتطلّب دراسة لحركة المرور.`,
+  warnOneway: 'يشير OpenStreetMap إلى نهج ذي اتجاه واحد: يحاكي النموذج اتجاهين للسير. يجب تأويل النتائج بحذر.',
+  applySite: 'نقل إلى المعطيات', applied: l => `نُقلت إلى الاستمارة: ${l}. اضغط على «تطبيق وإعادة التشغيل».`, nothingToApply: 'لا يُدرج OpenStreetMap السرعة القصوى ولا عرض هذا النهج.',
+  osmCredit: 'المعطيات © مساهمو OpenStreetMap (ODbL)؛ السكّان WorldPop 2020.', proposalTip: 'الموقع المقترح',
+  dayTitle: 'حركة المرور على مدار اليوم',
+  dayNote: 'اختر المنحنى الساعي النموذجي، أو أدخل عمليات العدّ الخاصّة بك: عدد العربات في الساعة في الاتجاه الأكثر حركة. يحاكي النموذج اليوم من الساعة 5 إلى الساعة 23 لكل تهيئة ويبيّن متى تتكوّن الطوابير.',
+  dayProfile: 'منحنى حضري نموذجي (فرضية)', dayCounts: 'عمليات العدّ الخاصّة بي', dayHour: 'الساعة', dayRowP: 'المنحنى النموذجي (عربة/س)', dayRowC: 'العدّ (عربة/س)',
+  dayCalc: 'حساب اليوم', dayResTitle: 'حركة المرور على مدار اليوم',
+  dayRunning: p => `محاكاة اليوم جارية: ${p} %.`, dayWait: 'ستُحاكى حركة اليوم بعد التقييم.',
+  dayResNote: src => `محاكاة متواصلة من الساعة 5 إلى الساعة 23، بنفس الوصولات لكل التهيئات. حركة المرور: ${src}. يتبع المترجّلون نفس منحنى العربات (فرضية). الأخضر: انسيابي؛ البرتقالي: طوابير تتجاوز 100 م؛ الأحمر: مُشبَع، لا يُصرَّف الطلب. يبيّن الرقم أطول طابور خلال الساعة بالمتر.`,
+  srcProfile: P => `منحنى حضري نموذجي مطبّق على تدفّق الذروة المُدخل (${f0(P.q)} عربة/س)`, srcCounts: 'عمليات عدّ البلدية (المنحنى النموذجي للساعات غير المُدخلة)',
+  dayDemand: 'الطلب (عربة/س)', daySatCol: 'ساعات الإشباع', dayNoneSat: 'لا شيء',
+  hRange: (a, b) => `من الساعة ${a} إلى الساعة ${b}`, rangeSep: ' و',
+  dayOk: (n, q) => `${n}: تُصرَّف حركة المرور طوال اليوم، ويبلغ أطول طابور ${f0(q)} م.`,
+  dayFiles: (n, r, q, h) => `${n}: تُصرَّف حركة المرور، لكن تتكوّن طوابير تتجاوز 100 م ${r} (حتى ${f0(q)} م نحو الساعة ${h}). يجب التثبّت من أنّها لا تبلغ مفترق الطرق السابق.`,
+  daySat: (n, r, q, h) => `${n}: إشباع ${r}؛ يبلغ الطابور ${f0(q)} م نحو الساعة ${h} ولا يُصرَّف الطلب.`,
+  dayAlt: l => `التهيئات التي تُصرّف حركة المرور طوال اليوم: ${l}.`,
+  dayAltNone: 'لا توجد تهيئة تُصرّف حركة المرور طوال اليوم عند هذا المستوى: يجب دراسة مخطّط للجولان (تحويل، اتجاهات واحدة).',
+  dayKeep: 'إذا تمّ الإبقاء على التهيئة: تخفيض حركة العبور في ساعات الذروة (مسلك تحويل، مخطّط جولان).',
+  daySig: 'الإشارة الضوئية: برمجة أخضر أطول للعربات في ساعات الذروة.',
+  dayVert: 'تهيئة مرتفعة: تُبطئ كل عربة، ولا تلائم إلّا الأنهج التي تبقى حركتها معتدلة في ساعات الذروة.',
+  dayMeasure: 'قياس الطابور الفعلي في ساعات الذروة بعد دخول التهيئة حيّز الاستغلال.',
+  dayFocus: n => `القراءة بالنسبة إلى التهيئة: ${n}`
+});
+Object.assign(NOTE.fr, {
+  siteCoords: (la, lo) => `Position du passage : ${la.toFixed(5)}, ${lo.toFixed(5)}.`, osmLink: 'Voir sur OpenStreetMap',
+  siteFig: 'Plan de situation : passage (P), établissements numérotés, position proposée (triangle), cercles de 100, 200 et 300 m.'
+});
+Object.assign(NOTE.ar, {
+  siteCoords: (la, lo) => `موقع الممرّ: ${la.toFixed(5)}، ${lo.toFixed(5)}.`, osmLink: 'عرض على OpenStreetMap',
+  siteFig: 'مخطّط الموقع: الممرّ (P)، المؤسّسات المرقّمة، الموقع المقترح (مثلّث)، دوائر 100 و200 و300 م.'
+});
+
+// --- géométrie locale (mètres autour du point) ---
+function segDist(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
+  const u = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2)) : 0, q = [a[0] + u * dx, a[1] + u * dy];
+  return { d: Math.hypot(p[0] - q[0], p[1] - q[1]), q };
+}
+function lineDist(p, pts, closed) {
+  let best = { d: Infinity, q: null };
+  const n = pts.length - (closed ? 0 : 1);
+  for (let i = 0; i < n; i++) { const s = segDist(p, pts[i], pts[(i + 1) % pts.length]); if (s.d < best.d) best = s; }
+  return best;
+}
+function inPoly(p, pts) {
+  let c = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++)
+    if ((pts[i][1] > p[1]) !== (pts[j][1] > p[1]) && p[0] < (pts[j][0] - pts[i][0]) * (p[1] - pts[i][1]) / (pts[j][1] - pts[i][1]) + pts[i][0]) c = !c;
+  return c;
+}
+function elemLL(el) {
+  if (el.type === 'node') return [[[el.lat, el.lon]]];
+  if (el.type === 'way' && el.geometry) return [el.geometry.map(g => [g.lat, g.lon])];
+  if (el.type === 'relation' && el.members) return el.members.filter(m => m.geometry && m.role !== 'inner').map(m => m.geometry.map(g => [g.lat, g.lon]));
+  return [];
+}
+function distRings(p, rings) {
+  let d = Infinity;
+  for (const r of rings) {
+    if (r.length === 1) { d = Math.min(d, Math.hypot(p[0] - r[0][0], p[1] - r[0][1])); continue; }
+    if (r.length > 2 && inPoly(p, r)) return 0;
+    d = Math.min(d, lineDist(p, r, true).d);
+  }
+  return d;
+}
+
+/* ---------- carte et analyse du lieu ---------- */
+const SITE = { lat: null, lon: null, data: null, pop: null, popState: '' };
+let MAP = null, mkPoint = null, siteLayer = null;
+function initMap() {
+  if (MAP) return;
+  if (typeof window.L === 'undefined') { $('#map').hidden = true; $('#map-msg').textContent = t('mapOffline'); return; }
+  MAP = window.L.map('map', { scrollWheelZoom: false }).setView([36.8065, 10.1815], 13);
+  const osm = window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
+  const sat = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri' });
+  osm.addTo(MAP);
+  window.L.control.layers({ [t('mapPlan')]: osm, [t('mapSat')]: sat }, null, { position: 'topright' }).addTo(MAP);
+  siteLayer = window.L.layerGroup().addTo(MAP);
+  MAP.on('click', e => { MAP.scrollWheelZoom.enable(); setPoint(e.latlng.lat, e.latlng.lng); });
+  $('#map-msg').textContent = t('mapClick');
+}
+function setPoint(lat, lon) {
+  Object.assign(SITE, { lat, lon, data: null, pop: null, popState: '' });
+  if (mkPoint) mkPoint.setLatLng([lat, lon]);
+  else { mkPoint = window.L.marker([lat, lon], { draggable: true }).addTo(MAP); mkPoint.on('dragend', ev => { const p = ev.target.getLatLng(); setPoint(p.lat, p.lng); }); }
+  siteLayer.clearLayers(); renderSiteInfo();
+  $('#btn-analyse').disabled = false; $('#map-msg').textContent = t('mapPoint', lat, lon);
+}
+async function searchPlace() {
+  const q = $('#map-search').value.trim();
+  if (!q || !MAP) return;
+  $('#map-msg').textContent = t('searching');
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=${lang}&q=${encodeURIComponent(q)}`);
+    const j = await r.json();
+    if (j && j[0]) { const la = +j[0].lat, lo = +j[0].lon; MAP.setView([la, lo], 18); setPoint(la, lo); }
+    else $('#map-msg').textContent = t('notFound');
+  } catch (e) { $('#map-msg').textContent = t('notFound'); }
+}
+async function overpass(lat, lon) {
+  const q = `[out:json][timeout:25];
+way(around:35,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service)(_link)?$"];
+out tags geom;
+nwr(around:400,${lat},${lon})[amenity~"^(school|kindergarten|college|university|hospital|clinic)$"];
+out tags geom;
+node(around:150,${lat},${lon})[highway~"^(crossing|traffic_signals|bus_stop)$"];
+out body;`;
+  for (const url of ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+    try {
+      const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 30000);
+      const r = await fetch(url, { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ctrl.signal });
+      clearTimeout(tm);
+      if (r.ok) return await r.json();
+    } catch (e) { /* miroir suivant */ }
+  }
+  throw new Error('overpass');
+}
+function processOSM(j, lat, lon) {
+  const cosl = Math.cos(lat * Math.PI / 180);
+  const PJ = (la, lo) => [(lo - lon) * 111320 * cosl, (la - lat) * 110540], UN = ([x, y]) => [lat + y / 110540, lon + x / (111320 * cosl)];
+  const p0 = [0, 0], els = j.elements || [], nm = tg => tg['name:' + lang] || tg.name || '';
+  let road = null;
+  for (const el of els) if (el.type === 'way' && el.tags && el.tags.highway && el.geometry) {
+    const pts = el.geometry.map(g => PJ(g.lat, g.lon)), s = lineDist(p0, pts, false);
+    if (!road || s.d < road.dist) road = { tags: el.tags, dist: s.d, pts, ll: el.geometry.map(g => [g.lat, g.lon]), q: s.q };
+  }
+  const pois = [], seen = new Set();
+  for (const el of els) if (el.tags && /^(school|kindergarten|college|university|hospital|clinic)$/.test(el.tags.amenity || '')) {
+    const ll = elemLL(el), rings = ll.map(r => r.map(g => PJ(g[0], g[1]))), d = distRings(p0, rings);
+    if (d <= 400) pois.push({ kind: el.tags.amenity, name: nm(el.tags), dist: d, rings, ll });
+  }
+  pois.sort((a, b) => a.dist - b.dist);
+  const pois2 = pois.filter(p => { const k = p.kind + '|' + p.name; if (p.name && seen.has(k)) return false; seen.add(k); return true; }).slice(0, 12);
+  const near = kind => els.filter(el => el.type === 'node' && el.tags && el.tags.highway === kind && el.lat !== undefined).map(el => Math.hypot(...PJ(el.lat, el.lon))).sort((a, b) => a - b);
+  const d = { lat, lon, road, pois: pois2, stops: near('bus_stop'), crossings: near('crossing'), signals: near('traffic_signals'), proposal: null, school: null, schoolOff: false, health: null };
+  // école la plus proche : si elle borde cette rue, proposer de rapprocher le passage du point de la rue le plus proche d'elle
+  const school = pois2.find(p => /^(school|kindergarten|college)$/.test(p.kind));
+  if (school) {
+    d.school = school;
+    if (school.dist > 50 && road) {
+      let best = null;
+      for (let i = 0; i < road.pts.length - 1; i++) {
+        const a = road.pts[i], b = road.pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2));
+        for (let k = 0; k <= n; k++) { const pt = [a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n], dd = distRings(pt, school.rings); if (!best || dd < best.d) best = { d: dd, pt }; }
+      }
+      if (best && best.d <= 60) { const mv = Math.hypot(best.pt[0] - road.q[0], best.pt[1] - road.q[1]); if (mv >= 20) d.proposal = { ll: UN(best.pt), move: mv }; }
+      else d.schoolOff = true;
+    }
+  }
+  d.health = pois2.find(p => p.kind === 'hospital' || p.kind === 'clinic') || null;
+  return d;
+}
+async function analyseSite() {
+  if (SITE.lat === null) return;
+  const btn = $('#btn-analyse'), { lat, lon } = SITE;
+  btn.disabled = true; $('#map-msg').textContent = t('analysing');
+  try { const j = await overpass(lat, lon); if (SITE.lat !== lat || SITE.lon !== lon) return; SITE.data = processOSM(j, lat, lon); }
+  catch (e) { $('#map-msg').textContent = t('osmFail'); btn.disabled = false; return; }
+  btn.disabled = false; $('#map-msg').textContent = t('analysed');
+  drawSiteLayers(); renderSiteInfo(); fetchPop(lat, lon);
+}
+async function fetchPop(lat, lon) {
+  if (!/^https?:$/.test(location.protocol)) { SITE.popState = 'offline'; renderSiteInfo(); return; }
+  SITE.popState = 'run'; renderSiteInfo();
+  try {
+    const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 95000);
+    const r = await fetch(`api/pop?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}&r=300`, { signal: ctrl.signal });
+    clearTimeout(tm);
+    const j = await r.json();
+    if (SITE.lat !== lat || SITE.lon !== lon) return;
+    if (j && j.ok) { SITE.pop = j; SITE.popState = 'ok'; } else SITE.popState = 'fail';
+  } catch (e) { if (SITE.lat === lat && SITE.lon === lon) SITE.popState = 'fail'; }
+  renderSiteInfo();
+}
+const roadType = hw => { const d = t('roadTypes'); return d[hw] || d[String(hw).replace('_link', '')] || hw; };
+const isYes = v => v === 'yes' || v === '1' || v === 'true';
+const popLevel = dd => t('popLevels')[dd >= 150 ? 3 : dd >= 60 ? 2 : dd >= 20 ? 1 : 0];
+// faits et recommandations du lieu, partagés par la page et la note de calcul
+function siteFacts(d) {
+  const C = t('colon'), out = { road: [], warn: [], pop: '', around: [], recos: [], measures: false };
+  if (d.road) {
+    const tg = d.road.tags, NT = t('notTagged');
+    out.roadTitle = t('roadLine', tg['name:' + lang] || tg.name || '', roadType(tg.highway));
+    out.road.push(t('kLanes') + C + (tg.lanes || NT), t('kOneway') + C + (isYes(tg.oneway) ? t('yes') : t('no')),
+      t('kMaxspeed') + C + (tg.maxspeed ? tg.maxspeed + ' km/h' : NT), t('kWidth') + C + (tg.width ? tg.width + ' m' : NT));
+    const lanes = parseInt(tg.lanes, 10);
+    if (lanes > 2 || (isYes(tg.oneway) && lanes >= 2)) out.warn.push(t('warnLanes', lanes));
+    if (isYes(tg.oneway)) out.warn.push(t('warnOneway'));
+  } else out.warn.push(t('roadNone'));
+  out.pop = SITE.popState === 'ok' ? t('popLine', SITE.pop.density, SITE.pop.pop, popLevel(SITE.pop.density))
+    : SITE.popState === 'run' ? t('popRun') : SITE.popState === 'offline' ? t('popOffline') : SITE.popState === 'fail' ? t('popFail') : '';
+  out.around.push(t('aroundStops', d.stops.length, d.stops[0]), t('aroundCross', d.crossings.length, d.crossings[0]), t('aroundSig', d.signals.length, d.signals[0]));
+  const sname = d.school ? (d.school.name || t('unnamed')) : '';
+  if (d.school && d.school.dist <= 300) {
+    if (d.proposal) out.recos.push(t('recoSchoolMove', sname, d.school.dist, d.proposal.move));
+    else if (d.schoolOff) out.recos.push(t('recoSchoolOther', sname, d.school.dist));
+    else out.recos.push(t('recoSchoolHere', sname, d.school.dist));
+    out.measures = d.school.dist <= 150 || !!d.proposal;
+  }
+  if (d.health && d.health.dist <= 300) out.recos.push(t('recoHealth', d.health.name || t('unnamed'), d.health.dist));
+  if (SITE.popState === 'ok' && SITE.pop.density >= 60) out.recos.push(t('recoDense'));
+  return out;
+}
+function renderSiteInfo() {
+  const d = SITE.data, box = $('#site-info');
+  if (!d) { box.innerHTML = ''; return; }
+  const F = siteFacts(d), li = a => '<ul>' + a.map(s => `<li>${esc(s)}</li>`).join('') + '</ul>', K = t('poiKind');
+  let h = `<div><h4>${t('hRoad')}</h4>${F.roadTitle ? `<p>${esc(F.roadTitle)}</p>${li(F.road)}` : ''}${F.warn.map(w => `<p class="warn">${esc(w)}</p>`).join('')}</div>`;
+  if (F.pop) h += `<div><h4>${t('hPop')}</h4><p>${esc(F.pop)}</p></div>`;
+  h += `<div><h4>${t('hPoi')}</h4>` + (d.pois.length
+    ? `<div class="table-wrap"><table class="ptable"><thead><tr>${t('poiCols').map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${d.pois.map((p, j) => `<tr><td>${j + 1}</td><td>${esc(p.name || t('unnamed'))}</td><td>${esc(K[p.kind] || p.kind)}</td><td>${f0(p.dist)} m</td></tr>`).join('')}</tbody></table></div>`
+    : `<p>${esc(t('poiNone'))}</p>`) + '</div>';
+  h += `<div><h4>${t('hAround')}</h4>${li(F.around)}</div>`;
+  if (F.recos.length) h += `<div class="reco"><h4>${t('hReco')}</h4>${li(F.recos)}${F.measures ? `<p>${esc(t('schoolMeasuresTitle'))}</p>${li(t('schoolMeasures'))}` : ''}</div>`;
+  h += `<div class="form-actions"><button class="btn" type="button" id="btn-site-apply">${t('applySite')}</button><span class="msg" id="site-apply-msg"></span></div><p class="map-msg">${esc(t('osmCredit'))}</p>`;
+  box.innerHTML = h;
+}
+function applySite() {
+  const tg = SITE.data && SITE.data.road && SITE.data.road.tags;
+  if (!tg) return;
+  const done = [], ms = parseInt(tg.maxspeed, 10);
+  if (ms >= 30 && ms <= 70) { $('#p-vLim').value = Math.round(ms / 10) * 10; done.push(`${t('kMaxspeed')} ${ms} km/h`); }
+  const w = parseFloat(String(tg.width || '').replace(',', '.')), ln = parseInt(tg.lanes, 10) || 2;
+  if (w > 0) { const lw = Math.min(3.75, Math.max(2.75, w / ln)); $('#p-laneW').value = lw.toFixed(2); done.push(`${t('kWidth')} ${fm(lw)} m`); }
+  $('#site-apply-msg').textContent = done.length ? t('applied', done.join(', ')) : t('nothingToApply');
+}
+function drawSiteLayers() {
+  if (!MAP || !siteLayer) return;
+  siteLayer.clearLayers();
+  const d = SITE.data; if (!d) return;
+  const K = t('poiKind');
+  window.L.circle([d.lat, d.lon], { radius: 300, color: '#1b5ea8', weight: 1, dashArray: '4 4', fill: false }).addTo(siteLayer);
+  if (d.road) window.L.polyline(d.road.ll, { color: '#1b5ea8', weight: 6, opacity: 0.5 }).addTo(siteLayer);
+  d.pois.forEach((p, j) => {
+    const col = /hospital|clinic/.test(p.kind) ? '#c62828' : '#ef8f00', tip = `${j + 1}. ${p.name || t('unnamed')} (${K[p.kind] || p.kind}, ${f0(p.dist)} m)`;
+    for (const r of p.ll) {
+      if (r.length === 1) window.L.circleMarker(r[0], { radius: 6, color: col, weight: 2 }).bindTooltip(tip).addTo(siteLayer);
+      else window.L.polygon(r, { color: col, weight: 2, fillOpacity: 0.15 }).bindTooltip(tip).addTo(siteLayer);
+    }
+  });
+  if (d.proposal) {
+    window.L.polyline([[d.lat, d.lon], d.proposal.ll], { color: '#ef8f00', weight: 3, dashArray: '6 6' }).addTo(siteLayer);
+    window.L.circleMarker(d.proposal.ll, { radius: 9, color: '#ef8f00', fillColor: '#ef8f00', fillOpacity: 0.9 }).bindTooltip(t('proposalTip'), { permanent: true, direction: 'top' }).addTo(siteLayer);
+  }
+}
+$('#btn-search').addEventListener('click', searchPlace);
+$('#map-search').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchPlace(); } });
+$('#btn-analyse').addEventListener('click', analyseSite);
+$('#site-info').addEventListener('click', e => { if (e.target.id === 'btn-site-apply') applySite(); });
+
+// plan de situation pour la note (SVG en millimètres, nord en haut)
+function siteSVG(d) {
+  const R = 300, rad = 50, k = rad / R, cx = 66, cy = 60;
+  const cosl = Math.cos(d.lat * Math.PI / 180), PJ = (la, lo) => [(lo - d.lon) * 111320 * cosl, (la - d.lat) * 110540];
+  const X = p => cx + p[0] * k, Y = p => cy - p[1] * k, fx = v => v.toFixed(2), o = [];
+  const T = (x, y, s, size = 2.4, anchor = 'middle') => o.push(`<text x="${fx(x)}" y="${fx(y)}" font-size="${size}" text-anchor="${anchor}" fill="#000">${esc(s)}</text>`);
+  o.push('<defs><clipPath id="cs"><circle cx="' + cx + '" cy="' + cy + '" r="' + (rad + 4) + '"/></clipPath></defs>');
+  o.push('<rect x="0" y="0" width="132" height="122" fill="#fff" stroke="#000" stroke-width="0.3"/>');
+  for (const r of [100, 200, 300]) { o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(r * k)}" fill="none" stroke="#888" stroke-width="0.2" stroke-dasharray="1 1"/>`); T(cx + r * k * 0.72 + 1.5, cy - r * k * 0.72, `${r} m`, 2); }
+  o.push('<g clip-path="url(#cs)">');
+  d.pois.forEach((p, j) => {
+    const col = /hospital|clinic/.test(p.kind) ? '#c62828' : '#ef8f00';
+    for (const ring of p.rings) {
+      if (ring.length === 1) o.push(`<circle cx="${fx(X(ring[0]))}" cy="${fx(Y(ring[0]))}" r="1.4" fill="${col}" stroke="#000" stroke-width="0.15"/>`);
+      else o.push(`<polygon points="${ring.map(q => fx(X(q)) + ',' + fx(Y(q))).join(' ')}" fill="${col}" fill-opacity="0.25" stroke="${col}" stroke-width="0.35"/>`);
+    }
+    const r0 = p.rings[0] || [[0, 0]], c = r0.reduce((a, q) => [a[0] + q[0] / r0.length, a[1] + q[1] / r0.length], [0, 0]);
+    o.push(`<circle cx="${fx(X(c))}" cy="${fx(Y(c))}" r="2.1" fill="#fff" stroke="#000" stroke-width="0.25"/>`); T(X(c), Y(c) + 0.85, String(j + 1), 2.2);
+  });
+  if (d.road) o.push(`<polyline points="${d.road.ll.map(g => PJ(g[0], g[1])).map(q => fx(X(q)) + ',' + fx(Y(q))).join(' ')}" fill="none" stroke="#1b5ea8" stroke-width="1.4" stroke-opacity="0.6"/>`);
+  if (d.proposal) {
+    const pp = PJ(d.proposal.ll[0], d.proposal.ll[1]);
+    o.push(`<line x1="${cx}" y1="${cy}" x2="${fx(X(pp))}" y2="${fx(Y(pp))}" stroke="#ef8f00" stroke-width="0.5" stroke-dasharray="1.5 1"/>`);
+    o.push(`<polygon points="${fx(X(pp))},${fx(Y(pp) - 2.4)} ${fx(X(pp) + 2.1)},${fx(Y(pp) + 1.3)} ${fx(X(pp) - 2.1)},${fx(Y(pp) + 1.3)}" fill="#ef8f00" stroke="#000" stroke-width="0.2"/>`);
+  }
+  o.push('</g>');
+  o.push(`<circle cx="${cx}" cy="${cy}" r="1.8" fill="#c62828" stroke="#000" stroke-width="0.2"/>`); T(cx + 3.2, cy - 2, 'P', 2.6, 'start');
+  o.push('<path d="M122 8 L124.5 15 L122 13.4 L119.5 15 Z" fill="#000"/>'); T(122, 19.5, 'N', 2.6);
+  const sb = 100 * k; o.push(`<line x1="8" y1="116" x2="${fx(8 + sb)}" y2="116" stroke="#000" stroke-width="0.4"/>`); T(8, 114, '0', 2, 'middle'); T(8 + sb, 114, '100 m', 2, 'middle');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 122" width="132mm" height="122mm" font-family="Arial, Tahoma, sans-serif">${o.join('')}</svg>`;
+}
+
+/* ---------- trafic sur la journée : profil type ou comptages, simulation continue de 5 h à 23 h ---------- */
+// part du débit de pointe, heure par heure (profil urbain de jour ouvré à deux pointes, hypothèse)
+const PROFILE = [0.10, 0.06, 0.04, 0.03, 0.04, 0.10, 0.35, 0.85, 1.00, 0.80, 0.70, 0.72, 0.78, 0.80, 0.72, 0.74, 0.82, 0.95, 0.98, 0.80, 0.60, 0.45, 0.32, 0.20];
+const DAY_H0 = 5, DAY_H1 = 23;
+const DAY = { mode: 'profile', counts: Array(24).fill(''), res: null, prog: 0, job: 0, src: 'profile', dem: null };
+try { const s = JSON.parse(localStorage.getItem('mv-day') || 'null'); if (s) { DAY.mode = s.mode === 'counts' ? 'counts' : 'profile'; if (Array.isArray(s.counts)) DAY.counts = s.counts.slice(0, 24).concat(Array(24).fill('')).slice(0, 24); } } catch (e) { /* stockage indisponible */ }
+const saveDay = () => { try { localStorage.setItem('mv-day', JSON.stringify({ mode: DAY.mode, counts: DAY.counts })); } catch (e) { /* stockage indisponible */ } };
+function dayDemand() {
+  return PROFILE.map((f, h) => { const c = parseFloat(DAY.counts[h]); return Math.min(2000, DAY.mode === 'counts' && Number.isFinite(c) && c >= 0 ? c : f * P.q); });
+}
+function buildDayInput() {
+  const hours = []; for (let h = DAY_H0; h < DAY_H1; h++) hours.push(h);
+  const counts = DAY.mode === 'counts';
+  $('#day-input').innerHTML = `<h3>${t('dayTitle')}</h3><p class="note">${t('dayNote')}</p>
+    <div class="modes" role="radiogroup" aria-label="${esc(t('dayTitle'))}">
+      <label><input type="radio" name="daymode" value="profile"${counts ? '' : ' checked'}> ${t('dayProfile')}</label>
+      <label><input type="radio" name="daymode" value="counts"${counts ? ' checked' : ''}> ${t('dayCounts')}</label>
+    </div>
+    <div class="table-wrap"><table class="dayin"><thead><tr><th>${t('dayHour')}</th>${hours.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>
+      <tr><td>${t('dayRowP')}</td>${hours.map(h => `<td>${f0(PROFILE[h] * P.q)}</td>`).join('')}</tr>
+      <tr><td>${t('dayRowC')}</td>${hours.map(h => `<td><input data-h="${h}" type="number" min="0" max="2000" step="10" inputmode="numeric" value="${esc(DAY.counts[h])}"${counts ? '' : ' disabled'} aria-label="${esc(t('dayRowC'))} ${h}"></td>`).join('')}</tr>
+    </tbody></table></div>
+    <div class="form-actions"><button class="btn primary" type="button" id="btn-day">${t('dayCalc')}</button></div>`;
+}
+$('#day-input').addEventListener('change', e => {
+  if (e.target.name === 'daymode') {
+    DAY.mode = e.target.value; saveDay();
+    document.querySelectorAll('#day-input input[data-h]').forEach(i => { i.disabled = DAY.mode !== 'counts'; });
+  }
+});
+$('#day-input').addEventListener('input', e => { if (e.target.dataset.h !== undefined) { DAY.counts[+e.target.dataset.h] = e.target.value; saveDay(); } });
+$('#day-input').addEventListener('click', e => { if (e.target.id === 'btn-day') startDay(); });
+
+function startDay() {
+  const job = ++DAY.job, Pe = P, scs = buildScenarios(Pe), dem = dayDemand(), nH = DAY_H1 - DAY_H0;
+  const peak = Math.max(1, ...dem.slice(DAY_H0, DAY_H1)), hourAt = t2 => DAY_H0 + Math.min(nH - 1, Math.floor(t2 / 3600));
+  const Pd = { ...Pe, qAt: t2 => dem[hourAt(t2)], pedAt: t2 => Pe.qPed * dem[hourAt(t2)] / peak };
+  const D = new Demand(Pd);
+  const sims2 = scs.map(sc => { const s = new Sim(sc, D, Pd); s.measFrom = 0; s.hourly = Array.from({ length: nH }, () => ({ out: 0, nTT: 0, sumTT: 0, qMax: 0, pend: 0, pedN: 0, pedSum: 0 })); return s; });
+  DAY.res = null; DAY.prog = 0; DAY.src = DAY.mode; DAY.dem = dem;
+  renderDayResults();
+  const Tend = nH * 3600;
+  let lastDraw = 0;
+  const tick = () => {
+    if (job !== DAY.job) return;
+    const t0 = performance.now();
+    while (performance.now() - t0 < 20 && sims2[0].t < Tend) for (let n = 0; n < 20; n++) for (const s of sims2) s.step();
+    DAY.prog = Math.min(1, sims2[0].t / Tend);
+    if (sims2[0].t < Tend) { if (performance.now() - lastDraw > 500) { lastDraw = performance.now(); renderDayResults(); } setTimeout(tick, 0); return; }
+    DAY.res = sims2.map(s => s.hourly.map((hb, j) => {
+      const h = DAY_H0 + j, demand = dem[h], served = hb.out / 2;
+      const state = served < 0.96 * demand - 20 || hb.pend > 10 ? 'sat' : hb.qMax >= 100 ? 'files' : 'ok';
+      return { h, demand, served, tt: hb.nTT ? hb.sumTT / hb.nTT : NaN, qMax: hb.qMax, pedW: hb.pedN ? hb.pedSum / hb.pedN : NaN, state };
+    }));
+    renderDayResults();
+  };
+  setTimeout(tick, 0);
+}
+function hourRanges(hours) {
+  const out = []; let a = null, b = null;
+  for (const h of hours) { if (a === null) a = b = h; else if (h === b + 1) b = h; else { out.push([a, b + 1]); a = b = h; } }
+  if (a !== null) out.push([a, b + 1]);
+  return out.map(([x, y]) => t('hRange', x, y)).join(t('rangeSep'));
+}
+function focusIndex() {
+  let id = pickedVariant;
+  if (!id && evalRes) { const r = recommend(evalRes, scenarios); id = r.best > 0 ? scenarios[r.best].id : 'ret'; }
+  return Math.max(1, scenarios.findIndex(s => s.id === (id || 'ret')));
+}
+function dayReco(i) {
+  const rows = DAY.res[i], name = scName(scenarios[i]);
+  const top = rows.reduce((a, r) => r.qMax > a.qMax ? r : a, rows[0]);
+  const sat = rows.filter(r => r.state === 'sat').map(r => r.h), files = rows.filter(r => r.state !== 'ok').map(r => r.h);
+  const out = [];
+  if (sat.length) {
+    out.push(t('daySat', name, hourRanges(sat), top.qMax, top.h));
+    const alts = DAY.res.map((rr, j) => j > 0 && rr.every(r => r.state !== 'sat') ? scName(scenarios[j]) : null).filter(Boolean);
+    out.push(alts.length ? t('dayAlt', alts.join(', ')) : t('dayAltNone'), t('dayKeep'));
+    if (scenarios[i].signal) out.push(t('daySig'));
+    if (['dos', 'trap', 'plat', 'cous'].includes(scenarios[i].id)) out.push(t('dayVert'));
+    out.push(t('dayMeasure'));
+  } else if (files.length) out.push(t('dayFiles', name, hourRanges(files), top.qMax, top.h), t('dayMeasure'));
+  else out.push(t('dayOk', name, top.qMax));
+  return out;
+}
+function dayCells(rows, inline) {
+  const bg = { ok: '#cfe9d6', files: '#f7dfae', sat: '#f2b8b8' };
+  return rows.map(r => inline
+    ? `<td style="background:${bg[r.state]};text-align:center;padding:1mm 0.5mm">${r.state === 'ok' ? '' : f0(r.qMax)}</td>`
+    : `<td class="c-${r.state}" title="${esc(t('dayDemand'))} ${f0(r.demand)} · ${f0(r.served)}">${r.state === 'ok' ? '' : f0(r.qMax)}</td>`).join('');
+}
+function renderDayResults() {
+  const tb = $('#day-table'), note = $('#day-note'), reco = $('#day-reco');
+  if (!DAY.res) { note.textContent = DAY.job ? t('dayRunning', Math.round(DAY.prog * 100)) : t('dayWait'); tb.innerHTML = ''; reco.innerHTML = ''; return; }
+  note.textContent = t('dayResNote', DAY.src === 'counts' ? t('srcCounts') : t('srcProfile', P));
+  const rows0 = DAY.res[0], focus = focusIndex();
+  let h = `<thead><tr><th></th>${rows0.map(r => `<th>${r.h}</th>`).join('')}<th>${t('daySatCol')}</th></tr>
+    <tr><th>${t('dayDemand')}</th>${rows0.map(r => `<th>${f0(r.demand)}</th>`).join('')}<th></th></tr></thead><tbody>`;
+  DAY.res.forEach((rows, i) => {
+    const sat = rows.filter(r => r.state === 'sat').map(r => r.h);
+    h += `<tr class="${i === focus ? 'focus' : ''}"><td>${esc(scShort(scenarios[i]))}</td>${dayCells(rows, false)}<td>${sat.length ? esc(hourRanges(sat)) : esc(t('dayNoneSat'))}</td></tr>`;
+  });
+  tb.innerHTML = h + '</tbody>';
+  reco.innerHTML = `<p><strong>${esc(t('dayFocus', scName(scenarios[focus])))}</strong></p><ul>${dayReco(focus).map(s => `<li>${esc(s)}</li>`).join('')}</ul>`;
+}
+
 /* ---------- choix de la variante et note de calcul ---------- */
 function buildNoteUI() {
   const box = $('#note-gen'), ui = lang === 'ar' ? 1 : 0;
@@ -2802,7 +3382,7 @@ $('#note-gen').addEventListener('input', e => {
   } else if (el.dataset.pk) { const v = parseFloat(el.value); if (Number.isFinite(v) && v >= 0) PRICES[el.dataset.pk] = v; }
   else if (el.id === 'pu-rate') { const v = parseFloat(el.value); if (Number.isFinite(v) && v > 0) RATE = v; }
 });
-$('#note-gen').addEventListener('change', e => { if (e.target.id === 'sel-variant') pickedVariant = e.target.value; });
+$('#note-gen').addEventListener('change', e => { if (e.target.id === 'sel-variant') { pickedVariant = e.target.value; if (DAY.res) renderDayResults(); } });
 let noteUrl = null;
 $('#note-gen').addEventListener('click', e => {
   if (e.target.id !== 'btn-note' || !evalRes) return;
@@ -2822,6 +3402,7 @@ function setLang(l) {
   document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   const bl = $('#btn-lang'); bl.textContent = t('langBtn'); bl.lang = lang === 'ar' ? 'fr' : 'ar';
   $('#btn-compact').textContent = isCompact() ? t('fullPage') : t('presentation');
   $('#btn-fs').textContent = t('fullscreen');
@@ -2842,6 +3423,8 @@ function setLang(l) {
     verdictHTML = ''; lastTable = '';
     updateKpis(); clock();
     buildNoteUI();
+    buildDayInput(); renderDayResults(); renderSiteInfo();
+    if (MAP && SITE.lat === null) $('#map-msg').textContent = t('mapClick');
   }
   buildForm();
 }
@@ -2904,11 +3487,17 @@ updateKpis(); clock();
 startEvaluation();
 requestAnimationFrame(frame);
 // les vignettes 3D attendent three.js (chargé en différé)
-if (document.readyState === 'complete') renderThumbs(); else window.addEventListener('load', renderThumbs);
+// carte (Leaflet) et vignettes 3D (three.js) : bibliothèques chargées en différé
+const onLibs = () => {
+  try { initMap(); } catch (e) { $('#map').hidden = true; $('#map-msg').textContent = t('mapOffline'); }
+  renderThumbs();
+};
+if (document.readyState === 'complete') onLibs(); else window.addEventListener('load', onLibs);
 
 // accès console pour vérification
 window.__mv = { stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P,
-  note: id => buildNote(id), setLang: l => setLang(l) };
+  note: id => buildNote(id), setLang: l => setLang(l),
+  site: (la, lo) => { if (MAP) MAP.setView([la, lo], 17); setPoint(la, lo); return analyseSite(); }, siteData: () => SITE, day: () => DAY };
 })();
 </script>
 </body>

@@ -1,8 +1,8 @@
 # Comparateur de modération des vitesses
 
-Outil web destiné aux communes. Il compare huit aménagements de modération de la vitesse au droit d'un passage piéton, sous le même trafic, et désigne la solution qui concilie le mieux trafic et sécurité des piétons.
+Outil web destiné aux communes. Il compare neuf aménagements de modération de la vitesse au droit d'un passage piéton, sous le même trafic, et désigne la solution qui concilie le mieux trafic et sécurité des piétons.
 
-Aménagements comparés à une référence sans aménagement : dos d'âne, ralentisseur trapézoïdal, plateau surélevé, coussins berlinois, rétrécissement avec îlot, chicane à deux voies, changement de revêtement, bandes rugueuses.
+Aménagements comparés à une référence sans aménagement : dos d’âne, ralentisseur trapézoïdal, plateau surélevé, coussins berlinois, rétrécissement avec îlot, chicane à deux voies, changement de revêtement, bandes rugueuses, feu piéton à la demande.
 
 Toute la page tient dans `index.html` : aucun serveur, aucune compilation. La bibliothèque three.js, chargée depuis cdnjs, ne sert qu'aux vues 3D ; sans connexion, la page fonctionne sans elles.
 
@@ -17,6 +17,7 @@ Toute la page tient dans `index.html` : aucun serveur, aucune compilation. La bi
   3. puis le temps perdu le plus faible ;
   4. puis l'attente piéton la plus courte.
 - **Vues 3D.** Elles sont calculées à partir de la géométrie simulée. Un clic sur une vignette l'ouvre en 3840 × 2160 px, image téléchargeable.
+- **Note de calcul.** La commune choisit la variante retenue ; la page produit une note imprimable (français ou arabe) : résumé pour les élus, résultats expliqués, conditions d'utilisation vérifiées, plan de principe coté au format A4 paysage, implantation, visibilité, signalisation, éclairage, trottoirs, entretien, coût sommaire en dinars et en euros, plan d'action P1/P2/P3 et annexes techniques. Les prix unitaires et le taux de change sont modifiables.
 - **Deux langues.** Français et arabe, avec la mise en page de droite à gauche.
 - **Mode présentation.** Toutes les bandes tiennent sur un seul écran, pour le partage d'écran ou l'enregistrement vidéo.
 

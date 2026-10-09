@@ -45,6 +45,7 @@
   --shade: rgba(0, 0, 0, .18);
   --box: #e2e5e8;
   --sp1: #23b5a5; --sp2: #74c45a; --sp3: #f1c232; --sp4: #f08a2c; --sp5: #e5414b;
+  --sig-g: #2fd16f; --sig-a: #f5b301; --sig-r: #ef3b34;
   --font-display: Bahnschrift, "DIN Alternate", "Roboto Condensed", "Arial Narrow", sans-serif;
   --font-body: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
   --leftcol: clamp(290px, 22vw, 390px);
@@ -121,9 +122,23 @@ h1 { margin: 0 0 10px; font-size: clamp(26px, 3.4vw, 40px); line-height: 1.12; f
 
 main { padding-block: 6px 48px; }
 
-.verdict { margin-block: 20px 8px; padding: 16px 18px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); }
+.block-top { padding-block: 6px 24px; }
+.block-top > h2 { margin-top: 0; }
+.verdict { margin-block: 12px 8px; padding: 16px 18px; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); }
 .verdict .eyebrow { margin-bottom: 4px; }
-.verdict h2 { margin: 0 0 6px; font-size: 24px; }
+.verdict h3 { margin: 0 0 6px; font-size: 24px; font-weight: 600; }
+.sum-title { margin: 26px 0 6px; font-size: 18px; font-weight: 600; }
+#note-gen .note-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px 18px; margin-bottom: 12px; }
+.nf { display: grid; gap: 4px; min-width: 0; }
+.nf > span { color: var(--muted); font: 500 11px/1.2 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
+.nf select, .nf input, .ptable input { font: 500 14px/1.2 var(--font-body); padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); min-width: 0; width: 100%; }
+.nf select:focus-visible, .nf input:focus-visible, .ptable input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ptable { min-width: 560px; }
+.ptable td { text-align: start; }
+.ptable td:nth-child(2) { width: 130px; }
+.ptable input { text-align: right; direction: ltr; }
+details.prices { margin-bottom: 14px; }
+details.prices summary { cursor: pointer; font: 600 13px/1.4 var(--font-display); color: var(--accent); padding-block: 4px; }
 .verdict p { margin: 4px 0; max-width: 110ch; font-size: 14px; }
 .verdict .v-rule, .verdict .v-excl { color: var(--muted); font-size: 13px; }
 .verdict .v-warn { color: var(--bad); font-weight: 600; }
@@ -218,8 +233,8 @@ body.compact #compact-head { display: grid; }
 body.no3d #compact-head { grid-template-columns: 0 var(--leftcol) minmax(0, 1fr); }
 #compact-head .ch-kpis { grid-column: 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 8px; align-items: end; }
 #compact-head #ch-view { grid-column: 3; }
-body.compact header.top, body.compact #synthese, body.compact #hypotheses, body.compact #methode, body.compact .desc,
-body.compact .ped-key:first-of-type, body.compact #verdict { display: none; }
+body.compact header.top, body.compact #donnees, body.compact #resultats, body.compact #note-gen, body.compact #calibrage,
+body.compact #methode, body.compact .desc, body.compact .ped-key:first-of-type { display: none; }
 body.compact .bar { position: static; }
 body.compact .bar .wrap { padding-block: 6px; gap: 6px 14px; }
 body.compact main { padding-block: 0; }
@@ -244,11 +259,17 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
 
 <header class="top">
   <div class="wrap">
-    <p class="eyebrow" data-i18n="eyebrow"></p>
+    <p class="eyebrow" id="eyebrow"></p>
     <h1 data-i18n="h1"></h1>
     <p class="lede" id="lede"></p>
   </div>
 </header>
+
+<section class="wrap block-top" id="donnees">
+  <h2 data-i18n="donTitle"></h2>
+  <p class="note" data-i18n="donNote"></p>
+  <form id="params" novalidate></form>
+</section>
 
 <div class="bar">
   <div class="wrap">
@@ -303,21 +324,24 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
 </div>
 
 <main class="wrap">
-  <section class="verdict" id="verdict" aria-live="polite"></section>
-  <section id="strips"></section>
+  <section id="strips" data-i18n-aria="stripsAria"></section>
 
-  <section class="block" id="synthese">
-    <h2 data-i18n="sumTitle"></h2>
+  <section class="block" id="resultats">
+    <h2 data-i18n="resTitle"></h2>
+    <div class="verdict" id="verdict" aria-live="polite"></div>
+    <h3 class="sum-title" data-i18n="sumTitle"></h3>
     <p class="note" id="summary-note"></p>
     <div class="table-wrap">
       <table id="summary"><thead></thead><tbody></tbody></table>
     </div>
   </section>
 
-  <section class="block" id="hypotheses">
-    <h2 data-i18n="hypTitle"></h2>
-    <p class="note" data-i18n="hypNote"></p>
-    <form id="params" novalidate></form>
+  <section class="block" id="note-gen"></section>
+
+  <section class="block" id="calibrage">
+    <h2 data-i18n="calibTitle"></h2>
+    <p class="note" data-i18n="calibNote"></p>
+    <form id="params-calib" novalidate></form>
   </section>
 
   <section class="block" id="methode">
@@ -353,6 +377,8 @@ const YIELD_PATIENCE = 8;      // un conducteur arrêté pour rien repart après
 const CVAR = 0.12;             // dispersion des vitesses de franchissement entre conducteurs
 const ISLAND_MIN = 1.5;        // îlot refuge utilisable (m)
 const REPS = 5, EVAL_T = WARMUP + 3600;   // évaluation : cinq simulations d'une heure
+// feu piéton à la demande : orange, rouge intégral, vert piéton, dégagement (à 1 m/s), rouge intégral
+const SIG = { amber: 3, red1: 2, walk: 7, red2: 1, vClear: 1.0 };
 const Y0 = -8, Y1 = 8;         // emprise latérale dessinée (m)
 const CLS = {
   VL: { len: 4.5, w: 1.8, a: 1.5, b: 2.0, s0: 2.0, bAnt: 1.5, dT: 0 },
@@ -362,9 +388,9 @@ const VIEWS = { full: { x0: 0, x1: L, sy: 4.5 }, zoom: { x0: XC - 80, x1: XC + 8
 
 const DEFAULTS = {
   // données du site
-  q: 1500, pPL: 6, v85free: 56, qPed: 60, laneW: 3.5,
+  q: 1500, pPL: 6, v85free: 56, qPed: 60, laneW: 3.5, vLim: 50,
   // choix de conception
-  retLane: 3.0, retIsl: 2.0, chOff: 3.0, chTrans: 15, chLane: 3.25,
+  retLane: 3.0, retIsl: 2.0, chOff: 3.0, chTrans: 15, chLane: 3.25, sigGreen: 40,
   // calibrage (verrouillé)
   T: 1.2, sdVL: 6, sdPL: 5, vPed: 1.2, tSafe: 1.0, y50: 38, ySlope: 0.15, dSurg: 15, tReact: 1.0, bEmerg: 7,
   dosVL: 25, dosPL: 15, trapVL: 25, trapPL: 15, platVL: 30, platPL: 25, cousVL: 30, cousPL: 40,
@@ -382,13 +408,15 @@ const FIELDS = [
     { k: 'pPL', fr: 'Poids lourds et bus', ar: 'العربات الثقيلة والحافلات', u: ['%', '%'], step: 1, min: 0, max: 30 },
     { k: 'v85free', fr: 'V85 mesurée en circulation libre', ar: 'V85 المقاسة في سير حرّ', u: ['km/h', 'كم/س'], step: 1, min: 30, max: 80 },
     { k: 'qPed', fr: 'Piétons au passage (heure de pointe)', ar: 'المترجّلون عند الممرّ (ساعة الذروة)', u: ['piét./h', 'مترجّل/س'], step: 5, min: 0, max: 600 },
-    { k: 'laneW', fr: 'Largeur de voie existante', ar: 'عرض المسلك الحالي', u: ['m', 'م'], step: 0.05, min: 2.75, max: 3.75 } ] },
+    { k: 'laneW', fr: 'Largeur de voie existante', ar: 'عرض المسلك الحالي', u: ['m', 'م'], step: 0.05, min: 2.75, max: 3.75 },
+    { k: 'vLim', fr: 'Limitation de vitesse actuelle', ar: 'السرعة القصوى المسموح بها حاليًا', u: ['km/h', 'كم/س'], step: 10, min: 30, max: 70 } ] },
   { g: 'design', items: [
     { k: 'retLane', fr: 'Rétrécissement : largeur de voie', ar: 'التضييق: عرض المسلك', u: ['m', 'م'], step: 0.05, min: 2.75, max: 3.25 },
     { k: 'retIsl', fr: 'Rétrécissement : largeur d’îlot', ar: 'التضييق: عرض الجزيرة', u: ['m', 'م'], step: 0.1, min: 1.0, max: 3.0 },
     { k: 'chOff', fr: 'Chicane : décalage d’axe', ar: 'التعرّج: إزاحة المحور', u: ['m', 'م'], step: 0.1, min: 1.5, max: 4.0 },
     { k: 'chTrans', fr: 'Chicane : longueur de transition', ar: 'التعرّج: طول الانتقال', u: ['m', 'م'], step: 1, min: 10, max: 30 },
-    { k: 'chLane', fr: 'Chicane : largeur de voie', ar: 'التعرّج: عرض المسلك', u: ['m', 'م'], step: 0.05, min: 3.0, max: 3.5 } ] },
+    { k: 'chLane', fr: 'Chicane : largeur de voie', ar: 'التعرّج: عرض المسلك', u: ['m', 'م'], step: 0.05, min: 3.0, max: 3.5 },
+    { k: 'sigGreen', fr: 'Feu piéton : vert minimal des véhicules', ar: 'إشارة المترجّلين: أدنى أخضر للعربات', u: ['s', 'ث'], step: 5, min: 20, max: 90 } ] },
   { g: 'calib', lock: true, items: [
     { k: 'T', fr: 'Temps intervéhiculaire', ar: 'الفاصل الزمني بين العربات', u: ['s', 'ث'], step: 0.1 },
     { k: 'sdVL', fr: 'Dispersion des vitesses VL (écart type)', ar: 'تشتّت سرعات العربات الخفيفة (الانحراف المعياري)', u: ['km/h', 'كم/س'], step: 0.5 },
@@ -447,8 +475,21 @@ const FP_REF = fingerprint(DEFAULTS);
 /* ---------- textes : français et arabe ---------- */
 const I18N = {
 fr: {
-  eyebrow: 'Sécurité des piétons · traversée urbaine limitée à 50 km/h',
-  h1: 'Huit aménagements, le même trafic',
+  eyebrow: P => `Sécurité des piétons · traversée urbaine limitée à ${f0(P.vLim)} km/h`,
+  h1: 'Neuf aménagements, le même trafic',
+  donTitle: 'Données de la rue et de l’aménagement',
+  donNote: 'Renseignez les données de votre rue, puis cliquez sur « Appliquer et relancer ». Les simulations et les résultats qui suivent sont alors recalculés.',
+  stripsAria: 'Vues en plan animées', resTitle: 'Résultats',
+  calibTitle: 'Calibrage du modèle', calibNote: 'Ces valeurs sont communes à toutes les communes et verrouillées, pour que les résultats restent comparables.',
+  applyCalib: 'Appliquer le calibrage',
+  noteTitle: 'Variante retenue et note de calcul',
+  noteIntro: 'Choisissez la variante que la commune retient. La note de calcul s’ouvre dans un nouvel onglet, dans la langue de la page : résultats expliqués simplement, conditions d’utilisation, plan coté au format A4 paysage, implantation, visibilité, signalisation, éclairage, trottoirs, coût sommaire et plan d’action. Elle s’imprime ou s’enregistre en PDF.',
+  selLabel: 'Variante retenue', recSuffix: ' (recommandée)', mCommune: 'Commune', mLieu: 'Lieu (rue, quartier)', mAuteur: 'Établie par',
+  pricesSum: 'Prix unitaires (TND hors taxes) et taux de change',
+  pricesNote: 'Valeurs indicatives 2026, à remplacer par le bordereau des prix de la commune.',
+  rateLabel: 'Taux de change : dinars pour 1 euro',
+  btnNote: 'Générer la note de calcul', noteWait: 'La note sera disponible à la fin de l’évaluation.',
+  noteOpened: 'La note s’est ouverte dans un nouvel onglet.', noteBlocked: 'Le navigateur a bloqué le nouvel onglet :', noteLink: 'ouvrir la note',
   lede: P => `Chaque bande reçoit les mêmes véhicules, aux mêmes instants : ${f0(P.q)} véh/h par sens, ${f0(P.pPL)} % de poids lourds et de bus, ${f0(P.qPed)} piétons/h au passage. Seul l’aménagement change. Vitesses, files, attentes et risques sont calculés par une microsimulation, pas dessinés à la main. Cliquez sur une vignette pour voir l’aménagement en 3D.`,
   barSub: P => `${f0(P.q)} véh/h par sens · ${f0(P.pPL)} % de PL et bus · ${f0(P.qPed)} piétons/h`,
   langBtn: 'العربية', presentation: 'Mode présentation', fullPage: 'Page complète', fullscreen: 'Plein écran',
@@ -472,9 +513,9 @@ fr: {
   profLabel: 'Vitesse moyenne selon la position, dans le sens de circulation', prof30: '30 km/h',
   planAria: n => `Vue en plan animée : ${n}`,
   names: { ref: 'Référence sans aménagement', dos: 'Dos d’âne', trap: 'Ralentisseur trapézoïdal', plat: 'Plateau surélevé', cous: 'Coussins berlinois',
-    ret: 'Rétrécissement avec îlot', chi: 'Chicane à deux voies', rev: 'Changement de revêtement', rug: 'Bandes rugueuses' },
+    ret: 'Rétrécissement avec îlot', chi: 'Chicane à deux voies', rev: 'Changement de revêtement', rug: 'Bandes rugueuses', sig: 'Feu piéton à la demande' },
   short: { ref: 'Référence', dos: 'Dos d’âne', trap: 'Trapézoïdal', plat: 'Plateau surélevé', cous: 'Coussins berlinois',
-    ret: 'Rétrécissement + îlot', chi: 'Chicane 2 voies', rev: 'Revêtement pavé', rug: 'Bandes rugueuses' },
+    ret: 'Rétrécissement + îlot', chi: 'Chicane 2 voies', rev: 'Revêtement pavé', rug: 'Bandes rugueuses', sig: 'Feu piéton' },
   desc: {
     ref: P => `Chaussée de 2 × ${fm(P.laneW)} m et passage piéton marqué. C’est la base de comparaison.`,
     dos: P => `Deux dos d’âne circulaires (4 m, 10 cm) à 10 m de part et d’autre du passage : la norme ne permet pas de marquer le passage sur un dos d’âne. V85 au franchissement : ${P.dosVL} km/h (VL), ${P.dosPL} km/h (PL).`,
@@ -484,7 +525,8 @@ fr: {
     ret: (P, i) => `Voies ramenées de ${fm(P.laneW)} à ${fm(P.retLane)} m autour d’un îlot central de ${fm(P.retIsl)} m${i.island ? ' : la traversée se fait en deux temps' : ' (trop étroit pour servir de refuge)'}. Baisse de vitesse supposée : ${P.retPct} %.`,
     chi: (P, i) => `Axe décalé de ${fm(P.chOff)} m sur ${f0(P.chTrans)} m, palier de 10 m, voies de ${fm(P.chLane)} m. Trajectoire la plus rapide : R ≈ ${f0(i.R)} m, d’où V85 ≈ ${f0(i.vVL)} km/h (VL) et ${f0(i.vPL)} km/h (PL).`,
     rev: P => `Pavés sur 40 m autour du passage, sans autre modification. Baisse de vitesse supposée : ${P.revPct} %, à confirmer par des mesures.`,
-    rug: P => `Trois groupes de bandes rugueuses transversales, à 60, 40 et 20 m en amont du passage dans chaque sens. Elles alertent par le bruit et la vibration ; baisse de vitesse supposée : ${P.rugPct} %. Bruit gênant pour les riverains.`
+    rug: P => `Trois groupes de bandes rugueuses transversales, à 60, 40 et 20 m en amont du passage dans chaque sens. Elles alertent par le bruit et la vibration ; baisse de vitesse supposée : ${P.rugPct} %. Bruit gênant pour les riverains.`,
+    sig: (P, i) => `Feux déclenchés par bouton d’appel. Les voitures gardent au moins ${f0(P.sigGreen)} s de vert entre deux appels, puis orange 3 s, rouge, vert piéton 7 s et dégagement de ${f0(i.clear)} s. Le feu ne change pas la vitesse en dehors du rouge.`
   },
   thumbAria: n => `Vue 3D de synthèse : ${n}. Cliquer pour agrandir.`,
   dlgNote: 'Image de synthèse calculée à partir de la géométrie simulée : dimensions réelles, hauteur des ralentisseurs non exagérée, mêmes bâtiments et mêmes véhicules pour tous les aménagements.',
@@ -499,7 +541,7 @@ fr: {
   hypNote: 'Les données du site et les choix de conception se modifient dans les limites indiquées. Le calibrage est verrouillé : il est commun à toutes les communes pour que les résultats restent comparables. « Appliquer » relance l’animation et l’évaluation.',
   groups: {
     site: ['Données du site', 'À renseigner par la commune : comptages à l’heure de pointe, part de poids lourds et de bus, vitesse mesurée au radar en circulation libre, piétons au passage, largeur de voie.'],
-    design: ['Choix de conception', 'Dimensions des aménagements, bornées aux valeurs usuelles des guides de conception.'],
+    design: ['Choix de conception', 'Dimensions des aménagements et réglage du feu, bornés aux valeurs usuelles des guides de conception.'],
     calib: ['Calibrage du modèle (verrouillé)', 'Comportement des conducteurs et des piétons, effet propre de chaque dispositif, tirages aléatoires. Commun à toutes les communes. Sources : IDM (Treiber et al., 2000) ; risque de décès (Rosén et Sander, 2009) ; chicane V = 8,76 R^0,386 (NCHRP 672). Vitesses de franchissement et courbe de cession : ordres de grandeur à caler sur des mesures locales par l’administration qui diffuse l’outil.']
   },
   apply: 'Appliquer et relancer', defaults: 'Valeurs par défaut', unlock: 'Déverrouiller (mode expert)', lock: 'Verrouiller',
@@ -537,6 +579,7 @@ fr: {
         <li><strong>Vitesse de franchissement des ralentisseurs</strong> (V85 par classe). Aucun modèle de trafic ne la calcule : elle vient des mesures. Les valeurs proposées sont des ordres de grandeur à remplacer par des relevés sur des ouvrages comparables.</li>
         <li><strong>Chicane.</strong> Sa vitesse est déduite de la géométrie : rayon de la trajectoire la plus rapide <span class="formula">R = L² / (4 e<sub>eff</sub>)</span>, où <em>e<sub>eff</sub></em> est le décalage moins la marge latérale disponible dans la voie, puis <span class="formula">V = 8,76 R<sup>0,386</sup></span>.</li>
         <li><strong>Rétrécissement, revêtement, bandes rugueuses.</strong> Réduction de la vitesse désirée en pourcentage. Leur effet propre est faible et mal établi.</li>
+        <li><strong>Feu piéton à la demande.</strong> Orange 3 s, rouge intégral 2 s, vert piéton 7 s, dégagement calculé à 1 m/s, rouge intégral 1 s. Conducteurs et piétons respectent le feu ; le feu ne modifie pas la vitesse désirée.</li>
         <li><strong>Probabilité de céder le passage.</strong> Elle baisse quand la vitesse monte, comme l’observent les études. La courbe retenue est une hypothèse à caler sur des comptages locaux.</li>
       </ul>
       <h3>Solution recommandée</h3>
@@ -556,8 +599,21 @@ fr: {
     </div>`
 },
 ar: {
-  eyebrow: 'سلامة المترجّلين · عبور حضري بسرعة قصوى 50 كم/س',
-  h1: 'ثماني تهيئات، نفس حركة المرور',
+  eyebrow: P => `سلامة المترجّلين · عبور حضري بسرعة قصوى ${f0(P.vLim)} كم/س`,
+  h1: 'تسع تهيئات، نفس حركة المرور',
+  donTitle: 'معطيات النهج والتهيئة',
+  donNote: 'أدخل معطيات النهج ثم اضغط على «تطبيق وإعادة التشغيل». تُعاد عندها المحاكاة وحساب النتائج التي تليها.',
+  stripsAria: 'مساقط أفقية متحرّكة', resTitle: 'النتائج',
+  calibTitle: 'معايرة النموذج', calibNote: 'هذه القيم موحّدة بين كل البلديات ومقفلة، حتى تبقى النتائج قابلة للمقارنة.',
+  applyCalib: 'تطبيق المعايرة',
+  noteTitle: 'التهيئة المعتمدة ومذكّرة الحساب',
+  noteIntro: 'اختر التهيئة التي تعتمدها البلدية. تُفتح مذكّرة الحساب في علامة تبويب جديدة، بلغة الصفحة: نتائج مشروحة ببساطة، شروط الاستعمال، مخطّط بالأبعاد بقياس A4 أفقي، التركيز، الرؤية، الإشارات، الإنارة، الأرصفة، الكلفة التقديرية وخطّة العمل. ويمكن طباعتها أو حفظها بصيغة PDF.',
+  selLabel: 'التهيئة المعتمدة', recSuffix: ' (موصى بها)', mCommune: 'البلدية', mLieu: 'الموقع (النهج، الحيّ)', mAuteur: 'أعدّها',
+  pricesSum: 'الأسعار الأحادية (بالدينار دون أداءات) وسعر الصرف',
+  pricesNote: 'قيم تقريبية لسنة 2026، يجب تعويضها بجدول أسعار البلدية.',
+  rateLabel: 'سعر الصرف: دينار مقابل 1 يورو',
+  btnNote: 'إعداد مذكّرة الحساب', noteWait: 'تصبح المذكّرة متاحة عند انتهاء التقييم.',
+  noteOpened: 'فُتحت المذكّرة في علامة تبويب جديدة.', noteBlocked: 'منع المتصفّح فتح علامة التبويب الجديدة:', noteLink: 'افتح المذكّرة',
   lede: P => `تستقبل كل شريحة نفس العربات في نفس اللحظات: ${f0(P.q)} عربة/س في كل اتجاه، و${f0(P.pPL)} % من العربات الثقيلة والحافلات، و${f0(P.qPed)} مترجّلًا/س عند الممرّ. التهيئة وحدها هي التي تتغيّر. السرعات والطوابير وأوقات الانتظار والمخاطر محسوبة بمحاكاة مجهرية، وليست مرسومة باليد. اضغط على صورة مصغّرة لرؤية التهيئة ثلاثية الأبعاد.`,
   barSub: P => `${f0(P.q)} عربة/س في كل اتجاه · ${f0(P.pPL)} % ثقيلة وحافلات · ${f0(P.qPed)} مترجّل/س`,
   langBtn: 'Français', presentation: 'وضع العرض', fullPage: 'الصفحة الكاملة', fullscreen: 'ملء الشاشة',
@@ -581,9 +637,9 @@ ar: {
   profLabel: 'متوسط السرعة حسب الموقع، في اتجاه السير', prof30: '30 كم/س',
   planAria: n => `مسقط أفقي متحرّك: ${n}`,
   names: { ref: 'المرجع دون تهيئة', dos: 'مطبّ دائري', trap: 'مطبّ شبه منحرف', plat: 'منصّة مرتفعة', cous: 'وسائد برلينية',
-    ret: 'تضييق مع جزيرة وسطية', chi: 'تعرّج المحور بمسلكين', rev: 'تغيير طبقة السير', rug: 'أشرطة اهتزازية' },
+    ret: 'تضييق مع جزيرة وسطية', chi: 'تعرّج المحور بمسلكين', rev: 'تغيير طبقة السير', rug: 'أشرطة اهتزازية', sig: 'إشارة ضوئية للمترجّلين عند الطلب' },
   short: { ref: 'المرجع', dos: 'مطبّ دائري', trap: 'مطبّ شبه منحرف', plat: 'منصّة مرتفعة', cous: 'وسائد برلينية',
-    ret: 'تضييق + جزيرة', chi: 'تعرّج بمسلكين', rev: 'رصف بالحجارة', rug: 'أشرطة اهتزازية' },
+    ret: 'تضييق + جزيرة', chi: 'تعرّج بمسلكين', rev: 'رصف بالحجارة', rug: 'أشرطة اهتزازية', sig: 'إشارة عند الطلب' },
   desc: {
     ref: P => `طريق بمسلكين عرض كل منهما ${fm(P.laneW)} م وممرّ مترجّلين مُعلَّم. هذه هي قاعدة المقارنة.`,
     dos: P => `مطبّان دائريان (طول 4 م، ارتفاع 10 صم) على بعد 10 م من جانبي الممرّ: لا تسمح المواصفة بتعليم الممرّ فوق المطبّ الدائري. V85 عند العبور: ${P.dosVL} كم/س (خفيفة)، ${P.dosPL} كم/س (ثقيلة).`,
@@ -593,7 +649,8 @@ ar: {
     ret: (P, i) => `تقليص عرض المسلكين من ${fm(P.laneW)} إلى ${fm(P.retLane)} م حول جزيرة وسطية بعرض ${fm(P.retIsl)} م${i.island ? '، فيتمّ العبور على مرحلتين' : ' (ضيّقة جدًّا لتكون ملجأً)'}. الانخفاض المفترض في السرعة: ${P.retPct} %.`,
     chi: (P, i) => `إزاحة المحور بـ ${fm(P.chOff)} م على طول ${f0(P.chTrans)} م، مع جزء مستقيم بطول 10 م ومسالك بعرض ${fm(P.chLane)} م. المسار الأسرع: نصف قطر ≈ ${f0(i.R)} م، أي V85 ≈ ${f0(i.vVL)} كم/س (خفيفة) و${f0(i.vPL)} كم/س (ثقيلة).`,
     rev: P => `حجارة رصف على طول 40 م حول الممرّ دون أيّ تغيير آخر. الانخفاض المفترض في السرعة: ${P.revPct} %، ويجب تأكيده بقياسات.`,
-    rug: P => `ثلاث مجموعات من الأشرطة الاهتزازية العرضية على بعد 60 و40 و20 م قبل الممرّ في كل اتجاه. تنبّه السائق بالضجيج والاهتزاز؛ الانخفاض المفترض في السرعة: ${P.rugPct} %. ضجيج مزعج للمتساكنين.`
+    rug: P => `ثلاث مجموعات من الأشرطة الاهتزازية العرضية على بعد 60 و40 و20 م قبل الممرّ في كل اتجاه. تنبّه السائق بالضجيج والاهتزاز؛ الانخفاض المفترض في السرعة: ${P.rugPct} %. ضجيج مزعج للمتساكنين.`,
+    sig: (P, i) => `إشارات ضوئية تُشغَّل بزرّ طلب. تحتفظ السيارات بـ ${f0(P.sigGreen)} ث على الأقلّ من الأخضر بين طلبين، ثم برتقالي 3 ث، فأحمر، فأخضر للمترجّلين 7 ث وزمن إخلاء ${f0(i.clear)} ث. لا تغيّر الإشارة السرعة خارج فترة الأحمر.`
   },
   thumbAria: n => `صورة ثلاثية الأبعاد: ${n}. اضغط للتكبير.`,
   dlgNote: 'صورة تركيبية محسوبة من الهندسة المُحاكاة: أبعاد حقيقية، وارتفاع المطبّات غير مُضخَّم، ونفس البنايات ونفس العربات لكل التهيئات.',
@@ -608,7 +665,7 @@ ar: {
   hypNote: 'يمكن تعديل معطيات الموقع وخيارات التصميم في الحدود المبيّنة. المعايرة مقفلة: فهي موحّدة بين كل البلديات حتى تبقى النتائج قابلة للمقارنة. زرّ «تطبيق» يعيد تشغيل الحركة والتقييم.',
   groups: {
     site: ['معطيات الموقع', 'تُعبّئها البلدية: عمليات العدّ في ساعة الذروة، نسبة العربات الثقيلة والحافلات، السرعة المقاسة بالرادار في سير حرّ، المترجّلون عند الممرّ، عرض المسلك.'],
-    design: ['خيارات التصميم', 'أبعاد التهيئات، محصورة في القيم المعتادة لأدلّة التصميم.'],
+    design: ['خيارات التصميم', 'أبعاد التهيئات وضبط الإشارة الضوئية، محصورة في القيم المعتادة لأدلّة التصميم.'],
     calib: ['معايرة النموذج (مقفلة)', 'سلوك السائقين والمترجّلين، والأثر الخاص لكل تهيئة، والسحوبات العشوائية. موحّدة بين كل البلديات. المصادر: نموذج IDM (Treiber وآخرون، 2000)؛ خطر الوفاة (Rosén وSander، 2009)؛ التعرّج V = 8,76 R^0,386 (NCHRP 672). سرعات العبور ومنحنى الإفساح: قيم تقريبية تعايرها بقياسات محلية الإدارةُ التي تنشر الأداة.']
   },
   apply: 'تطبيق وإعادة التشغيل', defaults: 'القيم الافتراضية', unlock: 'فتح القفل (وضع الخبير)', lock: 'إقفال',
@@ -646,6 +703,7 @@ ar: {
         <li><strong>سرعة عبور المطبّات</strong> (V85 حسب صنف العربة). لا يحسبها أيّ نموذج لحركة المرور، بل مصدرها القياسات. والقيم المقترحة تقريبية ويجب تعويضها بقياسات على منشآت مماثلة.</li>
         <li><strong>التعرّج.</strong> تُستنتج سرعته من الهندسة: نصف قطر المسار الأسرع <span class="formula">R = L² / (4 e<sub>eff</sub>)</span>، حيث <em>e<sub>eff</sub></em> هي الإزاحة ناقص الهامش الجانبي المتاح داخل المسلك، ثم <span class="formula">V = 8,76 R<sup>0,386</sup></span>.</li>
         <li><strong>التضييق وطبقة السير والأشرطة الاهتزازية.</strong> تخفيض للسرعة المرغوبة بنسبة مئوية. أثرها الخاص ضعيف وغير مُثبَت جيّدًا.</li>
+        <li><strong>الإشارة الضوئية للمترجّلين عند الطلب.</strong> برتقالي 3 ث، أحمر شامل 2 ث، أخضر للمترجّلين 7 ث، زمن إخلاء محسوب بسرعة 1 م/ث، أحمر شامل 1 ث. يحترم السائقون والمترجّلون الإشارة؛ ولا تغيّر الإشارة السرعة المرغوبة.</li>
         <li><strong>احتمال الإفساح للمترجّل.</strong> ينخفض كلّما ارتفعت السرعة، كما تُبيّنه الدراسات. والمنحنى المعتمد فرضية يجب معايرتها بعمليات عدّ محلية.</li>
       </ul>
       <h3>الحلّ الموصى به</h3>
@@ -734,7 +792,9 @@ function buildScenarios(P) {
     { id: 'rev', zones: [facZ(XC - 20, XC + 20, P.revPct)], geom: flat, feats: [{ t: 'pave', xa: XC - 20, xb: XC + 20 }], info: {} },
     // bandes rugueuses : seulement sur la voie qui s'approche du passage
     { id: 'rug', zones: [facZ(XC - 62, XC - 2, P.rugPct, 0), facZ(XC + 2, XC + 62, P.rugPct, 1)], geom: flat,
-      feats: [XC - 62, XC - 42, XC - 22].map(x0 => ({ t: 'rumble', lane: 0, x0 })).concat([XC + 18, XC + 38, XC + 58].map(x0 => ({ t: 'rumble', lane: 1, x0 }))), info: {} }
+      feats: [XC - 62, XC - 42, XC - 22].map(x0 => ({ t: 'rumble', lane: 0, x0 })).concat([XC + 18, XC + 38, XC + 58].map(x0 => ({ t: 'rumble', lane: 1, x0 }))), info: {} },
+    // feu piéton : aucun effet sur la vitesse désirée ; le rouge arrête les véhicules
+    { id: 'sig', signal: true, zones: [], geom: flat, feats: [{ t: 'signal' }], info: { clear: Math.ceil(2 * W / SIG.vClear) } }
   ];
 }
 const scName = sc => t('names')[sc.id];
@@ -779,6 +839,7 @@ class Sim {
     });
     this.peds = []; this.pedPtr = 0;
     this.need = [false, false]; this.occT = [Infinity, Infinity]; this.phys = [false, false];
+    this.sig = sc.signal ? { st: 'G', t0: 0, demand: false, clear: Math.ceil(this.cx.W / SIG.vClear) } : null;
     this.st = { nOut: 0, nExit: 0, sumTT: 0, nStop: 0, vXp: [], surgN: 0, surgStop: 0, surgP: 0, qInt: 0, qMax: 0,
       pedN: 0, pedSum: 0, pedMax: 0, yYes: 0, yNo: 0, conflicts: 0, hard: 0,
       profS: new Float64Array(L / 5), profN: new Uint32Array(L / 5) };
@@ -863,21 +924,25 @@ class Sim {
       v.pb = false;
       if (v.s < ln.sStop + 0.3) {
         const d = ln.sStop - v.s;
-        // décision de céder : chaque conducteur, une seule fois, quand il voit un piéton attendre et peut encore
-        // s'arrêter sans brusquer. La probabilité dépend de la vitesse qu'il aurait au passage.
-        const dComf = v.v * P.tReact + v.v * v.v / (2 * B_YIELD);
-        if (v.yd === 0 && need && d <= Math.max(D_DEC, dComf + 10)) {
-          const feasible = v.v < 1.5 || dComf <= d;
-          const vPlan = Math.min(v.v, this.vLim(v, ln, XC));
-          v.yd = feasible && this.rng() < pYield(vPlan * KMH, P) ? 1 : 2;
-          v.yT = t; v.stopT = -1;
-          if (t >= WARMUP) { if (v.yd === 1) this.st.yYes++; else this.st.yNo++; }
+        let stop;
+        if (this.sig) stop = this.sigStop(v, d);   // feu : le rouge arrête tout le monde, l'orange ceux qui peuvent s'arrêter
+        else {
+          // décision de céder : chaque conducteur, une seule fois, quand il voit un piéton attendre et peut encore
+          // s'arrêter sans brusquer. La probabilité dépend de la vitesse qu'il aurait au passage.
+          const dComf = v.v * P.tReact + v.v * v.v / (2 * B_YIELD);
+          if (v.yd === 0 && need && d <= Math.max(D_DEC, dComf + 10)) {
+            const feasible = v.v < 1.5 || dComf <= d;
+            const vPlan = Math.min(v.v, this.vLim(v, ln, XC));
+            v.yd = feasible && this.rng() < pYield(vPlan * KMH, P) ? 1 : 2;
+            v.yT = t; v.stopT = -1;
+            if (t >= WARMUP) { if (v.yd === 1) this.st.yYes++; else this.st.yNo++; }
+          }
+          if (v.yd === 1) {
+            if (!need && !occ) { if (t - v.yT > 1) v.yd = 3; }
+            else if (v.v < 0.5) { if (v.stopT < 0) v.stopT = t; if (!occ && t - v.stopT > YIELD_PATIENCE) v.yd = 3; }
+          }
+          stop = v.yd === 1;
         }
-        if (v.yd === 1) {
-          if (!need && !occ) { if (t - v.yT > 1) v.yd = 3; }
-          else if (v.v < 0.5) { if (v.stopT < 0) v.stopT = t; if (!occ && t - v.stopT > YIELD_PATIENCE) v.yd = 3; }
-        }
-        let stop = v.yd === 1;
         if (!stop && occ && d > 0.05) {
           const clears = v.v > 1 && (d + 0.5 + 2 * ZEBRA_HALF + v.len) / v.v < occT - 0.3;
           if (!clears && v.v * v.v / (2 * d) <= 8) stop = true;
@@ -886,6 +951,25 @@ class Sim {
       }
       v.acc = Math.max(-9, a);
     }
+  }
+
+  // feu : décision d'arrêt d'un véhicule en amont de la ligne
+  sigStop(v, d) {
+    const st = this.sig.st;
+    if (st === 'G') return false;
+    const dec = v.v < 1 ? 0 : v.v * v.v / (2 * Math.max(0.05, d));
+    return st === 'A' ? dec <= 3.5 : dec <= 8;
+  }
+  // cycle du feu à la demande : appel par bouton, vert minimal des véhicules respecté
+  stepSignal() {
+    const s = this.sig, el = this.t - s.t0, P = this.P, go = st => { s.st = st; s.t0 = this.t; };
+    if (s.st !== 'P' && this.peds.some(p => p.st === 0)) s.demand = true;
+    if (s.st === 'G') { if (s.demand && el >= P.sigGreen) go('A'); }
+    else if (s.st === 'A') { if (el >= SIG.amber) go('R'); }
+    else if (s.st === 'R') { if (el >= SIG.red1) { go('P'); s.demand = false; } }
+    else if (s.st === 'P') { if (el >= SIG.walk) go('C'); }
+    else if (s.st === 'C') { if (el >= s.clear) go('R2'); }
+    else if (s.st === 'R2') { if (el >= SIG.red2) go('G'); }
   }
 
   // piéton surgissant à dSurg mètres : réaction à vitesse constante, puis freinage d'urgence ; risque à la vitesse du choc
@@ -978,7 +1062,7 @@ class Sim {
     }
     for (const g of groups.values()) {
       const sg = this.nextStage(g[0]);
-      if (!this.stageOK(sg)) continue;
+      if (!(this.sig ? this.sig.st === 'P' : this.stageOK(sg))) continue;   // avec feu : seulement au vert piéton
       for (const p of g) { p.wait += t - p.tW; p.stage = sg; p.st = 1; p.y = sg.y; p.dir = sg.dir; }
     }
     for (const p of this.peds) {
@@ -1008,6 +1092,7 @@ class Sim {
       const r = pl[this.pedPtr++];
       this.peds.push({ side: r.side, t: r.t, xo: r.xo, st: 0, y: r.side ? this.cx.W : 0, dir: r.side ? -1 : 1, wait: 0, tW: r.t, stage: null });
     }
+    if (this.sig) this.stepSignal();
     this.flags();
     for (const ln of this.lanes) this.accel(ln);
     for (const ln of this.lanes) this.move(ln, meas);
@@ -1072,7 +1157,8 @@ function readColors() {
     brake: g('--brake'), surface: g('--surface'), line: g('--line'), muted: g('--muted'),
     accent: g('--accent'), bad: g('--bad'), zone: g('--zone'),
     shadow: g('--shadow'), glass: g('--glass'), roof: g('--roof'), roofUnit: g('--roof-unit'), headlight: g('--headlight'),
-    tail: g('--tail'), rib: g('--rib'), shade: g('--shade'), box: g('--box') };
+    tail: g('--tail'), rib: g('--rib'), shade: g('--shade'), box: g('--box'),
+    sigG: g('--sig-g'), sigA: g('--sig-a'), sigR: g('--sig-r') };
   SPEED = ['--sp1', '--sp2', '--sp3', '--sp4', '--sp5'].map(n => hexToRgb(g(n)));
   FONT = g('--font-display') || 'sans-serif';
 }
@@ -1218,6 +1304,13 @@ class View {
   feature(c, f, sc) {
     const X = x => this.X(x), Y = y => this.Y(y);
     if (f.t === 'island') { this.island(c, sc); return; }
+    if (f.t === 'signal') {   // lignes d'arrêt des feux, 1 m avant le passage
+      const g = sc.geom(XC), s = g.yc - g.wi / 2 - g.lw, n = g.yc + g.wi / 2 + g.lw, w = Math.max(1.2, 0.3 * this.sx);
+      c.fillStyle = C.mark;
+      c.fillRect(X(XC - 3) - w / 2, Y(g.yc), w, (g.yc - s) * this.sy);
+      c.fillRect(X(XC + 3) - w / 2, Y(n), w, (n - g.yc) * this.sy);
+      return;
+    }
     if (f.t === 'rumble') {
       const g = sc.geom(f.x0), ya = f.lane === 0 ? g.yc - g.wi / 2 - g.lw : g.yc + g.wi / 2;
       c.fillStyle = C.mark; c.globalAlpha = 0.85;
@@ -1313,6 +1406,21 @@ class View {
     c.stroke();
     for (const ln of sim.lanes) for (const veh of ln.veh) this.vehicle(c, ln.k, veh, sc);
     this.pedestrians(c);
+    if (sim.sig) this.signalHeads(c);
+  }
+
+  // feux : têtes véhicules sur le trottoir de droite de chaque approche, têtes piétons de part et d'autre
+  signalHeads(c) {
+    const g = this.sim.sc.geom(XC), s = g.yc - g.wi / 2 - g.lw, n = g.yc + g.wi / 2 + g.lw, st = this.sim.sig.st;
+    const vc = st === 'G' ? C.sigG : st === 'A' ? C.sigA : C.sigR, pc = st === 'P' ? C.sigG : C.sigR;
+    const r = Math.max(2.2, 0.3 * this.sy);
+    const head = (x, y, col) => {
+      const px = this.X(x), py = this.Y(y);
+      c.fillStyle = C.glass; c.fillRect(px - r - 1.2, py - r - 1.2, 2 * r + 2.4, 2 * r + 2.4);
+      c.beginPath(); c.arc(px, py, r, 0, Math.PI * 2); c.fillStyle = col; c.fill();
+    };
+    head(XC - 3.4, s - 1.1, vc); head(XC + 3.4, n + 1.1, vc);
+    head(XC + 2.6, s - 1.1, pc); head(XC - 2.6, n + 1.1, pc);
   }
 
   queueText(k) {
@@ -1546,6 +1654,18 @@ const V3D = (() => {
         const xpv = xs.filter(x => x >= f.xa && x <= f.xb);
         const pm = new THREE.MeshStandardMaterial({ map: T.pave, roughness: 0.9 });
         scene.add(ribbon(xpv, x => G(x).s, x => G(x).n, () => 0.004, pm, 1));
+      } else if (f.t === 'signal') {
+        const g = G(XC);
+        scene.add(box(0.3, 0.012, g.lw - 0.2, markMat, -3, 0.006, -(g.s + g.lw / 2)));
+        scene.add(box(0.3, 0.012, g.lw - 0.2, markMat, 3, 0.006, -(g.n - g.lw / 2)));
+        const lamp = hex => new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: 1.3 });
+        for (const [x, y, face] of [[-3.4, g.s - 0.9, -1], [3.4, g.n + 0.9, 1]]) {
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 3.3, 10), mat(0x3a3f45)); pole.position.set(x, KERB + 1.65, -y); pole.castShadow = true; scene.add(pole);
+          scene.add(box(0.3, 0.95, 0.3, mat(0x1b1e22), x, KERB + 3.0, -y));
+          const red = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), lamp(0xff2a1a)); red.position.set(x + face * 0.16, KERB + 3.3, -y); scene.add(red);
+          scene.add(box(0.22, 0.42, 0.22, mat(0x1b1e22), x, KERB + 2.1, -y));
+          const grn = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), lamp(0x22dd66)); grn.position.set(x, KERB + 2.1, -y + (y < 0 ? -0.12 : 0.12)); scene.add(grn);
+        }
       } else if (f.t === 'rumble') {
         const g = G(f.x0), ya = f.lane === 0 ? g.s : g.yc;
         for (let j = 0; j < 6; j++) scene.add(box(0.25, 0.012, g.lw - 0.3, markMat, f.x0 + j * 0.8 + 0.125 - XC, 0.006, -(ya + g.lw / 2)));
@@ -1631,6 +1751,707 @@ const V3D = (() => {
   }
   return { ok, render };
 })();
+
+/* =====================================================================================================
+   NOTE DE CALCUL : prix, conditions d'utilisation, dimensions, plan de principe A4 paysage, textes FR/AR
+   ===================================================================================================== */
+const PRICE_DEF = [
+  { k: 'zebra', u: ['m²', 'م²'], pu: 70, fr: 'Marquage du passage piéton et des triangles (résine)', ar: 'تعليم ممرّ المترجّلين والمثلّثات (راتنج)' },
+  { k: 'line', u: ['ml', 'م.ط'], pu: 8, fr: 'Marquage linéaire (axe, lignes d’arrêt)', ar: 'تعليم خطّي (المحور، خطوط التوقّف)' },
+  { k: 'sign', u: ['u', 'وحدة'], pu: 600, fr: 'Panneau de signalisation sur support, posé', ar: 'لافتة إشارة على عمود، مركّبة' },
+  { k: 'light', u: ['u', 'وحدة'], pu: 6500, fr: 'Candélabre LED dédié au passage (massif, câblage)', ar: 'عمود إنارة LED مخصّص للممرّ (قاعدة وتوصيلات)' },
+  { k: 'kerbRamp', u: ['u', 'وحدة'], pu: 1800, fr: 'Abaissé de trottoir avec bande d’éveil de vigilance', ar: 'تخفيض الرصيف مع شريط تنبيه لمسي' },
+  { k: 'asphalt', u: ['t', 'طن'], pu: 330, fr: 'Enrobé bitumineux des dos d’âne, mis en œuvre', ar: 'خرسانة إسفلتية للمطبّات، منفّذة' },
+  { k: 'table', u: ['m²', 'م²'], pu: 260, fr: 'Plateau et rampes en béton avec revêtement coloré', ar: 'منصّة ومنحدرات من الخرسانة بطلاء ملوّن' },
+  { k: 'cushion', u: ['u', 'وحدة'], pu: 2500, fr: 'Coussin berlinois préfabriqué, posé', ar: 'وسادة برلينية مسبقة الصنع، مركّبة' },
+  { k: 'kerb', u: ['ml', 'م.ط'], pu: 45, fr: 'Bordure béton posée', ar: 'حافّة رصيف خرسانية مركّبة' },
+  { k: 'island', u: ['m²', 'م²'], pu: 90, fr: 'Îlot ou avancée de trottoir (remplissage, plantation ou pavés)', ar: 'جزيرة أو امتداد رصيف (ردم، غراسة أو رصف)' },
+  { k: 'pavement', u: ['m²', 'م²'], pu: 140, fr: 'Reprise de chaussée (structure et enrobé)', ar: 'إعادة تهيئة المعبّد (هيكل وإسفلت)' },
+  { k: 'pavers', u: ['m²', 'م²'], pu: 170, fr: 'Pavés béton sur fondation, posés', ar: 'بلاط رصف خرساني على أساس، مركّب' },
+  { k: 'rumble', u: ['m²', 'م²'], pu: 150, fr: 'Bandes rugueuses en résine à relief', ar: 'أشرطة اهتزازية من الراتنج البارز' },
+  { k: 'bollard', u: ['u', 'وحدة'], pu: 450, fr: 'Balise de tête d’îlot', ar: 'منارة رأس الجزيرة' },
+  { k: 'signals', u: ['ens.', 'مجموعة'], pu: 85000, fr: 'Feux piétons à la demande : contrôleur, feux, boutons d’appel, génie civil, raccordement', ar: 'إشارات ضوئية للمترجّلين عند الطلب: وحدة تحكّم، أضواء، أزرار طلب، هندسة مدنية، ربط كهربائي' },
+  { k: 'fees', u: ['%', '%'], pu: 12, fr: 'Études, contrôle, installation de chantier et signalisation temporaire', ar: 'الدراسات والمراقبة وتركيز الحضيرة والإشارات الوقتية' }
+];
+const PRICES = Object.fromEntries(PRICE_DEF.map(p => [p.k, p.pu]));
+let RATE = 3.4;                                   // dinars pour 1 euro
+const META = { commune: '', lieu: '', auteur: '' };
+let pickedVariant = null;                         // null : la variante recommandée
+try { const m = JSON.parse(localStorage.getItem('mv-meta') || '{}'); Object.assign(META, m); } catch (e) { /* stockage indisponible */ }
+
+const laneAt = sc => ({ ret: P.retLane, chi: P.chLane })[sc.id] || P.laneW;
+const stopDist = vk => { const v = vk / KMH; return v * 2 + v * v / 10; };   // 2 s de réaction, 5 m/s²
+
+// quantités sommaires, déduites de la géométrie simulée
+function quantities(sc) {
+  const lw = P.laneW, W = 2 * lw, gz = sc.geom(XC);
+  const q = { zebra: 2 * gz.lw * 4 * 0.5, sign: 2, light: 2, kerbRamp: 2 };
+  const add = (k, v) => { q[k] = (q[k] || 0) + v; };
+  switch (sc.id) {
+    case 'dos': add('asphalt', 2 * W * 4 * (2 / 3) * 0.10 * 2.35); add('sign', 4); add('zebra', 0.5 * W); break;
+    case 'trap': add('table', W * 6.4); add('sign', 4); add('zebra', 0.25 * W); break;
+    case 'plat': add('table', W * 11); add('sign', 2); add('zebra', 0.25 * W); break;
+    case 'cous': add('cushion', 4); add('sign', 2); add('zebra', 4 * 0.45); break;
+    case 'ret': add('kerb', 4 * 13 + 2 * 30); add('island', P.retIsl * 18); add('pavement', 2 * Math.max(0, P.retIsl / 2 + P.retLane - lw) * 30);
+      add('bollard', 2); add('sign', 2); add('kerbRamp', 2); break;
+    case 'chi': add('kerb', 2 * (2 * P.chTrans + 10)); add('pavement', P.chOff * (P.chTrans + 10)); add('island', P.chOff * (P.chTrans + 10));
+      add('bollard', 4); add('line', 2 * P.chTrans + 10); break;
+    case 'rev': add('pavers', W * 40); break;
+    case 'rug': add('rumble', 6 * 0.25 * (lw - 0.3) * 3 * 2); add('sign', 2); break;
+    case 'sig': add('signals', 1); add('line', 2 * lw); add('sign', 2); break;
+  }
+  return q;
+}
+function costing(sc) {
+  const q = quantities(sc), rows = [];
+  for (const p of PRICE_DEF) if (p.k !== 'fees' && q[p.k] > 0) {
+    const qty = p.u[0] === 'u' || p.u[0] === 'ens.' ? Math.round(q[p.k]) : Math.round(q[p.k] * 10) / 10;
+    rows.push({ p, qty, amount: qty * PRICES[p.k] });
+  }
+  const sub = rows.reduce((a, r) => a + r.amount, 0), fees = sub * PRICES.fees / 100;
+  const total = Math.round((sub + fees) / 100) * 100;
+  return { rows, sub, fees, total, low: Math.round(total * 0.7 / 100) * 100, high: Math.round(total * 1.3 / 100) * 100, eur: Math.round(total / RATE / 10) * 10 };
+}
+
+// dimensions principales [clé, valeur affichée]
+function dims(sc) {
+  const lw = P.laneW, f = v => fm(v), out = [['lane', f(lw)], ['road', f(2 * lw)], ['walk', f(2.5)], ['zebraL', f(4)], ['zebraB', f(0.5)]];
+  const add = (...r) => out.push(...r);
+  switch (sc.id) {
+    case 'dos': add(['humpL', f(4)], ['height', f(0.10)], ['humpDist', f(10)]); break;
+    case 'trap': add(['tableL', f(4)], ['rampL', f(1.2)], ['height', f(0.10)], ['rampSlope', '8,3 %']); break;
+    case 'plat': add(['tableL', f(8)], ['rampL', f(1.5)], ['height', f(0.10)], ['rampSlope', '6,7 %']); break;
+    case 'cous': add(['cushL', f(3)], ['cushW', f(1.8)], ['cushH', f(0.07)], ['rampL', f(0.8)], ['humpDist', f(10)]); break;
+    case 'ret': add(['laneN', f(P.retLane)], ['islW', f(P.retIsl)], ['islL', f(30)], ['taper', f(8)], ['refugeL', f(4)]); break;
+    case 'chi': add(['offset', f(P.chOff)], ['transL', f(P.chTrans)], ['palier', f(10)], ['laneC', f(P.chLane)], ['radius', f0(sc.info.R)]); break;
+    case 'rev': add(['paveL', f(40)]); break;
+    case 'rug': add(['rugPos', '20 / 40 / 60'], ['rugGroup', f(4.25)], ['rugBand', f(0.25)], ['rugGap', f(0.8)]); break;
+    case 'sig': add(['stopDist', f(1)], ['pedGreen', SIG.walk + ' s'], ['clear', sc.info.clear + ' s'], ['minGreen', f0(P.sigGreen) + ' s']); break;
+  }
+  return out;
+}
+
+// conditions d'utilisation : test automatique quand la page dispose de la donnée, sinon « à vérifier »
+const COND = {
+  agglo: { test: () => 'check', fr: () => 'Section située en agglomération', ar: () => 'مقطع داخل منطقة عمرانية' },
+  zone30: { test: c => c.P.vLim <= 30 ? 'ok' : 'ko', fr: c => `Voie limitée à 30 km/h (zone 30) ; limitation actuelle : ${f0(c.P.vLim)} km/h`, ar: c => `طريق محدّدة سرعتها بـ 30 كم/س (منطقة 30)؛ السرعة القصوى الحالية: ${f0(c.P.vLim)} كم/س` },
+  mja3000: { test: c => c.mja < 3000 ? 'ok' : 'ko', fr: c => `Trafic inférieur à 3 000 véh/j en moyenne journalière ; estimé ici à ${f0(c.mja)} véh/j`, ar: c => `حركة أقلّ من 3000 عربة/يوم كمعدّل يومي؛ وهي مقدّرة هنا بـ ${f0(c.mja)} عربة/يوم` },
+  noBus: { test: () => 'check', fr: () => 'Pas d’itinéraire régulier de bus ni d’accès prioritaire des secours', ar: () => 'لا يمرّ به خطّ حافلات منتظم ولا مسلك ذو أولوية للنجدة' },
+  slope4: { test: () => 'check', fr: () => 'Pente en long inférieure à 4 %', ar: () => 'انحدار طولي أقلّ من 4 %' },
+  noCurve: { test: () => 'check', fr: () => 'Hors virage et hors ouvrage d’art (pont, tunnel)', ar: () => 'خارج المنعطفات وخارج المنشآت الفنية (جسر، نفق)' },
+  v50: { test: c => c.P.vLim <= 50 ? 'ok' : 'ko', fr: c => `Voie limitée à 50 km/h au plus ; limitation actuelle : ${f0(c.P.vLim)} km/h`, ar: c => `طريق محدّدة سرعتها بـ 50 كم/س على الأكثر؛ السرعة القصوى الحالية: ${f0(c.P.vLim)} كم/س` },
+  capacity: { test: c => c.e.sat ? 'ko' : 'ok', fr: c => `Le trafic de pointe reste écoulé : ${f0(c.e.flow)} véh/h par sens pour ${f0(c.P.q)} demandés`, ar: c => `تبقى حركة الذروة مُصرَّفة: ${f0(c.e.flow)} عربة/س في كل اتجاه من أصل ${f0(c.P.q)} مطلوبة` },
+  safeSys: { test: c => c.e.v85 <= 30 ? 'ok' : 'warn', fr: c => `Vitesse au passage compatible avec la présence de piétons (V85 ≤ 30 km/h) ; V85 simulée : ${f0(c.e.v85)} km/h`, ar: c => `سرعة عند الممرّ ملائمة لوجود المترجّلين (V85 ≤ 30 كم/س)؛ V85 المُحاكاة: ${f0(c.e.v85)} كم/س` },
+  lane3: { test: c => c.lane >= 3.0 ? 'ok' : 'warn', fr: c => `Voies d’au moins 3,00 m pour les bus et poids lourds ; ici ${fm(c.lane)} m`, ar: c => `مسالك لا يقلّ عرضها عن 3,00 م للحافلات والشاحنات؛ وهنا ${fm(c.lane)} م` },
+  refuge: { test: c => c.P.retIsl >= ISLAND_MIN ? 'ok' : 'ko', fr: c => `Îlot d’au moins 1,50 m pour servir de refuge ; ici ${fm(c.P.retIsl)} m`, ar: c => `جزيرة لا يقلّ عرضها عن 1,50 م لتكون ملجأً؛ وهنا ${fm(c.P.retIsl)} م` },
+  busTurn: { test: () => 'check', fr: () => 'Giration des bus et poids lourds vérifiée sur plan', ar: () => 'التثبّت على المخطّط من دوران الحافلات والشاحنات' },
+  drain: { test: () => 'check', fr: () => 'Écoulement des eaux maintenu le long des bordures (avaloir en amont)', ar: () => 'المحافظة على سيلان المياه على طول الحواف (بالوعة قبل التهيئة)' },
+  noise: { test: () => 'check', fr: () => 'Pas d’habitations immédiatement riveraines (bruit au passage des véhicules)', ar: () => 'لا مساكن ملاصقة مباشرة (ضجيج عند مرور العربات)' },
+  power: { test: () => 'check', fr: () => 'Alimentation électrique disponible à proximité', ar: () => 'توفّر التغذية الكهربائية على مقربة' },
+  nearSignals: { test: () => 'check', fr: () => 'Pas d’autre feu à moins de 100 m, sinon coordonner les feux', ar: () => 'لا توجد إشارة ضوئية أخرى على أقلّ من 100 م، وإلّا يجب التنسيق بينها' },
+  heavyPave: { test: c => c.P.pPL <= 10 ? 'ok' : 'warn', fr: c => `Pavés adaptés au trafic lourd ; part de poids lourds et bus : ${f0(c.P.pPL)} %`, ar: c => `بلاط ملائم لحركة الثقيلة؛ نسبة العربات الثقيلة والحافلات: ${f0(c.P.pPL)} %` },
+  combine: { test: () => 'warn', fr: () => 'Effet propre faible : à associer à un autre aménagement', ar: () => 'أثر خاص ضعيف: يجب قرنه بتهيئة أخرى' },
+  visib: { test: () => 'check', fr: c => `Passage et piétons visibles depuis ${f0(c.dVis)} m au moins, dans chaque sens`, ar: c => `الممرّ والمترجّلون مرئيّون من مسافة ${f0(c.dVis)} م على الأقلّ في كل اتجاه` }
+};
+const VCOND = {
+  dos: ['agglo', 'zone30', 'mja3000', 'noBus', 'slope4', 'noCurve', 'capacity', 'safeSys', 'visib'],
+  trap: ['agglo', 'zone30', 'mja3000', 'noBus', 'slope4', 'noCurve', 'capacity', 'safeSys', 'visib'],
+  plat: ['agglo', 'v50', 'capacity', 'safeSys', 'drain', 'busTurn', 'visib'],
+  cous: ['agglo', 'v50', 'lane3', 'capacity', 'safeSys', 'drain', 'visib'],
+  ret: ['v50', 'lane3', 'refuge', 'capacity', 'safeSys', 'busTurn', 'visib'],
+  chi: ['v50', 'lane3', 'busTurn', 'capacity', 'safeSys', 'drain', 'visib'],
+  rev: ['combine', 'heavyPave', 'capacity', 'safeSys', 'visib'],
+  rug: ['combine', 'noise', 'capacity', 'safeSys', 'visib'],
+  sig: ['power', 'nearSignals', 'capacity', 'visib']
+};
+
+// textes propres à chaque variante : implantation, signalisation verticale, marquage, trottoirs, entretien
+const VDOC = {
+  dos: {
+    fr: P => ({ implant: ['Deux dos d’âne à 10 m de part et d’autre de l’axe du passage, perpendiculaires à la rue, sur toute la largeur de chaussée.', 'Le passage piéton n’est pas marqué sur un dos d’âne (norme NF P 98-300).', 'Profil circulaire : longueur 4,00 m, hauteur 0,10 m, raccordé au caniveau sans le boucher.', 'Hors virage, hors pente de plus de 4 %, loin des arrêts de bus.'],
+      signs: ['A2b « ralentisseur de type dos d’âne » dans chaque sens, avec panonceau de distance.', 'B14 « 30 km/h » : les dos d’âne ne s’emploient qu’en zone limitée à 30 km/h.', 'C20a « passage pour piétons » de chaque côté du passage.'],
+      marks: ['Triangles blancs sur la rampe d’accès de chaque dos d’âne.', 'Passage piéton en bandes de 0,50 m, longueur 4,00 m.'], walks: [], water: ['Laisser un passage d’eau le long des bordures sous chaque dos d’âne.'] }),
+    ar: P => ({ implant: ['مطبّان دائريان على بعد 10 م من جانبي محور الممرّ، عموديّان على النهج، على كامل عرض المعبّد.', 'لا يُعلَّم ممرّ المترجّلين فوق المطبّ الدائري (المواصفة NF P 98-300).', 'مقطع دائري: طول 4,00 م وارتفاع 0,10 م، يتّصل بالمجرى دون أن يسدّه.', 'خارج المنعطفات، وخارج الانحدارات التي تفوق 4 %، وبعيدًا عن محطّات الحافلات.'],
+      signs: ['A2b «مطبّ» في كل اتجاه، مع لوحة تكميلية للمسافة.', 'B14 «30 كم/س»: لا تُستعمل المطبّات الدائرية إلّا في منطقة محدّدة السرعة بـ 30 كم/س.', 'C20a «ممرّ للمترجّلين» من جانبي الممرّ.'],
+      marks: ['مثلّثات بيضاء على منحدر كل مطبّ.', 'ممرّ مترجّلين بأشرطة عرضها 0,50 م وطولها 4,00 م.'], walks: [], water: ['ترك ممرّ للمياه على طول الحواف تحت كل مطبّ.'] })
+  },
+  trap: {
+    fr: P => ({ implant: ['Un ralentisseur trapézoïdal centré sur le passage : plateau de 4,00 m, rampes de 1,20 m, hauteur 0,10 m.', 'Le passage piéton est marqué sur le plateau.', 'Mêmes restrictions que le dos d’âne : zone 30, moins de 3 000 véh/j, pas de bus réguliers, pente de moins de 4 %.'],
+      signs: ['A2b dans chaque sens, avec panonceau de distance.', 'B14 « 30 km/h ».', 'C20a de chaque côté du passage.'],
+      marks: ['Triangles blancs sur les rampes.', 'Passage piéton sur le plateau.'], walks: [], water: ['Avaloir en amont du ralentisseur, côté haut de la pente.'] }),
+    ar: P => ({ implant: ['مطبّ شبه منحرف في وسط الممرّ: منصّة بطول 4,00 م ومنحدرات بطول 1,20 م وارتفاع 0,10 م.', 'يُعلَّم ممرّ المترجّلين فوق المنصّة.', 'نفس قيود المطبّ الدائري: منطقة 30، أقلّ من 3000 عربة/يوم، دون حافلات منتظمة، وانحدار أقلّ من 4 %.'],
+      signs: ['A2b في كل اتجاه، مع لوحة تكميلية للمسافة.', 'B14 «30 كم/س».', 'C20a من جانبي الممرّ.'],
+      marks: ['مثلّثات بيضاء على المنحدرات.', 'ممرّ المترجّلين فوق المنصّة.'], walks: [], water: ['بالوعة قبل المطبّ، من الجهة العليا للانحدار.'] })
+  },
+  plat: {
+    fr: P => ({ implant: ['Plateau surélevé centré sur le passage : plateau de 8,00 m, rampes de 1,50 m (pente ≈ 7 %), hauteur 0,10 m.', 'Revêtement contrasté (résine colorée ou béton désactivé) pour signaler le plateau.', 'Rampes plus douces (pente de 5 % au plus) si la rue est empruntée par des bus.'],
+      signs: ['C27 « surélévation de chaussée » dans chaque sens.', 'C20a de chaque côté du passage.'],
+      marks: ['Triangles blancs sur les rampes.', 'Passage piéton sur le plateau.'], walks: ['Plateau au niveau du trottoir ou presque : le cheminement piéton reste continu.'], water: ['Avaloirs en amont du plateau : il coupe le caniveau.'] }),
+    ar: P => ({ implant: ['منصّة مرتفعة في وسط الممرّ: منصّة بطول 8,00 م ومنحدرات بطول 1,50 م (انحدار ≈ 7 %) وارتفاع 0,10 م.', 'كساء متباين (راتنج ملوّن أو خرسانة مكشوفة الحصى) للتنبيه إلى المنصّة.', 'منحدرات ألطف (انحدار لا يتجاوز 5 %) إذا كانت الحافلات تمرّ بالنهج.'],
+      signs: ['C27 «ارتفاع المعبّد» في كل اتجاه.', 'C20a من جانبي الممرّ.'],
+      marks: ['مثلّثات بيضاء على المنحدرات.', 'ممرّ المترجّلين فوق المنصّة.'], walks: ['منصّة في مستوى الرصيف أو قريبة منه: يبقى مسلك المترجّلين متواصلًا.'], water: ['بالوعات قبل المنصّة: فهي تقطع المجرى.'] })
+  },
+  cous: {
+    fr: P => ({ implant: ['Un coussin par voie, centré sur la voie, à 10 m de part et d’autre du passage : longueur 3,00 m, largeur 1,80 m, hauteur 0,07 m.', 'Les bus et poids lourds l’enjambent : adapté aux itinéraires de bus.', 'Laisser l’espace entre coussin et bordure libre pour l’écoulement des eaux et les deux-roues.'],
+      signs: ['C27 « surélévation de chaussée » dans chaque sens.', 'C20a de chaque côté du passage.'],
+      marks: ['Triangles blancs sur les rampes des coussins.', 'Passage piéton en bandes de 0,50 m.'], walks: [], water: [] }),
+    ar: P => ({ implant: ['وسادة في كل مسلك، في وسطه، على بعد 10 م من جانبي الممرّ: طول 3,00 م وعرض 1,80 م وارتفاع 0,07 م.', 'تعبرها الحافلات والشاحنات بين عجلاتها: ملائمة لمسالك الحافلات.', 'ترك المسافة بين الوسادة والحافّة خالية لسيلان المياه وللدرّاجات.'],
+      signs: ['C27 «ارتفاع المعبّد» في كل اتجاه.', 'C20a من جانبي الممرّ.'],
+      marks: ['مثلّثات بيضاء على منحدرات الوسائد.', 'ممرّ مترجّلين بأشرطة عرضها 0,50 م.'], walks: [], water: [] })
+  },
+  ret: {
+    fr: P => ({ implant: [`Îlot central de ${fm(P.retIsl)} m de large sur 30 m, avec entrées en biseau de 8 m et refuge de 4,00 m au droit du passage.`, `Voies ramenées à ${fm(P.retLane)} m de part et d’autre de l’îlot.`, 'Têtes d’îlot visibles de loin, balisées et éclairées.', 'Traversée en deux temps : le piéton ne coupe qu’une voie à la fois.'],
+      signs: ['B21-1 « contournement obligatoire par la droite » sur chaque tête d’îlot, avec balise J5.', 'C20a de chaque côté du passage.'],
+      marks: ['Passage piéton interrompu au droit du refuge.', 'Zébras de rabattement en amont des têtes d’îlot.'], walks: ['Refuge sur l’îlot au niveau de la chaussée, d’au moins 1,50 m de large, avec bandes d’éveil de vigilance.'], water: ['Vérifier que l’îlot ne coupe pas l’écoulement vers les avaloirs.'] }),
+    ar: P => ({ implant: [`جزيرة وسطية بعرض ${fm(P.retIsl)} م على طول 30 م، بمداخل مائلة طولها 8 م وملجأ بطول 4,00 م بمحاذاة الممرّ.`, `مسالك بعرض ${fm(P.retLane)} م على جانبي الجزيرة.`, 'رؤوس الجزيرة مرئية من بعيد، مزوّدة بمنارات ومضاءة.', 'العبور على مرحلتين: لا يقطع المترجّل إلّا مسلكًا واحدًا في كل مرّة.'],
+      signs: ['B21-1 «الالتفاف الإجباري من اليمين» على كل رأس جزيرة، مع منارة J5.', 'C20a من جانبي الممرّ.'],
+      marks: ['ممرّ المترجّلين متقطّع بمحاذاة الملجأ.', 'خطوط مائلة للتوجيه قبل رؤوس الجزيرة.'], walks: ['ملجأ على الجزيرة في مستوى المعبّد، لا يقلّ عرضه عن 1,50 م، مع أشرطة تنبيه لمسي.'], water: ['التثبّت من أنّ الجزيرة لا تقطع سيلان المياه نحو البالوعات.'] })
+  },
+  chi: {
+    fr: P => ({ implant: [`Axe décalé de ${fm(P.chOff)} m sur ${f0(P.chTrans)} m, palier de 10 m centré sur le passage, puis retour sur ${f0(P.chTrans)} m.`, `Deux voies de ${fm(P.chLane)} m conservées.`, 'Avancées de trottoir plantées du côté intérieur du décalage.', 'Vérifier sur plan la giration des bus et poids lourds.'],
+      signs: ['Balises J5 sur les avancées de trottoir.', 'C20a de chaque côté du passage.'],
+      marks: ['Axe continu dans la chicane pour interdire le dépassement.', 'Lignes de rive qui suivent le décalage.'], walks: [], water: ['Avaloirs au point bas de chaque avancée.'] }),
+    ar: P => ({ implant: [`إزاحة المحور بـ ${fm(P.chOff)} م على طول ${f0(P.chTrans)} م، مع جزء مُزاح بطول 10 م في وسط الممرّ، ثم عودة على طول ${f0(P.chTrans)} م.`, `المحافظة على مسلكين بعرض ${fm(P.chLane)} م.`, 'امتدادات رصيف مغروسة من الجهة الداخلية للإزاحة.', 'التثبّت على المخطّط من دوران الحافلات والشاحنات.'],
+      signs: ['منارات J5 على امتدادات الرصيف.', 'C20a من جانبي الممرّ.'],
+      marks: ['خطّ محوري متواصل داخل التعرّج لمنع التجاوز.', 'خطوط جانبية تتبع الإزاحة.'], walks: [], water: ['بالوعات في النقطة المنخفضة لكل امتداد.'] })
+  },
+  rev: {
+    fr: P => ({ implant: ['Pavés béton (ou pierre) sur 40 m centrés sur le passage, sur toute la largeur de chaussée.', 'Bordures de confinement aux deux extrémités de la zone pavée.', 'Effet propre faible : à associer à un autre aménagement.'],
+      signs: ['C20a de chaque côté du passage.'], marks: ['Passage piéton en résine sur les pavés, ou pavés blancs.'], walks: [], water: ['Contrôler chaque année les joints et les affaissements des pavés.'] }),
+    ar: P => ({ implant: ['بلاط رصف خرساني (أو حجري) على طول 40 م حول الممرّ، على كامل عرض المعبّد.', 'حواف تثبيت في طرفي المنطقة المرصوفة.', 'أثر خاص ضعيف: يجب قرنه بتهيئة أخرى.'],
+      signs: ['C20a من جانبي الممرّ.'], marks: ['ممرّ مترجّلين من الراتنج فوق البلاط، أو بلاط أبيض.'], walks: [], water: ['مراقبة الفواصل وهبوط البلاط كل سنة.'] })
+  },
+  rug: {
+    fr: P => ({ implant: ['Trois groupes de six bandes transversales à 60, 40 et 20 m avant le passage, dans chaque sens, sur la voie d’arrivée seulement.', 'Bandes de 0,25 m espacées de 0,80 m, relief d’environ 1 cm.', 'Éviter devant les habitations : bruit au passage des véhicules.'],
+      signs: ['A14 « autres dangers » avec panonceau « bandes rugueuses », si nécessaire.', 'C20a de chaque côté du passage.'], marks: ['Bandes en résine blanche à relief.'], walks: [], water: ['Remplacer les bandes usées.'] }),
+    ar: P => ({ implant: ['ثلاث مجموعات من ستّة أشرطة عرضية على بعد 60 و40 و20 م قبل الممرّ في كل اتجاه، على مسلك القدوم فقط.', 'أشرطة بعرض 0,25 م تفصل بينها 0,80 م، ببروز حوالي 1 صم.', 'تجنّبها أمام المساكن: ضجيج عند مرور العربات.'],
+      signs: ['A14 «أخطار أخرى» مع لوحة تكميلية «أشرطة اهتزازية»، عند الحاجة.', 'C20a من جانبي الممرّ.'], marks: ['أشرطة من الراتنج الأبيض البارز.'], walks: [], water: ['تعويض الأشرطة المهترئة.'] })
+  },
+  sig: {
+    fr: P => ({ implant: ['Ligne d’arrêt des feux environ 1 m avant le passage, dans chaque sens.', 'Un feu pour les véhicules à droite de chaque approche, répété si la visibilité l’exige.', 'Feux piétons et boutons d’appel de chaque côté du passage.', `Vert piéton de ${SIG.walk} s, dégagement calculé à 1 m/s, et au moins ${f0(P.sigGreen)} s de vert pour les véhicules entre deux appels.`, 'À coordonner avec les feux voisins s’il en existe à moins de 100 m.'],
+      signs: ['Feux tricolores pour les véhicules (R11v) et feux piétons (R12), boutons d’appel avec signal sonore.', 'A17 « feux » en amont si la visibilité est réduite.', 'C20a de chaque côté du passage.'],
+      marks: ['Ligne d’arrêt des feux dans chaque sens.', 'Passage piéton en bandes de 0,50 m.'], walks: ['Boutons d’appel accessibles (entre 0,90 et 1,30 m de haut) et signal sonore pour les personnes aveugles.'], water: ['Contrat d’entretien des feux (pannes, lampes, réglage du cycle).'] }),
+    ar: P => ({ implant: ['خطّ توقّف الإشارات على بعد 1 م تقريبًا قبل الممرّ، في كل اتجاه.', 'إشارة للعربات على يمين كل مدخل، مع تكرارها إذا تطلّبت الرؤية ذلك.', 'إشارات للمترجّلين وأزرار طلب من جانبي الممرّ.', `أخضر للمترجّلين مدّته ${SIG.walk} ث، وزمن إخلاء محسوب بسرعة 1 م/ث، و${f0(P.sigGreen)} ث على الأقلّ من الأخضر للعربات بين طلبين.`, 'التنسيق مع الإشارات المجاورة إن وُجدت على أقلّ من 100 م.'],
+      signs: ['إشارات ضوئية ثلاثية للعربات (R11v) وإشارات للمترجّلين (R12)، وأزرار طلب مع إشارة صوتية.', 'A17 «إشارات ضوئية» قبل الممرّ إذا كانت الرؤية محدودة.', 'C20a من جانبي الممرّ.'],
+      marks: ['خطّ توقّف الإشارات في كل اتجاه.', 'ممرّ مترجّلين بأشرطة عرضها 0,50 م.'], walks: ['أزرار طلب في متناول الجميع (على ارتفاع بين 0,90 و1,30 م) وإشارة صوتية للمكفوفين.'], water: ['عقد صيانة للإشارات (الأعطال، المصابيح، ضبط الدورة).'] })
+  }
+};
+
+const NOTE = {
+fr: {
+  title: 'Note de calcul', sub: 'Modération de la vitesse au droit d’un passage piéton', print: 'Imprimer ou enregistrer en PDF',
+  cover: [['commune', 'Commune'], ['lieu', 'Lieu'], ['objet', 'Objet'], ['name', 'Variante retenue'], ['date', 'Date'], ['auteur', 'Établie par'], ['fp', 'Calibrage'], ['outil', 'Outil']],
+  objet: 'Choix d’un aménagement pour la sécurité des piétons', outil: 'Comparateur de modération des vitesses (microsimulation)', unknown: 'non renseigné',
+  glossTitle: 'Mots utiles',
+  gloss: [['V85', 'Vitesse en dessous de laquelle roulent 85 % des conducteurs. C’est la vitesse réelle de la rue, plus parlante que la limitation affichée.'],
+    ['Débit', 'Nombre de véhicules qui passent en une heure, dans un sens.'],
+    ['MJA', 'Moyenne journalière annuelle : nombre moyen de véhicules par jour, deux sens confondus.'],
+    ['Saturation', 'Il arrive plus de véhicules que l’aménagement ne peut en laisser passer : la file d’attente grandit sans cesse.'],
+    ['Système Sûr', 'Approche de la sécurité routière qui vise à ce qu’aucune erreur ne soit mortelle. Là où voitures et piétons se croisent, elle retient 30 km/h au plus.'],
+    ['Microsimulation', 'Calcul qui fait rouler chaque véhicule et marcher chaque piéton, dixième de seconde par dixième de seconde, selon des règles de comportement publiées.'],
+    ['Plan de principe', 'Plan qui fixe les dimensions et l’emplacement des éléments. Il ne remplace pas le plan d’exécution établi sur un levé du site.']],
+  s: { brief: '1. En bref', change: '2. Ce que la variante change', cond: '3. Conditions d’utilisation', dims: '4. Dimensions', implant: '5. Implantation', visib: '6. Visibilité',
+    signs: '7. Signalisation', light: '8. Éclairage', walks: '9. Trottoirs et accessibilité', water: '10. Eaux pluviales et entretien', cost: '11. Estimation sommaire du coût', plan: '12. Plan d’action',
+    annA: 'Annexe A — Toutes les variantes simulées', annB: 'Annexe B — Méthode et hypothèses', annC: 'Annexe C — Sources' },
+  brief: {
+    site: c => `La commune étudie un passage piéton sur une rue où passent ${f0(c.P.q)} véhicules par heure et par sens à l’heure de pointe, dont ${f0(c.P.pPL)} % de poids lourds et de bus, et ${f0(c.P.qPed)} piétons par heure.`,
+    variant: c => `${c.n} solutions ont été simulées sous exactement le même trafic. La variante retenue est : ${c.name}.`,
+    speed: c => `Au droit du passage, la vitesse des voitures (V85) passe de ${f0(c.r.v85)} km/h aujourd’hui à ${f0(c.e.v85)} km/h.` + (c.e.v85 <= 30 ? ' C’est en dessous du seuil de 30 km/h recommandé là où l’on croise des piétons.' : ' Elle reste au-dessus du seuil de 30 km/h recommandé là où l’on croise des piétons.'),
+    risk: c => `Si un piéton surgit à ${f0(c.P.dSurg)} m devant une voiture, le risque qu’il soit tué passe de ${f1(c.r.surgRisk)} % à ${f1(c.e.surgRisk)} %.`,
+    ped: c => `Un piéton attend en moyenne ${f0(c.e.pedW)} s avant de traverser (aujourd’hui : ${f0(c.r.pedW)} s).`,
+    traffic: c => c.e.sat ? `Attention : à ce trafic, la variante sature. Il passe ${f0(c.e.flow)} véhicules par heure au lieu de ${f0(c.P.q)}, et la file d’attente grandit sans cesse à l’heure de pointe.` : `Le trafic reste écoulé. Le temps pour parcourir 500 m change de ${sgn(c.e.tt - c.r.tt)} s par véhicule.`,
+    cost: c => `Coût sommaire : ${f0(c.cost.total)} dinars hors taxes (environ ${f0(c.cost.eur)} €), à ±30 % près.`,
+    cond: c => c.nKo ? `${c.nKo} condition(s) d’utilisation ne sont pas respectées : voir la section 3 avant toute décision.` : `Aucune condition d’utilisation bloquante n’a été détectée ; ${c.nCheck} point(s) restent à vérifier sur place.`,
+    rec: c => c.rec < 0 ? 'L’outil n’a trouvé aucune solution qui concilie trafic et sécurité à ce débit.' : c.rec === c.i ? 'C’est aussi la solution que l’outil recommande pour concilier trafic et sécurité.' : `L’outil recommandait plutôt : ${c.recName}. La commune a retenu une autre variante ; les écarts sont détaillés ci-dessous.`
+  },
+  changeIntro: 'Comparaison avec la situation actuelle, sans aménagement, sous le même trafic. Chaque valeur est la moyenne de cinq simulations d’une heure.',
+  changeCols: ['Indicateur', 'Aujourd’hui', 'Avec la variante', 'Ce que cela veut dire'],
+  ind: { v85: 'Vitesse des voitures au passage (V85)', tt: 'Temps pour parcourir 500 m', flow: 'Véhicules écoulés par heure et par sens', q: 'File d’attente la plus longue', ped: 'Attente moyenne d’un piéton',
+    yield: 'Conducteurs qui laissent passer un piéton qui attend', stop: 'Conducteurs qui s’arrêtent à temps si un piéton surgit', risk: 'Risque qu’un piéton heurté soit tué' },
+  mean: {
+    v85: (r, e) => (e.v85 < r.v85 - 2 ? 'Les voitures passent moins vite devant les piétons.' : 'La vitesse au passage change peu.') + (e.v85 <= 30 ? ' Le seuil de 30 km/h est respecté.' : ' Le seuil de 30 km/h n’est pas atteint.'),
+    tt: (r, e) => e.sat ? 'Le temps augmente sans cesse tant que dure la pointe.' : (e.tt - r.tt > 2 ? `Chaque véhicule perd environ ${f0(e.tt - r.tt)} s.` : e.tt - r.tt < -2 ? `Chaque véhicule gagne environ ${f0(r.tt - e.tt)} s : les traversées gênent moins la circulation.` : 'Le temps de parcours change peu.'),
+    flow: (r, e) => e.sat ? 'Une partie des véhicules ne passe pas : la file grandit tant que dure la pointe.' : 'Tout le trafic de la pointe passe.',
+    q: (r, e) => e.qMax > r.qMax + 20 ? 'Les files sont plus longues qu’aujourd’hui.' : e.qMax < r.qMax - 20 ? 'Les files sont plus courtes qu’aujourd’hui.' : 'Les files restent du même ordre.',
+    ped: (r, e) => e.pedW < r.pedW - 1 ? 'Les piétons attendent moins pour traverser.' : e.pedW > r.pedW + 1 ? 'Les piétons attendent plus pour traverser.' : 'L’attente des piétons change peu.',
+    yield: (r, e, sc) => sc.signal ? 'Sans objet : le feu règle la priorité.' : `Sur 100 conducteurs qui voient un piéton attendre, ${f0(e.yieldPct)} le laissent passer.`,
+    stop: (r, e) => `Sur 100 conducteurs, ${f0(e.surgStop)} s’arrêtent avant le piéton.`,
+    risk: (r, e) => e.surgRisk < r.surgRisk - 0.1 ? 'Le choc, s’il a lieu, est moins grave.' : 'La gravité d’un choc reste du même ordre.'
+  },
+  u: { kmh: 'km/h', s: 's', m: 'm' },
+  condIntro: 'À vérifier avant toute décision. « Non respectée » : la variante ne devrait pas être réalisée en l’état. « À vérifier » : la page ne dispose pas de l’information, à contrôler sur place.',
+  condCols: ['Condition', 'État'],
+  st: { ok: 'Respectée', warn: 'À surveiller', ko: 'Non respectée', check: 'À vérifier' },
+  dimsIntro: 'Dimensions principales ; le plan de principe à l’échelle suit, au format A4 paysage. Cotes en mètres.',
+  dimCols: ['Élément', 'Valeur (m)'],
+  dim: { lane: 'Largeur d’une voie', road: 'Largeur de chaussée', walk: 'Largeur des trottoirs', zebraL: 'Longueur du passage (dans le sens de circulation)', zebraB: 'Largeur et espacement des bandes',
+    humpL: 'Longueur d’un dos d’âne', height: 'Hauteur', humpDist: 'Distance de l’axe du passage à l’axe du dispositif', tableL: 'Longueur du plateau', rampL: 'Longueur des rampes', rampSlope: 'Pente des rampes',
+    cushL: 'Longueur du coussin', cushW: 'Largeur du coussin', cushH: 'Hauteur du coussin', laneN: 'Largeur de voie au droit de l’îlot', islW: 'Largeur de l’îlot', islL: 'Longueur de l’îlot', taper: 'Longueur des entrées en biseau', refugeL: 'Longueur du refuge',
+    offset: 'Décalage de l’axe', transL: 'Longueur de chaque transition', palier: 'Longueur du palier décalé', laneC: 'Largeur de voie dans la chicane', radius: 'Rayon de la trajectoire la plus rapide',
+    paveL: 'Longueur pavée', rugPos: 'Position des groupes avant le passage', rugGroup: 'Longueur d’un groupe', rugBand: 'Largeur d’une bande', rugGap: 'Espacement des bandes',
+    stopDist: 'Ligne d’arrêt : distance au bord du passage', pedGreen: 'Vert piéton', clear: 'Temps de dégagement', minGreen: 'Vert minimal des véhicules entre deux appels' },
+  visib: c => `À ${f0(c.P.v85free)} km/h, vitesse actuelle des conducteurs (V85 en circulation libre), il faut environ ${f0(c.dVis)} m pour s’arrêter : 2 s de réaction, puis freinage à 5 m/s². Le passage et les piétons qui attendent doivent être visibles de cette distance, dans les deux sens.`,
+  visibList: ['Aucun stationnement ni obstacle de plus de 1 m de haut sur 5 m avant le passage, de chaque côté (règle française depuis la loi d’orientation des mobilités de 2019).', 'Végétation basse taillée, mobilier urbain écarté du bord du trottoir.', 'Pas de passage dans un virage ni derrière un sommet de côte.'],
+  signV: 'Signalisation verticale', marks: 'Marquage au sol',
+  signNote: 'Codes de la signalisation française ; utiliser les panneaux équivalents du règlement tunisien.',
+  light: ['Deux candélabres dédiés, un pour chaque sens, environ 1 à 3 m avant le passage, sur le trottoir de droite du conducteur (E1 et E2 sur le plan). Le piéton est ainsi éclairé de face et se détache du fond.', 'Éclairement nettement supérieur à celui de la rue, à dimensionner selon la norme EN 13201.', 'Lumière blanche (LED), orientée pour ne pas éblouir les conducteurs.'],
+  walks: ['Abaissé de trottoir sur toute la largeur du passage (4 m), ressaut de 2 cm au plus, pente de 5 % au plus.', 'Bande d’éveil de vigilance (dalles podotactiles) à 0,50 m du bord, de chaque côté.', 'Trottoir d’au moins 1,40 m libre de tout obstacle, de part et d’autre du passage.'],
+  walksNote: 'Ces règles sont celles de la réglementation française ; les adapter aux normes tunisiennes d’accessibilité.',
+  water: ['Maintenir l’écoulement des eaux le long des bordures ; placer un avaloir en amont de tout dispositif qui coupe le caniveau.', 'Repeindre le marquage dès qu’il s’efface, au moins une fois par an au droit du passage.', 'Contrôler l’éclairage et la signalisation chaque année.'],
+  costCols: ['Poste', 'Quantité', 'Unité', 'Prix unitaire (TND)', 'Montant (TND)'],
+  costSub: 'Sous-total', costFees: p => `Études, contrôle, installation de chantier (${f0(p)} %)`, costTotal: 'Total hors taxes', costRange: 'Fourchette (±30 %)', costEur: 'Équivalent en euros',
+  costNote: r => `Prix unitaires indicatifs, hors taxes, valeur 2026, à remplacer par le bordereau des prix de la commune. Taux de change retenu : 1 € = ${nf2.format(r)} TND.`,
+  planCols: ['Priorité', 'Action', 'Qui', 'Quand'],
+  actions: {
+    ko: ['Lever les conditions non respectées (section 3) ou choisir une autre variante.', 'Services techniques', 'Avant la décision'],
+    sat: ['Réduire le trafic de transit ou choisir une variante qui écoule le trafic : la variante retenue sature à ce débit.', 'Commune', 'Avant la décision'],
+    count: ['Mesurer la vitesse au radar et compter piétons et véhicules à l’heure de pointe, puis relancer la simulation avec ces valeurs.', 'Services techniques', 'Avant la décision'],
+    exec: ['Faire établir le plan d’exécution (géomètre, bureau d’études) à partir du plan de principe, et vérifier la giration des bus et poids lourds.', 'Bureau d’études', 'Avant les travaux'],
+    market: ['Prévoir l’éclairage et la signalisation dans le même marché que les travaux.', 'Commune', 'Au lancement du marché'],
+    inform: ['Informer les riverains et les commerçants.', 'Commune', 'Un mois avant les travaux'],
+    after: ['Mesurer à nouveau vitesses, files et attente des piétons trois à six mois après la mise en service, et comparer avec cette note.', 'Services techniques', '3 à 6 mois après'],
+    maint: ['Entretenir le marquage, l’éclairage et la signalisation.', 'Commune', 'Chaque année']
+  },
+  annexBox: 'Cette annexe et les suivantes s’adressent aux techniciens. Leur lecture n’est pas nécessaire pour comprendre la note.',
+  annACols: ['Variante', 'V85 au passage (km/h)', 'Temps sur 500 m (s)', 'Débit écoulé (véh/h/sens)', 'Attente piéton (s)', 'Risque de décès (%)', 'État'],
+  stateTxt: { sat: 'Saturé', ok: 'Écoulé' },
+  recLine: n => `Solution recommandée par la règle : ${n}.`, recNone: 'Aucune solution ne satisfait la règle à ce débit.',
+  method: ['Microsimulation : chaque véhicule suit le modèle de poursuite IDM (Treiber et al., 2000) ; chaque piéton traverse sur créneau, quand un conducteur lui cède le passage, au vert du feu, ou en s’engageant si le véhicule peut s’arrêter à 3 m/s².',
+    'Mêmes arrivées de véhicules et de piétons dans toutes les variantes, cinq simulations d’une heure avec des tirages fixés à l’avance, après 2 min de mise en régime.',
+    'Vitesse au franchissement des ralentisseurs donnée en entrée (V85 par classe) ; vitesse dans la chicane déduite de sa géométrie ; rétrécissement, revêtement et bandes rugueuses : baisse de vitesse en pourcentage.',
+    'Risque de décès : courbe de Rosén et Sander (2009), P = 1 / (1 + e^(6,9 − 0,090 v)), appliquée à la vitesse restante quand un piéton surgit à la distance indiquée, après le temps de réaction et un freinage d’urgence.',
+    'Limites : tronçon isolé de 500 m, pas de report de trafic ni de deux-roues ; bruit, vibrations et confort des bus non évalués ; calibrage à caler sur des mesures locales.'],
+  calibCols: ['Paramètre de calibrage', 'Valeur'],
+  plan: { title: 'Plan de principe', legend: 'Légende', walk: 'Trottoir', raised: 'Dispositif surélevé', island: 'Îlot, avancée', bev: 'Bande d’éveil de vigilance', light: 'Candélabre (E1, E2)', sign: 'Panneau (code)', signal: 'Feu (véhicules et piétons)', dir: 'Sens de circulation', cotes: 'Cotes en mètres',
+    scale: 'Échelle', secA: 'Coupe A-A, hauteurs ×10', secB: 'Coupe B-B au droit du passage, hauteurs ×10', formatL: 'Format', format: 'A4 paysage', indice: 'Indice', objet: 'Objet', commune: 'Commune', lieu: 'Lieu', date: 'Date', auteur: 'Établi par', calib: 'Calibrage',
+    disclaimer: 'Plan de principe, à reprendre en plan d’exécution sur levé topographique.' }
+},
+ar: {
+  title: 'مذكّرة حساب', sub: 'تهدئة السرعة عند ممرّ للمترجّلين', print: 'طباعة أو حفظ بصيغة PDF',
+  cover: [['commune', 'البلدية'], ['lieu', 'الموقع'], ['objet', 'الموضوع'], ['name', 'التهيئة المعتمدة'], ['date', 'التاريخ'], ['auteur', 'أعدّها'], ['fp', 'المعايرة'], ['outil', 'الأداة']],
+  objet: 'اختيار تهيئة لسلامة المترجّلين', outil: 'أداة مقارنة تهدئة السرعة (محاكاة مجهرية)', unknown: 'غير مُحدَّد',
+  glossTitle: 'مصطلحات مفيدة',
+  gloss: [['V85', 'السرعة التي لا يتجاوزها 85 % من السائقين. هي السرعة الفعلية في النهج، وهي أبلغ من السرعة القصوى المعلنة.'],
+    ['التدفّق', 'عدد العربات التي تمرّ في ساعة واحدة في اتجاه واحد.'],
+    ['المعدّل اليومي السنوي', 'متوسّط عدد العربات في اليوم، في الاتجاهين معًا.'],
+    ['الإشباع', 'يصل عدد من العربات أكبر ممّا تسمح التهيئة بمروره، فيطول الطابور دون توقّف.'],
+    ['النظام الآمن', 'مقاربة للسلامة المرورية تهدف إلى ألّا يكون أيّ خطأ قاتلًا. وحيث تلتقي العربات بالمترجّلين، تعتمد 30 كم/س كحدّ أقصى.'],
+    ['المحاكاة المجهرية', 'حساب يُسيّر كل عربة ويُمشّي كل مترجّل، عُشرًا من الثانية بعد عُشر، وفق قواعد سلوك منشورة.'],
+    ['المخطّط المبدئي', 'مخطّط يحدّد أبعاد العناصر ومواقعها، ولا يُغني عن مخطّط التنفيذ المُنجز على أساس رفع للموقع.']],
+  s: { brief: '1. باختصار', change: '2. ما الذي تغيّره التهيئة', cond: '3. شروط الاستعمال', dims: '4. الأبعاد', implant: '5. التركيز', visib: '6. الرؤية',
+    signs: '7. الإشارات', light: '8. الإنارة', walks: '9. الأرصفة وإمكانية النفاذ', water: '10. مياه الأمطار والصيانة', cost: '11. التقدير الأوّلي للكلفة', plan: '12. خطّة العمل',
+    annA: 'الملحق أ — كل التهيئات المُحاكاة', annB: 'الملحق ب — المنهجية والفرضيات', annC: 'الملحق ج — المصادر' },
+  brief: {
+    site: c => `تدرس البلدية ممرّ مترجّلين على نهج تمرّ به في ساعة الذروة ${f0(c.P.q)} عربة في الساعة وفي كل اتجاه، منها ${f0(c.P.pPL)} % من العربات الثقيلة والحافلات، و${f0(c.P.qPed)} مترجّلًا في الساعة.`,
+    variant: c => `تمّت محاكاة ${c.n} حلول تحت نفس حركة المرور تمامًا. التهيئة المعتمدة هي: ${c.name}.`,
+    speed: c => `عند الممرّ، تنتقل سرعة السيارات (V85) من ${f0(c.r.v85)} كم/س حاليًا إلى ${f0(c.e.v85)} كم/س.` + (c.e.v85 <= 30 ? ' وهي دون عتبة 30 كم/س الموصى بها حيث يوجد المترجّلون.' : ' وتبقى فوق عتبة 30 كم/س الموصى بها حيث يوجد المترجّلون.'),
+    risk: c => `إذا ظهر مترجّل فجأة على بعد ${f0(c.P.dSurg)} م أمام سيارة، ينتقل خطر وفاته من ${f1(c.r.surgRisk)} % إلى ${f1(c.e.surgRisk)} %.`,
+    ped: c => `ينتظر المترجّل في المتوسّط ${f0(c.e.pedW)} ث قبل العبور (حاليًا: ${f0(c.r.pedW)} ث).`,
+    traffic: c => c.e.sat ? `تنبيه: عند هذا الحجم من الحركة، تُشبَع التهيئة. يمرّ ${f0(c.e.flow)} عربة في الساعة بدل ${f0(c.P.q)}، ويطول الطابور دون توقّف طيلة الذروة.` : `تبقى حركة المرور مُصرَّفة. ويتغيّر زمن قطع 500 م بـ ${sgn(c.e.tt - c.r.tt)} ث لكل عربة.`,
+    cost: c => `الكلفة التقديرية: ${f0(c.cost.total)} دينار دون أداءات (حوالي ${f0(c.cost.eur)} يورو)، بهامش ±30 %.`,
+    cond: c => c.nKo ? `${c.nKo} من شروط الاستعمال غير محترمة: انظر القسم 3 قبل أيّ قرار.` : `لم يُكتشف أيّ شرط استعمال مانع؛ ويبقى ${c.nCheck} عنصرًا للتثبّت منه على عين المكان.`,
+    rec: c => c.rec < 0 ? 'لم تجد الأداة أيّ حلّ يوفّق بين حركة المرور والسلامة عند هذا الحجم من الحركة.' : c.rec === c.i ? 'وهو أيضًا الحلّ الذي توصي به الأداة للتوفيق بين حركة المرور والسلامة.' : `كانت الأداة توصي بالأحرى بـ: ${c.recName}. اعتمدت البلدية تهيئة أخرى، والفوارق مفصّلة أدناه.`
+  },
+  changeIntro: 'مقارنة مع الوضع الحالي دون تهيئة، تحت نفس حركة المرور. كل قيمة هي متوسّط خمس محاكاة مدّة كل منها ساعة.',
+  changeCols: ['المؤشّر', 'اليوم', 'مع التهيئة', 'ماذا يعني ذلك'],
+  ind: { v85: 'سرعة السيارات عند الممرّ (V85)', tt: 'زمن قطع 500 م', flow: 'العربات المُصرَّفة في الساعة وفي كل اتجاه', q: 'أطول طابور انتظار', ped: 'متوسّط انتظار المترجّل',
+    yield: 'السائقون الذين يُفسحون لمترجّل ينتظر', stop: 'السائقون الذين يتوقّفون في الوقت إذا ظهر مترجّل فجأة', risk: 'خطر وفاة المترجّل إذا صُدم' },
+  mean: {
+    v85: (r, e) => (e.v85 < r.v85 - 2 ? 'تمرّ السيارات بسرعة أقلّ أمام المترجّلين.' : 'تتغيّر السرعة عند الممرّ قليلًا.') + (e.v85 <= 30 ? ' وعتبة 30 كم/س محترمة.' : ' ولم تُبلغ عتبة 30 كم/س.'),
+    tt: (r, e) => e.sat ? 'يزداد الزمن دون توقّف ما دامت الذروة.' : (e.tt - r.tt > 2 ? `تخسر كل عربة حوالي ${f0(e.tt - r.tt)} ث.` : e.tt - r.tt < -2 ? `تربح كل عربة حوالي ${f0(r.tt - e.tt)} ث: يقلّ تعطيل العبور لحركة المرور.` : 'يتغيّر زمن القطع قليلًا.'),
+    flow: (r, e) => e.sat ? 'جزء من العربات لا يمرّ: يطول الطابور ما دامت الذروة.' : 'تمرّ كل حركة الذروة.',
+    q: (r, e) => e.qMax > r.qMax + 20 ? 'الطوابير أطول من اليوم.' : e.qMax < r.qMax - 20 ? 'الطوابير أقصر من اليوم.' : 'تبقى الطوابير في نفس المستوى.',
+    ped: (r, e) => e.pedW < r.pedW - 1 ? 'ينتظر المترجّلون وقتًا أقلّ للعبور.' : e.pedW > r.pedW + 1 ? 'ينتظر المترجّلون وقتًا أطول للعبور.' : 'يتغيّر انتظار المترجّلين قليلًا.',
+    yield: (r, e, sc) => sc.signal ? 'لا ينطبق: الإشارة الضوئية تنظّم الأولوية.' : `من بين 100 سائق يرون مترجّلًا ينتظر، يُفسح له ${f0(e.yieldPct)}.`,
+    stop: (r, e) => `من بين 100 سائق، يتوقّف ${f0(e.surgStop)} قبل المترجّل.`,
+    risk: (r, e) => e.surgRisk < r.surgRisk - 0.1 ? 'يكون الصدم، إن حدث، أقلّ خطورة.' : 'تبقى خطورة الصدم في نفس المستوى.'
+  },
+  u: { kmh: 'كم/س', s: 'ث', m: 'م' },
+  condIntro: 'يجب التثبّت منها قبل أيّ قرار. «غير محترم»: لا ينبغي إنجاز التهيئة على حالها. «للتثبّت»: لا تتوفّر المعلومة في الصفحة، ويجب مراقبتها على عين المكان.',
+  condCols: ['الشرط', 'الحالة'],
+  st: { ok: 'محترم', warn: 'تحت المراقبة', ko: 'غير محترم', check: 'للتثبّت' },
+  dimsIntro: 'الأبعاد الرئيسية؛ ويلي ذلك المخطّط المبدئي بالسلّم بقياس A4 أفقي. الأبعاد بالمتر.',
+  dimCols: ['العنصر', 'القيمة (م)'],
+  dim: { lane: 'عرض المسلك', road: 'عرض المعبّد', walk: 'عرض الأرصفة', zebraL: 'طول الممرّ (في اتجاه السير)', zebraB: 'عرض الأشرطة والمسافة بينها',
+    humpL: 'طول المطبّ', height: 'الارتفاع', humpDist: 'المسافة بين محور الممرّ ومحور التهيئة', tableL: 'طول المنصّة', rampL: 'طول المنحدرات', rampSlope: 'انحدار المنحدرات',
+    cushL: 'طول الوسادة', cushW: 'عرض الوسادة', cushH: 'ارتفاع الوسادة', laneN: 'عرض المسلك بمحاذاة الجزيرة', islW: 'عرض الجزيرة', islL: 'طول الجزيرة', taper: 'طول المداخل المائلة', refugeL: 'طول الملجأ',
+    offset: 'إزاحة المحور', transL: 'طول كل انتقال', palier: 'طول الجزء المُزاح', laneC: 'عرض المسلك في التعرّج', radius: 'نصف قطر المسار الأسرع',
+    paveL: 'الطول المرصوف', rugPos: 'موقع المجموعات قبل الممرّ', rugGroup: 'طول المجموعة', rugBand: 'عرض الشريط', rugGap: 'المسافة بين الأشرطة',
+    stopDist: 'خطّ التوقّف: المسافة إلى حافّة الممرّ', pedGreen: 'الأخضر للمترجّلين', clear: 'زمن الإخلاء', minGreen: 'أدنى أخضر للعربات بين طلبين' },
+  visib: c => `عند ${f0(c.P.v85free)} كم/س، وهي السرعة الحالية للسائقين (V85 في سير حرّ)، يحتاج السائق إلى حوالي ${f0(c.dVis)} م للتوقّف: ثانيتان لردّ الفعل ثم فرملة بـ 5 م/ث². يجب أن يكون الممرّ والمترجّلون المنتظرون مرئيّين من هذه المسافة في الاتجاهين.`,
+  visibList: ['لا وقوف ولا عائق يتجاوز ارتفاعه 1 م على مسافة 5 م قبل الممرّ من كل جانب (قاعدة فرنسية منذ قانون توجيه التنقّل لسنة 2019).', 'تشذيب النباتات المنخفضة وإبعاد الأثاث الحضري عن حافّة الرصيف.', 'لا يُوضع الممرّ في منعطف ولا خلف قمّة منحدر.'],
+  signV: 'الإشارات العمودية', marks: 'التعليم الأرضي',
+  signNote: 'رموز الإشارات الفرنسية؛ تُستعمل اللافتات المماثلة من الترتيب التونسي للإشارات.',
+  light: ['عمودا إنارة مخصّصان، واحد لكل اتجاه، على بعد 1 إلى 3 م تقريبًا قبل الممرّ على الرصيف الأيمن للسائق (E1 وE2 في المخطّط). هكذا يُضاء المترجّل من الأمام فيبرز عن الخلفية.', 'مستوى إنارة أعلى بوضوح من إنارة النهج، يُحدَّد وفق المواصفة EN 13201.', 'ضوء أبيض (LED) موجَّه حتى لا يُبهر السائقين.'],
+  walks: ['تخفيض الرصيف على كامل عرض الممرّ (4 م)، بفارق ارتفاع لا يتجاوز 2 صم وانحدار لا يتجاوز 5 %.', 'شريط تنبيه لمسي على بعد 0,50 م من الحافّة من كل جانب.', 'رصيف بعرض 1,40 م على الأقلّ خالٍ من العوائق على جانبي الممرّ.'],
+  walksNote: 'هذه قواعد الترتيب الفرنسي؛ ويجب ملاءمتها مع المواصفات التونسية لإمكانية النفاذ.',
+  water: ['المحافظة على سيلان المياه على طول الحواف، ووضع بالوعة قبل كل تهيئة تقطع المجرى.', 'إعادة طلاء التعليم الأرضي حالما يمّحي، مرّة في السنة على الأقلّ عند الممرّ.', 'مراقبة الإنارة والإشارات كل سنة.'],
+  costCols: ['البند', 'الكمية', 'الوحدة', 'السعر الأحادي (د.ت)', 'المبلغ (د.ت)'],
+  costSub: 'المجموع الفرعي', costFees: p => `الدراسات والمراقبة وتركيز الحضيرة (${f0(p)} %)`, costTotal: 'المجموع دون أداءات', costRange: 'المجال (±30 %)', costEur: 'ما يعادل باليورو',
+  costNote: r => `أسعار أحادية تقريبية دون أداءات، قيمة 2026، يجب تعويضها بجدول أسعار البلدية. سعر الصرف المعتمد: 1 يورو = ${nf2.format(r)} دينار.`,
+  planCols: ['الأولوية', 'الإجراء', 'الجهة', 'الموعد'],
+  actions: {
+    ko: ['رفع الشروط غير المحترمة (القسم 3) أو اختيار تهيئة أخرى.', 'المصالح الفنية', 'قبل القرار'],
+    sat: ['تخفيض حركة العبور أو اختيار تهيئة تُصرّف حركة المرور: التهيئة المعتمدة تُشبَع عند هذا الحجم.', 'البلدية', 'قبل القرار'],
+    count: ['قياس السرعة بالرادار وعدّ المترجّلين والعربات في ساعة الذروة، ثم إعادة المحاكاة بهذه القيم.', 'المصالح الفنية', 'قبل القرار'],
+    exec: ['إعداد مخطّط التنفيذ (مهندس مساح، مكتب دراسات) انطلاقًا من المخطّط المبدئي، والتثبّت من دوران الحافلات والشاحنات.', 'مكتب الدراسات', 'قبل الأشغال'],
+    market: ['إدراج الإنارة والإشارات في نفس صفقة الأشغال.', 'البلدية', 'عند إطلاق الصفقة'],
+    inform: ['إعلام المتساكنين والتجّار.', 'البلدية', 'شهرًا قبل الأشغال'],
+    after: ['إعادة قياس السرعات والطوابير وانتظار المترجّلين بعد ثلاثة إلى ستة أشهر من دخول التهيئة حيّز الاستغلال، ومقارنتها بهذه المذكّرة.', 'المصالح الفنية', 'بعد 3 إلى 6 أشهر'],
+    maint: ['صيانة التعليم الأرضي والإنارة والإشارات.', 'البلدية', 'كل سنة']
+  },
+  annexBox: 'هذا الملحق والملاحق التالية موجّهة للفنّيين، وقراءتها ليست ضرورية لفهم المذكّرة.',
+  annACols: ['التهيئة', 'V85 عند الممرّ (كم/س)', 'زمن قطع 500 م (ث)', 'التدفّق المُصرَّف (عربة/س/اتجاه)', 'انتظار المترجّل (ث)', 'خطر الوفاة (%)', 'الحالة'],
+  stateTxt: { sat: 'مُشبَع', ok: 'مُصرَّف' },
+  recLine: n => `الحلّ الموصى به حسب القاعدة: ${n}.`, recNone: 'لا يستجيب أيّ حلّ للقاعدة عند هذا الحجم من الحركة.',
+  method: ['المحاكاة المجهرية: تتبع كل عربة نموذج التتبّع IDM (Treiber وآخرون، 2000)؛ ويعبر كل مترجّل عند وجود فجوة كافية، أو عندما يُفسح له سائق، أو في الأخضر الخاصّ به، أو بالشروع في العبور إذا كانت العربة قادرة على التوقّف بتباطؤ 3 م/ث².',
+    'نفس وصولات العربات والمترجّلين في كل التهيئات، وخمس محاكاة مدّة كل منها ساعة بسحوبات محدّدة مسبقًا، بعد دقيقتين من الاستقرار.',
+    'سرعة عبور المطبّات معطاة كمُدخل (V85 حسب الصنف)؛ وسرعة التعرّج مستنتجة من هندسته؛ أمّا التضييق وطبقة السير والأشرطة الاهتزازية فتُخفّض السرعة بنسبة مئوية.',
+    'خطر الوفاة: منحنى Rosén وSander (2009)، P = 1 / (1 + e^(6,9 − 0,090 v))، يُطبَّق على السرعة المتبقّية عند ظهور مترجّل فجأة على المسافة المذكورة، بعد زمن ردّ الفعل وفرملة الطوارئ.',
+    'الحدود: مقطع معزول بطول 500 م، دون تحويل للحركة ودون درّاجات؛ لا يُقيَّم الضجيج والاهتزازات وراحة ركّاب الحافلات؛ ويجب معايرة النموذج بقياسات محلية.'],
+  calibCols: ['معيار المعايرة', 'القيمة'],
+  plan: { title: 'مخطّط مبدئي', legend: 'المفتاح', walk: 'رصيف', raised: 'تهيئة مرتفعة', island: 'جزيرة، امتداد رصيف', bev: 'شريط تنبيه لمسي', light: 'عمود إنارة (E1، E2)', sign: 'لافتة (الرمز)', signal: 'إشارة ضوئية (عربات ومترجّلون)', dir: 'اتجاه السير', cotes: 'الأبعاد بالمتر',
+    scale: 'السلّم', secA: 'مقطع A-A، الارتفاعات مضاعفة 10 مرات', secB: 'مقطع B-B عند الممرّ، الارتفاعات مضاعفة 10 مرات', formatL: 'القياس', format: 'A4 أفقي', indice: 'المؤشّر', objet: 'الموضوع', commune: 'البلدية', lieu: 'الموقع', date: 'التاريخ', auteur: 'أعدّه', calib: 'المعايرة',
+    disclaimer: 'مخطّط مبدئي، يُعاد إنجازه كمخطّط تنفيذ على أساس رفع طوبوغرافي.' }
+}
+};
+
+/* ---------- plan de principe coté, A4 paysage (SVG en millimètres) ---------- */
+function planSVG(sc, meta, N) {
+  const ar = lang === 'ar', D = N.plan, f2 = v => nf2.format(v);
+  const halfX = ({ ref: 16, dos: 18, trap: 14, plat: 15, cous: 18, ret: 22, chi: P.chTrans + 13, rev: 26, rug: 66, sig: 16 })[sc.id] || 18;
+  let S = 1000;
+  for (const s of [100, 125, 200, 250, 500, 1000]) { const kk = 1000 / s; if (2 * halfX * kk <= 262 && 17 * kk <= 86) { S = s; break; } }
+  const k = 1000 / S, cx = 148.5, cy = 76;
+  const PX = x => cx + (x - XC) * k, PY = y => cy - y * k;
+  const o = [];
+  const fx = v => v.toFixed(2);
+  const txt = (x, y, s, size = 2.4, anchor = 'middle', rot = 0) => o.push(`<text x="${fx(x)}" y="${fx(y)}" font-size="${size}" text-anchor="${anchor}" fill="#000"${rot ? ` transform="rotate(${rot} ${fx(x)} ${fx(y)})"` : ''}${ar ? ' direction="rtl"' : ''}>${esc(s)}</text>`);
+  const line = (x1, y1, x2, y2, w = 0.25, extra = '') => o.push(`<line x1="${fx(x1)}" y1="${fx(y1)}" x2="${fx(x2)}" y2="${fx(y2)}" stroke="#000" stroke-width="${w}"${extra}/>`);
+  const poly = (pts, fill, stroke = 'none', w = 0.2) => o.push(`<polygon points="${pts.map(p => fx(p[0]) + ',' + fx(p[1])).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${w}"/>`);
+  const pl = (pts, w, extra = '') => o.push(`<polyline points="${pts.map(p => fx(p[0]) + ',' + fx(p[1])).join(' ')}" fill="none" stroke="#000" stroke-width="${w}"${extra}/>`);
+  const rectW = (xa, xb, ya, yb, fill, stroke = '#000', w = 0.2) => poly([[PX(xa), PY(ya)], [PX(xb), PY(ya)], [PX(xb), PY(yb)], [PX(xa), PY(yb)]], fill, stroke, w);
+  const xs = []; for (let x = XC - halfX; x <= XC + halfX + 1e-9; x += halfX > 40 ? 1 : 0.5) xs.push(x);
+  const G = x => { const g = sc.geom(x); g.s = g.yc - g.wi / 2 - g.lw; g.n = g.yc + g.wi / 2 + g.lw; return g; };
+  const band = (fa, fb, fill) => poly(xs.map(x => [PX(x), PY(fa(G(x)))]).concat(xs.slice().reverse().map(x => [PX(x), PY(fb(G(x)))])), fill);
+  const edge = (f, w) => pl(xs.map(x => [PX(x), PY(f(G(x)))]), w);
+  const gs = 0.2 * k;   // maille des pavés
+  o.push(`<defs>
+    <clipPath id="clipPlan"><rect x="9" y="12" width="279" height="127"/></clipPath>
+    <pattern id="hatch" width="1.2" height="1.2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="1.2" stroke="#000" stroke-width="0.12"/></pattern>
+    <pattern id="hatch2" width="0.7" height="0.7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line x1="0" y1="0" x2="0" y2="0.7" stroke="#000" stroke-width="0.1"/></pattern>
+    <pattern id="dots" width="0.8" height="0.8" patternUnits="userSpaceOnUse"><circle cx="0.4" cy="0.4" r="0.16" fill="#000"/></pattern>
+    <pattern id="grid" width="${fx(Math.max(0.7, gs))}" height="${fx(Math.max(0.7, gs))}" patternUnits="userSpaceOnUse"><path d="M0 0H${fx(Math.max(0.7, gs))}M0 0V${fx(Math.max(0.7, gs))}" fill="none" stroke="#000" stroke-width="0.08"/></pattern>
+    <pattern id="green" width="1.6" height="1.6" patternUnits="userSpaceOnUse"><circle cx="0.8" cy="0.8" r="0.28" fill="none" stroke="#000" stroke-width="0.1"/></pattern>
+    <marker id="arr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="#000"/></marker>
+  </defs>`);
+  o.push('<rect x="5" y="5" width="287" height="200" fill="#fff" stroke="#000" stroke-width="0.5"/>');
+  txt(ar ? 287 : 10, 10.2, `${D.title} — ${meta.name}`, 3.4, 'start');
+  o.push('<g clip-path="url(#clipPlan)">');
+  // trottoirs, bordures
+  band(g => g.s - 2.5, g => g.s, '#e6e6e6'); band(g => g.n, g => g.n + 2.5, '#e6e6e6');
+  edge(g => g.s - 2.5, 0.18); edge(g => g.n + 2.5, 0.18);
+  // dispositifs
+  const gm = G(XC);
+  for (const f of sc.feats) {
+    if (f.t === 'hump') {
+      const g = G(f.xa); rectW(f.xa, f.xb, g.s, g.n, 'url(#hatch)', '#000', 0.25);
+    } else if (f.t === 'table') {
+      const g = G(f.xa);
+      rectW(f.xa, f.xa + f.ramp, g.s, g.n, 'url(#hatch2)', '#000', 0.2); rectW(f.xb - f.ramp, f.xb, g.s, g.n, 'url(#hatch2)', '#000', 0.2);
+      rectW(f.xa + f.ramp, f.xb - f.ramp, g.s, g.n, f.raised ? 'url(#hatch)' : '#fff', '#000', 0.25);
+    } else if (f.t === 'cushion') {
+      const g = G(f.xa);
+      for (const kk of [0, 1]) { const yc = laneY(g, kk); rectW(f.xa, f.xb, yc - 0.9, yc + 0.9, 'url(#hatch)', '#000', 0.25); }
+    } else if (f.t === 'pave') {
+      const g = G(f.xa); rectW(f.xa, f.xb, g.s, g.n, 'url(#grid)', '#000', 0.25);
+    } else if (f.t === 'rumble') {
+      const g = G(f.x0), ya = f.lane === 0 ? g.s : g.yc;
+      for (let j = 0; j < 6; j++) rectW(f.x0 + j * 0.8, f.x0 + j * 0.8 + 0.25, ya + 0.15, ya + g.lw - 0.15, '#000', 'none');
+    } else if (f.t === 'island') {
+      for (const [a, b] of [[XC - 15, XC - ZEBRA_HALF], [XC + ZEBRA_HALF, XC + 15]]) {
+        const xi = xs.filter(x => x >= a - 1e-9 && x <= b + 1e-9);
+        poly(xi.map(x => [PX(x), PY(G(x).yc + G(x).wi / 2)]).concat(xi.slice().reverse().map(x => [PX(x), PY(G(x).yc - G(x).wi / 2)])), 'url(#green)', '#000', 0.35);
+      }
+      rectW(XC - ZEBRA_HALF, XC + ZEBRA_HALF, gm.yc - gm.wi / 2, gm.yc + gm.wi / 2, '#e6e6e6', '#000', 0.15);
+      for (const xb of [XC - 12, XC + 12]) o.push(`<circle cx="${fx(PX(xb))}" cy="${fx(PY(G(xb).yc))}" r="0.7" fill="#fff" stroke="#000" stroke-width="0.25"/>`);
+    } else if (f.t === 'signal') {
+      line(PX(XC - 3), PY(gm.s), PX(XC - 3), PY(gm.yc), Math.max(0.5, 0.3 * k));
+      line(PX(XC + 3), PY(gm.yc), PX(XC + 3), PY(gm.n), Math.max(0.5, 0.3 * k));
+    }
+  }
+  edge(g => g.s, 0.4); edge(g => g.n, 0.4);
+  // passage piéton
+  for (let y = gm.s + 0.3; y + 0.5 <= gm.n - 0.2; y += 1.0) {
+    if (gm.wi > 0.05 && y + 0.5 > gm.yc - gm.wi / 2 && y < gm.yc + gm.wi / 2) continue;
+    rectW(XC - ZEBRA_HALF, XC + ZEBRA_HALF, y, y + 0.5, '#cfcfcf', '#000', 0.12);
+  }
+  // axe discontinu (3 m / 3,5 m)
+  const busy = sc.feats.filter(f => f.xa !== undefined);
+  for (let x = XC - halfX; x < XC + halfX; x += 6.5) {
+    const xe = x + 3;
+    if (xe > XC - ZEBRA_HALF - 2 && x < XC + ZEBRA_HALF + 2) continue;
+    if (busy.some(f => xe > f.xa - 0.5 && x < f.xb + 0.5)) continue;
+    if (G(x).wi > 0.05 || G(xe).wi > 0.05) continue;
+    pl([[PX(x), PY(G(x).yc)], [PX(x + 1.5), PY(G(x + 1.5).yc)], [PX(xe), PY(G(xe).yc)]], 0.25);
+  }
+  // abaissés de trottoir et bandes d'éveil de vigilance
+  rectW(XC - ZEBRA_HALF, XC + ZEBRA_HALF, gm.s - 0.92, gm.s - 0.5, 'url(#dots)', '#000', 0.1);
+  rectW(XC - ZEBRA_HALF, XC + ZEBRA_HALF, gm.n + 0.5, gm.n + 0.92, 'url(#dots)', '#000', 0.1);
+  if (gm.wi >= ISLAND_MIN) {
+    rectW(XC - ZEBRA_HALF, XC + ZEBRA_HALF, gm.yc - gm.wi / 2 + 0.1, gm.yc - gm.wi / 2 + 0.5, 'url(#dots)', '#000', 0.1);
+    rectW(XC - ZEBRA_HALF, XC + ZEBRA_HALF, gm.yc + gm.wi / 2 - 0.5, gm.yc + gm.wi / 2 - 0.1, 'url(#dots)', '#000', 0.1);
+  }
+  // éclairage : en amont de chaque sens, trottoir de droite du conducteur
+  const lamp = (x, y, lab) => { const px = PX(x), py = PY(y); o.push(`<circle cx="${fx(px)}" cy="${fx(py)}" r="1.25" fill="#fff" stroke="#000" stroke-width="0.25"/>`); line(px - 0.9, py - 0.9, px + 0.9, py + 0.9, 0.2); line(px - 0.9, py + 0.9, px + 0.9, py - 0.9, 0.2); txt(px, py + 3.4, lab, 1.9); };
+  lamp(XC - 3.8, gm.s - 1.5, 'E1'); lamp(XC + 3.8, gm.n + 1.5, 'E2');
+  // panneaux
+  const sign = (type, code, x, side) => {
+    const g = G(x), y = side === 'S' ? g.s - 1.6 : side === 'N' ? g.n + 1.6 : g.yc, px = PX(x), py = PY(y);
+    if (type === 'A') poly([[px, py - 1.5], [px + 1.4, py + 1.0], [px - 1.4, py + 1.0]], '#fff', '#000', 0.25);
+    else if (type === 'B') o.push(`<circle cx="${fx(px)}" cy="${fx(py)}" r="1.3" fill="#fff" stroke="#000" stroke-width="0.25"/>`);
+    else if (type === 'C') o.push(`<rect x="${fx(px - 1.2)}" y="${fx(py - 1.2)}" width="2.4" height="2.4" fill="#fff" stroke="#000" stroke-width="0.25"/>`);
+    else o.push(`<rect x="${fx(px - 0.5)}" y="${fx(py - 1.2)}" width="1" height="2.4" fill="#fff" stroke="#000" stroke-width="0.25"/>`);
+    txt(px, side === 'N' ? py - 2.0 : py + 3.3, code, 1.8);
+  };
+  const far = halfX - 2.5;
+  sign('C', 'C20a', XC - 6.5, 'S'); sign('C', 'C20a', XC + 6.5, 'N');
+  if (sc.id === 'dos' || sc.id === 'trap') { sign('A', 'A2b', XC - far, 'S'); sign('A', 'A2b', XC + far, 'N'); sign('B', 'B14', XC - far + 3.5, 'S'); sign('B', 'B14', XC + far - 3.5, 'N'); }
+  if (sc.id === 'plat' || sc.id === 'cous') { sign('C', 'C27', XC - far, 'S'); sign('C', 'C27', XC + far, 'N'); }
+  if (sc.id === 'ret') { sign('B', 'B21-1', XC - 13.5, 'I'); sign('B', 'B21-1', XC + 13.5, 'I'); }
+  if (sc.id === 'chi') { const xc1 = XC - 5 - P.chTrans / 2, xc2 = XC + 5 + P.chTrans / 2; sign('J', 'J5', xc1, 'S'); sign('J', 'J5', xc2, 'N'); }
+  if (sc.id === 'rug') { sign('A', 'A14', XC - far, 'S'); sign('A', 'A14', XC + far, 'N'); }
+  if (sc.id === 'sig') {
+    sign('A', 'A17', XC - far, 'S'); sign('A', 'A17', XC + far, 'N');
+    for (const [x, side] of [[XC - 3.4, 'S'], [XC + 3.4, 'N']]) {
+      const g = G(x), px = PX(x), py = PY(side === 'S' ? g.s - 0.9 : g.n + 0.9);
+      o.push(`<rect x="${fx(px - 0.8)}" y="${fx(py - 1.6)}" width="1.6" height="3.2" fill="#fff" stroke="#000" stroke-width="0.25"/>`);
+      for (const dy of [-1, 0, 1]) o.push(`<circle cx="${fx(px)}" cy="${fx(py + dy)}" r="0.32" fill="#000"/>`);
+    }
+  }
+  // sens de circulation
+  const xA = XC - halfX + 1.5, xB = XC + halfX - 1.5;
+  line(PX(xA), PY(laneY(G(xA), 0)), PX(xA) + 9, PY(laneY(G(xA), 0)), 0.3, ' marker-end="url(#arr)"');
+  line(PX(xB), PY(laneY(G(xB), 1)), PX(xB) - 9, PY(laneY(G(xB), 1)), 0.3, ' marker-end="url(#arr)"');
+  // trait de coupe A-A sur la voie sens →
+  const vert = sc.feats.find(f => f.t === 'hump' || f.t === 'table' || f.t === 'cushion');
+  if (vert) {
+    const ya = laneY(G(vert.xa), 0), a = PX(vert.xa - 1.5), b = PX(vert.xb + 1.5);
+    line(a, PY(ya), b, PY(ya), 0.25, ' stroke-dasharray="2 0.8 0.4 0.8"'); txt(a - 1.6, PY(ya) + 0.9, 'A', 2.6); txt(b + 1.6, PY(ya) + 0.9, 'A', 2.6);
+  } else {
+    line(PX(XC), PY(gm.s - 2.5) + 1, PX(XC), PY(gm.n + 2.5) - 1, 0.25, ' stroke-dasharray="2 0.8 0.4 0.8"');
+    txt(PX(XC) - 2.2, PY(gm.n + 1.0), 'B', 2.6); txt(PX(XC) - 2.2, PY(gm.s - 1.0) + 2.4, 'B', 2.6);
+  }
+  o.push('</g>');
+  // cotes
+  const nMax = Math.max(...xs.map(x => G(x).n)), sMin = Math.min(...xs.map(x => G(x).s));
+  const yTop = r => PY(nMax + 2.5) - 4 - 5 * r, yBot = r => PY(sMin - 2.5) + 5 + 5 * r;
+  const tick = (x, y) => line(x - 0.7, y + 0.7, x + 0.7, y - 0.7, 0.3);
+  const dimH = (x1, x2, yP, label, refY) => {
+    const a = PX(x1), b = PX(x2); line(a, yP, b, yP, 0.15); tick(a, yP); tick(b, yP);
+    if (refY !== undefined) { line(a, refY, a, yP, 0.1, ' stroke-dasharray="0.8 0.6"'); line(b, refY, b, yP, 0.1, ' stroke-dasharray="0.8 0.6"'); }
+    txt((a + b) / 2, yP - 0.9, label, 2.1);
+  };
+  const dimV = (y1, y2, xP, label) => { const a = PY(y1), b = PY(y2); line(xP, a, xP, b, 0.15); tick(xP, a); tick(xP, b); txt(xP - 1.0, (a + b) / 2, label, 2.0, 'middle', -90); };
+  const refTop = PY(nMax + 2.5), refBot = PY(sMin - 2.5);
+  dimH(XC - ZEBRA_HALF, XC + ZEBRA_HALF, yBot(0), f2(4), refBot);
+  const H = (x1, x2, r, lab) => dimH(x1, x2, yTop(r), lab, refTop);
+  switch (sc.id) {
+    case 'dos': H(XC - 12, XC - 8, 0, f2(4)); H(XC + 8, XC + 12, 0, f2(4)); H(XC - 10, XC, 1, f2(10)); H(XC, XC + 10, 1, f2(10)); break;
+    case 'trap': H(XC - 3.2, XC - 2, 0, f2(1.2)); H(XC - 2, XC + 2, 0, f2(4)); H(XC + 2, XC + 3.2, 0, f2(1.2)); break;
+    case 'plat': H(XC - 5.5, XC - 4, 0, f2(1.5)); H(XC - 4, XC + 4, 0, f2(8)); H(XC + 4, XC + 5.5, 0, f2(1.5)); break;
+    case 'cous': H(XC - 11.5, XC - 8.5, 0, f2(3)); H(XC + 8.5, XC + 11.5, 0, f2(3)); H(XC - 10, XC, 1, f2(10)); H(XC, XC + 10, 1, f2(10)); break;
+    case 'ret': H(XC - 15, XC - 7, 0, f2(8)); H(XC - ZEBRA_HALF, XC + ZEBRA_HALF, 0, f2(4)); H(XC + 7, XC + 15, 0, f2(8)); H(XC - 15, XC + 15, 1, f2(30)); break;
+    case 'chi': H(XC - 5 - P.chTrans, XC - 5, 0, f2(P.chTrans)); H(XC - 5, XC + 5, 0, f2(10)); H(XC + 5, XC + 5 + P.chTrans, 0, f2(P.chTrans)); break;
+    case 'rev': H(XC - 20, XC + 20, 0, f2(40)); break;
+    case 'rug': H(XC - 22, XC - 2, 0, '20'); H(XC - 42, XC - 2, 1, '40'); H(XC - 62, XC - 2, 2, '60'); break;
+    case 'sig': H(XC - 3, XC - ZEBRA_HALF, 0, f2(1)); break;
+  }
+  // chaîne transversale en section courante (à gauche) et au droit du dispositif quand la largeur change
+  const vChain = (x, xP) => {
+    const g = G(x);
+    dimV(g.s - 2.5, g.s, xP, f2(2.5)); dimV(g.s, g.yc - g.wi / 2, xP, f2(g.lw));
+    if (g.wi > 0.05) dimV(g.yc - g.wi / 2, g.yc + g.wi / 2, xP, f2(g.wi));
+    dimV(g.yc + g.wi / 2, g.n, xP, f2(g.lw)); dimV(g.n, g.n + 2.5, xP, f2(2.5));
+  };
+  vChain(XC - halfX + 4, PX(XC - halfX + 4));
+  if (sc.id === 'ret') vChain(XC + 5, PX(XC + 5));   // partie de largeur constante de l'îlot
+  if (sc.id === 'chi') {
+    vChain(XC, PX(XC) + 9);
+    const e = P.chOff; line(PX(XC - 5 - P.chTrans), PY(-e / 2), PX(XC + 5 + P.chTrans), PY(-e / 2), 0.12, ' stroke-dasharray="1.2 0.8"');
+    dimV(-e / 2, e / 2, PX(XC) - 9, f2(e));
+  }
+  // barre d'échelle
+  const sb = S >= 500 ? 20 : 10, sbL = sb * k, x0 = 12, ySb = 142.5;
+  line(x0, ySb, x0 + sbL, ySb, 0.3); for (const t of [0, sb / 2, sb]) { line(x0 + t * k, ySb - 1, x0 + t * k, ySb + 1, 0.25); txt(x0 + t * k, ySb - 1.6, String(t), 1.8); }
+  txt(x0 + sbL + 3, ySb + 0.7, `m — ${D.scale} 1:${S}`, 2.0, 'start');
+  txt(ar ? 287 : 10, 145.8, D.disclaimer, 1.9, 'start');
+  // coupe A-A (dispositif surélevé) ou B-B (profil en travers au droit du passage)
+  const bx = 100, by = 148, bw = 80, bh = 52;
+  o.push(`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="none" stroke="#000" stroke-width="0.25"/>`);
+  if (vert) {
+    txt(bx + bw / 2, by + 4, D.secA, 2.3);
+    const prof = sc.id === 'dos' ? { L: 4, h: 0.10, fn: u => { const c = 2, R = 20.05; return u <= 0 || u >= 4 ? 0 : Math.sqrt(R * R - (u - c) * (u - c)) - (R - 0.10); }, segs: [[0, 4, f2(4)]], slope: '' }
+      : sc.id === 'cous' ? { L: 3, h: 0.07, fn: u => u <= 0 || u >= 3 ? 0 : Math.min(0.07, 0.07 * u / 0.8, 0.07 * (3 - u) / 0.8), segs: [[0, 0.8, f2(0.8)], [0.8, 2.2, f2(1.4)], [2.2, 3, f2(0.8)]], slope: '8,8 %' }
+      : { L: vert.xb - vert.xa, h: 0.10, fn: u => { const Lr = vert.ramp, L2 = vert.xb - vert.xa; return u <= 0 || u >= L2 ? 0 : Math.min(0.10, 0.10 * u / Lr, 0.10 * (L2 - u) / Lr); },
+          segs: [[0, vert.ramp, f2(vert.ramp)], [vert.ramp, vert.xb - vert.xa - vert.ramp, f2(vert.xb - vert.xa - 2 * vert.ramp)], [vert.xb - vert.xa - vert.ramp, vert.xb - vert.xa, f2(vert.ramp)]], slope: sc.id === 'trap' ? '8,3 %' : '6,7 %' };
+    const span = prof.L + 4, ks = Math.min(66 / span, 14), kv = ks * 10, x1 = bx + (bw - span * ks) / 2, y0 = by + bh - 16;
+    const pts = []; for (let u = -2; u <= prof.L + 2 + 1e-9; u += 0.05) pts.push([x1 + (u + 2) * ks, y0 - prof.fn(u) * kv]);
+    pl(pts, 0.35); line(x1, y0 + 0.01, x1 + span * ks, y0 + 0.01, 0.12);
+    for (const [a, b, lab] of prof.segs) { const pa = x1 + (a + 2) * ks, pb = x1 + (b + 2) * ks, yd = y0 + 6; line(pa, yd, pb, yd, 0.15); tick(pa, yd); tick(pb, yd); txt((pa + pb) / 2, yd - 0.9, lab, 2.0); }
+    const xh = x1 + span * ks - 3; line(xh, y0, xh, y0 - prof.h * kv, 0.15); tick(xh, y0); tick(xh, y0 - prof.h * kv); txt(xh + 1.2, y0 - prof.h * kv / 2, f2(prof.h), 2.0, 'start');
+    if (prof.slope) txt(x1 + (2 + (prof.segs[0][1]) / 2) * ks, y0 - prof.h * kv - 2.5, prof.slope, 1.9);
+  } else {
+    txt(bx + bw / 2, by + 4, D.secB, 2.3);
+    const g = G(XC), parts = [[2.5, 0.15, 'walk'], [g.lw, 0, 'lane']];
+    if (g.wi > 0.05) parts.push([g.wi, 0.15, 'isl']);
+    parts.push([g.lw, 0, 'lane'], [2.5, 0.15, 'walk']);
+    const tot = parts.reduce((a, p) => a + p[0], 0), ks = 70 / tot, kv = ks * 10, x1 = bx + 5, y0 = by + bh - 16;
+    let xc = x1; const pts = [];
+    for (const [w, h] of parts) { pts.push([xc, y0 - h * kv], [xc + w * ks, y0 - h * kv]); xc += w * ks; }
+    pl(pts, 0.35);
+    xc = x1; for (const [w] of parts) { const yd = y0 + 6; line(xc, yd, xc + w * ks, yd, 0.15); tick(xc, yd); tick(xc + w * ks, yd); txt(xc + w * ks / 2, yd - 0.9, f2(w), 1.9); xc += w * ks; }
+    txt(x1 + 2.5 * ks + 1, y0 - 0.15 * kv - 1.2, f2(0.15), 1.8, 'start');
+  }
+  // légende
+  const lx = 10, ly = 148, lw2 = 86;
+  o.push(`<rect x="${lx}" y="${ly}" width="${lw2}" height="52" fill="none" stroke="#000" stroke-width="0.25"/>`);
+  txt(ar ? lx + lw2 - 3 : lx + 3, ly + 4.5, D.legend, 2.5, 'start');
+  const items = [['walk', '#e6e6e6'], ['raised', 'url(#hatch)'], ['island', 'url(#green)'], ['bev', 'url(#dots)'], ['light'], ['sign']];
+  if (sc.signal) items.push(['signal']);
+  items.push(['dir']);
+  items.forEach(([key, fill], j) => {
+    const yy = ly + 9 + j * 5.2, sxp = ar ? lx + lw2 - 10 : lx + 4, tx = ar ? lx + lw2 - 13 : lx + 13;
+    if (fill) o.push(`<rect x="${sxp}" y="${fx(yy - 1.6)}" width="6" height="3" fill="${fill}" stroke="#000" stroke-width="0.2"/>`);
+    else if (key === 'light') { o.push(`<circle cx="${sxp + 3}" cy="${fx(yy)}" r="1.25" fill="#fff" stroke="#000" stroke-width="0.25"/>`); line(sxp + 2.1, yy - 0.9, sxp + 3.9, yy + 0.9, 0.2); line(sxp + 2.1, yy + 0.9, sxp + 3.9, yy - 0.9, 0.2); }
+    else if (key === 'sign') poly([[sxp + 3, yy - 1.5], [sxp + 4.4, yy + 1.0], [sxp + 1.6, yy + 1.0]], '#fff', '#000', 0.25);
+    else if (key === 'signal') { o.push(`<rect x="${sxp + 2.2}" y="${fx(yy - 1.6)}" width="1.6" height="3.2" fill="#fff" stroke="#000" stroke-width="0.25"/>`); }
+    else if (key === 'dir') line(sxp, yy, sxp + 6, yy, 0.3, ' marker-end="url(#arr)"');
+    txt(tx, yy + 0.8, D[key], 2.1, 'start');
+  });
+  txt(ar ? lx + lw2 - 3 : lx + 3, ly + 50, D.cotes, 1.9, 'start');
+  // cartouche : texte noir, jamais en gras, sans bande de couleur
+  const kx0 = 184, ky0 = 148, kw = 103, rowsC = [[D.commune, meta.commune], [D.lieu, meta.lieu], [D.objet, `${D.title} — ${meta.name}`], [D.scale, `1:${S}`], [D.formatL, D.format],
+    [D.date, meta.date], [D.auteur, meta.auteur], [D.indice, 'A'], [D.calib, meta.fp]];
+  const rh = 52 / rowsC.length;
+  o.push(`<rect x="${kx0}" y="${ky0}" width="${kw}" height="52" fill="none" stroke="#000" stroke-width="0.3"/>`);
+  line(ar ? kx0 + kw - 26 : kx0 + 26, ky0, ar ? kx0 + kw - 26 : kx0 + 26, ky0 + 52, 0.2);
+  rowsC.forEach(([l, v], j) => {
+    const yy = ky0 + rh * (j + 1);
+    if (j < rowsC.length - 1) line(kx0, yy, kx0 + kw, yy, 0.15);
+    const ty = yy - rh / 2 + 0.8;
+    txt(ar ? kx0 + kw - 1.5 : kx0 + 1.5, ty, l, 2.0, 'start');
+    const val = String(v).length > 62 ? String(v).slice(0, 60) + '…' : String(v);
+    txt(ar ? kx0 + kw - 27.5 : kx0 + 27.5, ty, val, 2.0, 'start');
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 297 210" width="297mm" height="210mm" font-family="Arial, 'Segoe UI', Tahoma, sans-serif">${o.join('')}</svg>`;
+}
+
+const NOTE_CSS = `
+@page { size: A4 portrait; margin: 16mm 15mm 16mm; }
+@page plan { size: A4 landscape; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #e8eaec; color: #111; font: 10.5pt/1.5 "Segoe UI", Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+html[lang="ar"] body { font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 2; display: flex; gap: 12px; align-items: center; padding: 8px 16px; background: #fff; border-bottom: 1px solid #bbb; }
+.toolbar button { font: inherit; padding: 6px 14px; border: 1px solid #1b5ea8; background: #1b5ea8; color: #fff; border-radius: 4px; cursor: pointer; }
+.sheet { background: #fff; width: 210mm; margin: 8mm auto; padding: 16mm 15mm; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+.plan-sheet { page: plan; background: #fff; width: 297mm; height: 210mm; margin: 8mm auto; box-shadow: 0 1px 4px rgba(0,0,0,.18); break-before: page; break-after: page; overflow: hidden; }
+.plan-sheet svg { display: block; width: 297mm; height: 210mm; }
+h1 { font-size: 21pt; margin: 0 0 1mm; line-height: 1.2; }
+.sub { font-size: 12.5pt; color: #333; margin: 0 0 6mm; }
+h2 { font-size: 13.5pt; margin: 8mm 0 2.5mm; padding-bottom: 1mm; border-bottom: 0.4mm solid #111; break-after: avoid; }
+h3 { font-size: 11pt; margin: 4mm 0 1.5mm; break-after: avoid; }
+p, li { margin: 1.2mm 0; }
+ul, ol { padding-inline-start: 6mm; margin: 1mm 0; }
+table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.5pt; }
+th, td { border: 0.25mm solid #999; padding: 1.4mm 2mm; text-align: start; vertical-align: top; }
+th { background: #f0f0f0; font-weight: 600; }
+td.n { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
+tr { break-inside: avoid; }
+.cover td:first-child { width: 40mm; color: #333; }
+.box { border: 0.3mm solid #888; background: #f5f5f5; padding: 3mm 4mm; margin: 3mm 0; }
+.st { font-weight: 600; white-space: nowrap; }
+.st-ok { color: #1e7a3c; } .st-warn { color: #a86400; } .st-ko { color: #b3261e; } .st-check { color: #555; }
+.prio { color: #fff; font-weight: 700; text-align: center; white-space: nowrap; width: 18mm; }
+.p1 { background: #c62828; } .p2 { background: #ef8f00; } .p3 { background: #2e7d32; }
+.num { unicode-bidi: isolate; direction: ltr; }
+.annex { break-before: page; }
+.small { font-size: 9pt; color: #444; }
+.gloss td:first-child { width: 34mm; font-weight: 600; }
+@media print { body { background: #fff; } .toolbar { display: none; } .sheet { width: auto; margin: 0; padding: 0; box-shadow: none; } .plan-sheet { margin: 0; box-shadow: none; } }
+@media screen and (max-width: 900px) { .sheet { width: auto; margin: 0; padding: 6mm; } .plan-sheet { width: 100%; height: auto; } .plan-sheet svg { width: 100%; height: auto; } }`;
+
+function buildNote(id) {
+  const N = NOTE[lang], i = scenarios.findIndex(s => s.id === id), sc = scenarios[i], V = VDOC[id] ? VDOC[id][lang](P) : null;
+  const E = evalRes, e = E[i], r = E[0], R = recommend(E, scenarios), ui = lang === 'ar' ? 1 : 0;
+  const name = scName(sc), fp = fingerprint(P), fpTxt = calibModified ? t('calibMod', fp) : t('calibRef', fp);
+  const meta = { commune: META.commune || N.unknown, lieu: META.lieu || N.unknown, auteur: META.auteur || N.unknown, date: new Date().toLocaleDateString('fr-FR'), name, fp: fpTxt, objet: N.objet, outil: N.outil };
+  const c = { P, e, r, sc, i, n: scenarios.length - 1, name, mja: 2 * P.q * 10, lane: laneAt(sc), dVis: stopDist(P.v85free), rec: R.best, recName: R.best >= 0 ? scName(scenarios[R.best]) : '' };
+  c.cost = costing(sc);
+  const conds = (VCOND[id] || []).map(k => ({ st: COND[k].test(c), txt: COND[k][lang](c) }));
+  c.nKo = conds.filter(x => x.st === 'ko').length; c.nCheck = conds.filter(x => x.st === 'check').length;
+  const li = arr => '<ul>' + arr.map(s => `<li>${esc(s)}</li>`).join('') + '</ul>';
+  const u = N.u, B = N.brief;
+  const tbl = (cols, rows) => `<table><thead><tr>${cols.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  // 1-4
+  let h1 = `<h1>${esc(N.title)}</h1><p class="sub">${esc(N.sub)}</p>`;
+  h1 += `<table class="cover"><tbody>${N.cover.map(([k2, l]) => `<tr><td>${esc(l)}</td><td>${esc(meta[k2])}</td></tr>`).join('')}</tbody></table>`;
+  h1 += `<h3>${esc(N.glossTitle)}</h3><table class="gloss"><tbody>${N.gloss.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table>`;
+  h1 += `<h2>${esc(N.s.brief)}</h2><ul class="brief">${['site', 'variant', 'speed', 'risk', 'ped', 'traffic', 'cost', 'cond', 'rec'].map(k2 => `<li>${B[k2](c)}</li>`).join('')}</ul>`;
+  const M = N.mean, ind = N.ind;
+  const rows2 = [
+    ['v85', `${f0(r.v85)} ${u.kmh}`, `${f0(e.v85)} ${u.kmh}`, M.v85(r, e)],
+    ['tt', `${f0(r.tt)} ${u.s}`, `${f0(e.tt)} ${u.s}`, M.tt(r, e)],
+    ['flow', f0(r.flow), f0(e.flow), M.flow(r, e)],
+    ['q', `${f0(r.qMax)} ${u.m}`, `${f0(e.qMax)} ${u.m}`, M.q(r, e)],
+    ['ped', `${f0(r.pedW)} ${u.s}`, `${f0(e.pedW)} ${u.s}`, M.ped(r, e)],
+    ['yield', `${f0(r.yieldPct)} %`, sc.signal ? '–' : `${f0(e.yieldPct)} %`, M.yield(r, e, sc)],
+    ['stop', `${f0(r.surgStop)} %`, `${f0(e.surgStop)} %`, M.stop(r, e)],
+    ['risk', `${f1(r.surgRisk)} %`, `${f1(e.surgRisk)} %`, M.risk(r, e)]
+  ].map(([k2, a, b, m]) => `<tr><td>${esc(ind[k2])}</td><td class="n">${esc(a)}</td><td class="n">${esc(b)}</td><td>${esc(m)}</td></tr>`);
+  h1 += `<h2>${esc(N.s.change)}</h2><p>${esc(N.changeIntro)}</p>${tbl(N.changeCols, rows2)}`;
+  h1 += `<h2>${esc(N.s.cond)}</h2><p>${esc(N.condIntro)}</p>${tbl(N.condCols, conds.map(x => `<tr><td>${esc(x.txt)}</td><td class="st st-${x.st}">${esc(N.st[x.st])}</td></tr>`))}`;
+  h1 += `<h2>${esc(N.s.dims)}</h2><p>${esc(N.dimsIntro)}</p>${tbl(N.dimCols, dims(sc).map(([k2, v]) => `<tr><td>${esc(N.dim[k2])}</td><td class="n">${esc(v)}</td></tr>`))}`;
+  // 5-12
+  let h2 = '';
+  if (V) {
+    h2 += `<h2>${esc(N.s.implant)}</h2>${li(V.implant)}`;
+    h2 += `<h2>${esc(N.s.visib)}</h2><p>${esc(N.visib(c))}</p>${li(N.visibList)}`;
+    h2 += `<h2>${esc(N.s.signs)}</h2><h3>${esc(N.signV)}</h3>${li(V.signs)}<h3>${esc(N.marks)}</h3>${li(V.marks)}<p class="small">${esc(N.signNote)}</p>`;
+    h2 += `<h2>${esc(N.s.light)}</h2>${li(N.light)}`;
+    h2 += `<h2>${esc(N.s.walks)}</h2>${li(N.walks.concat(V.walks))}<p class="small">${esc(N.walksNote)}</p>`;
+    h2 += `<h2>${esc(N.s.water)}</h2>${li(N.water.concat(V.water))}`;
+  }
+  const C2 = c.cost, nfp = v => nf0.format(v), nq = v => (Number.isInteger(v) ? nf0 : nf1).format(v);
+  const crow = C2.rows.map(x => `<tr><td>${esc(x.p[lang])}</td><td class="n">${nq(x.qty)}</td><td>${esc(x.p.u[ui])}</td><td class="n">${nfp(PRICES[x.p.k])}</td><td class="n">${nfp(x.amount)}</td></tr>`);
+  crow.push(`<tr><td colspan="4">${esc(N.costSub)}</td><td class="n">${nfp(C2.sub)}</td></tr>`);
+  crow.push(`<tr><td colspan="4">${esc(N.costFees(PRICES.fees))}</td><td class="n">${nfp(C2.fees)}</td></tr>`);
+  crow.push(`<tr><th colspan="4">${esc(N.costTotal)}</th><th class="n">${nfp(C2.total)}</th></tr>`);
+  crow.push(`<tr><td colspan="4">${esc(N.costRange)}</td><td class="n"><span class="num">${nfp(C2.low)} – ${nfp(C2.high)}</span></td></tr>`);
+  crow.push(`<tr><td colspan="4">${esc(N.costEur)}</td><td class="n">≈ ${nfp(C2.eur)} €</td></tr>`);
+  h2 += `<h2>${esc(N.s.cost)}</h2>${tbl(N.costCols, crow)}<p class="small">${esc(N.costNote(RATE))}</p>`;
+  const A = N.actions, acts = [];
+  if (c.nKo) acts.push([1, A.ko]);
+  if (e.sat) acts.push([1, A.sat]);
+  acts.push([1, A.count], [2, A.exec], [2, A.market], [2, A.inform], [3, A.after], [3, A.maint]);
+  h2 += `<h2>${esc(N.s.plan)}</h2>${tbl(N.planCols, acts.map(([p, [a, w, q]]) => `<tr><td class="prio p${p}">P${p}</td><td>${esc(a)}</td><td>${esc(w)}</td><td>${esc(q)}</td></tr>`))}`;
+  // annexes
+  const st = x => x.sat ? N.stateTxt.sat : N.stateTxt.ok;
+  h2 += `<section class="annex"><h2>${esc(N.s.annA)}</h2><div class="box">${esc(N.annexBox)}</div>`;
+  h2 += tbl(N.annACols, E.map((x, j) => `<tr${j === i ? ' style="font-weight:600"' : ''}><td>${esc(scName(scenarios[j]))}</td><td class="n">${f0(x.v85)}</td><td class="n">${f0(x.tt)}</td><td class="n">${f0(x.flow)}</td><td class="n">${f0(x.pedW)}</td><td class="n">${f1(x.surgRisk)}</td><td>${esc(st(x))}</td></tr>`));
+  h2 += `<p>${esc(t('vCriteria'))}</p><p>${esc(R.best >= 0 ? N.recLine(scName(scenarios[R.best])) : N.recNone)}</p></section>`;
+  const calibRows = FIELDS.find(g => g.lock).items.map(f => `<tr><td>${esc(f[lang])}</td><td class="n">${esc(nfa.format(P[f.k]))} ${esc(f.u[ui])}</td></tr>`);
+  h2 += `<section><h2>${esc(N.s.annB)}</h2>${li(N.method)}${tbl(N.calibCols, calibRows)}<p class="small">${esc(fpTxt)}</p></section>`;
+  h2 += `<section><h2>${esc(N.s.annC)}</h2><ol dir="ltr">${SOURCES}</ol></section>`;
+  const dir = lang === 'ar' ? 'rtl' : 'ltr';
+  return `<!doctype html><html lang="${lang}" dir="${dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(N.title)} — ${esc(name)}</title><style>${NOTE_CSS}</style></head><body>
+<div class="toolbar"><button type="button" onclick="window.print()">${esc(N.print)}</button><span>${esc(N.title)} — ${esc(name)}</span></div>
+<div class="sheet">${h1}</div>
+<div class="plan-sheet">${planSVG(sc, meta, N)}</div>
+<div class="sheet">${h2}</div>
+</body></html>`;
+}
 
 /* ---------- état global ---------- */
 let P = derive({ ...DEFAULTS }), scenarios = [], sims = [], views = [];
@@ -1718,6 +2539,7 @@ function build() {
   layoutAll();
   $('#bar-sub').textContent = t('barSub', P);
   $('#lede').textContent = t('lede', P);
+  $('#eyebrow').textContent = t('eyebrow', P);
 }
 
 /* ---------- évaluation : cinq simulations d'une heure, tirages fixés, en tâche de fond ---------- */
@@ -1734,7 +2556,7 @@ function startEvaluation() {
       if (cur[0].t >= EVAL_T - 1e-6) {
         cur.forEach((s, i) => acc[i].push(stats(s)));
         cur = null; rep++;
-        if (rep >= REPS) { evalRes = aggregate(acc); evalProg = 1; if (!busy) updateKpis(); return; }
+        if (rep >= REPS) { evalRes = aggregate(acc); evalProg = 1; if (!busy) updateKpis(); buildNoteUI(); return; }
       }
     }
     evalProg = (rep + (cur ? cur[0].t / EVAL_T : 0)) / REPS;
@@ -1793,10 +2615,10 @@ function renderVerdict() {
   if (!evalRes) h += `<p class="eyebrow">${t('vEyebrow')}</p><p>${t('vRunning', Math.round(evalProg * 100))}</p>`;
   else {
     const r = recommend(evalRes, scenarios), ref = evalRes[0];
-    if (r.best < 0) h += `<p class="eyebrow">${t('vEyebrow')}</p><h2>${t('vNoneTitle')}</h2><p>${t('vNone')}</p>`;
+    if (r.best < 0) h += `<p class="eyebrow">${t('vEyebrow')}</p><h3>${t('vNoneTitle')}</h3><p>${t('vNone')}</p>`;
     else {
       const e = evalRes[r.best];
-      h += `<p class="eyebrow">${t('vEyebrow')}</p><h2>${scName(scenarios[r.best])}</h2><p>${t('vMetrics', e, ref)}</p>`;
+      h += `<p class="eyebrow">${t('vEyebrow')}</p><h3>${scName(scenarios[r.best])}</h3><p>${t('vMetrics', e, ref)}</p>`;
       h += `<p class="${e.v85 <= 30 ? 'ok-t' : 'warn-t'}">${e.v85 <= 30 ? t('vSafeOk') : t('vSafeKo', e.v85)}</p>`;
       if (ref.surgRisk - e.surgRisk < 0.1) h += `<p class="warn-t">${t('vSmallGain')}</p>`;
     }
@@ -1847,27 +2669,38 @@ function frame(now) {
 }
 
 /* ---------- formulaire : site et conception modifiables, calibrage verrouillé ---------- */
+// données de la rue et conception en haut de page ; calibrage verrouillé en bas
 function buildForm() {
-  const form = $('#params'), G = t('groups'), ui = lang === 'ar' ? 1 : 0;
-  form.innerHTML = FIELDS.map(grp => {
+  const G = t('groups'), ui = lang === 'ar' ? 1 : 0;
+  const fs = grp => {
     const locked = grp.lock && !calibUnlocked;
     const fields = grp.items.map(f => `<div class="field"><label for="p-${f.k}">${f[lang]}</label><input id="p-${f.k}" name="${f.k}" type="number" step="${f.step}"${f.min !== undefined ? ` min="${f.min}" max="${f.max}"` : ''} inputmode="decimal" value="${P[f.k]}"${locked ? ' readonly' : ''}><span class="unit">${f.u[ui]}</span></div>`).join('');
     return `<fieldset class="${grp.lock ? 'calib' : ''}"><legend>${G[grp.g][0]}</legend><div class="fields">${fields}</div><p class="src">${G[grp.g][1]}</p>${grp.lock ? `<button class="btn" type="button" id="btn-unlock">${calibUnlocked ? t('lock') : t('unlock')}</button>` : ''}</fieldset>`;
-  }).join('') + `<div class="form-actions"><button class="btn primary" type="submit">${t('apply')}</button><button class="btn" type="button" id="btn-defaults">${t('defaults')}</button><span class="msg" id="form-msg"></span></div>`;
+  };
+  $('#params').innerHTML = FIELDS.filter(g => !g.lock).map(fs).join('')
+    + `<div class="form-actions"><button class="btn primary" type="submit">${t('apply')}</button><button class="btn" type="button" id="btn-defaults">${t('defaults')}</button><span class="msg" id="form-msg"></span></div>`;
+  $('#params-calib').innerHTML = FIELDS.filter(g => g.lock).map(fs).join('')
+    + `<div class="form-actions"><button class="btn primary" type="submit" id="btn-apply-calib"${calibUnlocked ? '' : ' hidden'}>${t('applyCalib')}</button><span class="msg" id="form-msg-c"></span></div>`;
 }
-$('#params').addEventListener('click', e => {
+let formMsg = '#form-msg';
+function onFormClick(e) {
   const id = e.target && e.target.id;
   if (id === 'btn-unlock') {
     calibUnlocked = !calibUnlocked;
     document.querySelectorAll('fieldset.calib input').forEach(i => { i.readOnly = !calibUnlocked; });
     e.target.textContent = calibUnlocked ? t('lock') : t('unlock');
-    $('#form-msg').textContent = calibUnlocked ? t('msgUnlocked') : t('msgLocked');
+    $('#btn-apply-calib').hidden = !calibUnlocked;
+    $('#form-msg-c').textContent = calibUnlocked ? t('msgUnlocked') : t('msgLocked');
   } else if (id === 'btn-defaults') {
     for (const grp of FIELDS) for (const f of grp.items) if (!grp.lock || calibUnlocked) $('#p-' + f.k).value = DEFAULTS[f.k];
     $('#form-msg').textContent = t('msgDefaults');
   }
-});
-$('#params').addEventListener('submit', e => {
+}
+$('#params').addEventListener('click', onFormClick);
+$('#params-calib').addEventListener('click', onFormClick);
+$('#params').addEventListener('submit', e => { formMsg = '#form-msg'; applyParams(e); });
+$('#params-calib').addEventListener('submit', e => { formMsg = '#form-msg-c'; applyParams(e); });
+function applyParams(e) {
   e.preventDefault();
   const next = { ...P }, bad = [];
   for (const grp of FIELDS) for (const f of grp.items) {
@@ -1879,12 +2712,12 @@ $('#params').addEventListener('submit', e => {
   }
   if (next.retLane >= next.laneW) bad.push(t('msgLane'));
   if (next.vPed < 0.3) bad.push(FIELDS[2].items[3][lang]);
-  if (bad.length) { $('#form-msg').textContent = t('msgFix', bad.join(t('sep'))); return; }
+  if (bad.length) { $(formMsg).textContent = t('msgFix', bad.join(t('sep'))); return; }
   P = derive(next);
   calibModified = fingerprint(P) !== FP_REF;
-  $('#form-msg').textContent = t('msgApplied');
+  $(formMsg).textContent = t('msgApplied');
   restart(true);
-});
+}
 
 function restart(paramsChanged) {
   build();
@@ -1941,6 +2774,48 @@ function open3D(sc) {
 $('#dlg-close').addEventListener('click', () => { const d = $('#dlg3d'); if (d.close) d.close(); else d.removeAttribute('open'); });
 $('#dlg3d').addEventListener('click', e => { if (e.target === e.currentTarget && e.currentTarget.close) e.currentTarget.close(); });
 
+/* ---------- choix de la variante et note de calcul ---------- */
+function buildNoteUI() {
+  const box = $('#note-gen'), ui = lang === 'ar' ? 1 : 0;
+  const rec = evalRes ? recommend(evalRes, scenarios).best : -1;
+  const chosen = pickedVariant || (rec > 0 ? scenarios[rec].id : 'ret');
+  const opts = scenarios.slice(1).map((sc, j) => `<option value="${sc.id}"${sc.id === chosen ? ' selected' : ''}>${esc(scName(sc))}${j + 1 === rec ? esc(t('recSuffix')) : ''}</option>`).join('');
+  box.innerHTML = `<h2>${t('noteTitle')}</h2><p class="note">${t('noteIntro')}</p>
+    <div class="note-grid">
+      <label class="nf"><span>${t('selLabel')}</span><select id="sel-variant">${opts}</select></label>
+      <label class="nf"><span>${t('mCommune')}</span><input id="m-commune" type="text" value="${esc(META.commune)}" autocomplete="off"></label>
+      <label class="nf"><span>${t('mLieu')}</span><input id="m-lieu" type="text" value="${esc(META.lieu)}" autocomplete="off"></label>
+      <label class="nf"><span>${t('mAuteur')}</span><input id="m-auteur" type="text" value="${esc(META.auteur)}" autocomplete="off"></label>
+    </div>
+    <details class="prices"><summary>${t('pricesSum')}</summary><p class="note">${t('pricesNote')}</p>
+      <div class="table-wrap"><table class="ptable"><tbody>${PRICE_DEF.map(p => `<tr><td>${esc(p[lang])}</td><td><input id="pu-${p.k}" data-pk="${p.k}" type="number" min="0" step="any" value="${PRICES[p.k]}"></td><td>${esc(p.u[ui])}</td></tr>`).join('')}
+      <tr><td>${t('rateLabel')}</td><td><input id="pu-rate" type="number" min="0.1" step="0.01" value="${RATE}"></td><td>TND / €</td></tr></tbody></table></div>
+    </details>
+    <div class="form-actions"><button class="btn primary" id="btn-note" type="button"${evalRes ? '' : ' disabled'}>${t('btnNote')}</button><span class="msg" id="note-msg">${evalRes ? '' : t('noteWait')}</span></div>`;
+}
+$('#note-gen').addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'sel-variant') pickedVariant = el.value;
+  else if (el.id === 'm-commune' || el.id === 'm-lieu' || el.id === 'm-auteur') {
+    META[el.id.slice(2)] = el.value;
+    try { localStorage.setItem('mv-meta', JSON.stringify(META)); } catch (err) { /* stockage indisponible */ }
+  } else if (el.dataset.pk) { const v = parseFloat(el.value); if (Number.isFinite(v) && v >= 0) PRICES[el.dataset.pk] = v; }
+  else if (el.id === 'pu-rate') { const v = parseFloat(el.value); if (Number.isFinite(v) && v > 0) RATE = v; }
+});
+$('#note-gen').addEventListener('change', e => { if (e.target.id === 'sel-variant') pickedVariant = e.target.value; });
+let noteUrl = null;
+$('#note-gen').addEventListener('click', e => {
+  if (e.target.id !== 'btn-note' || !evalRes) return;
+  const id = $('#sel-variant').value;
+  const html = buildNote(id);
+  if (noteUrl) URL.revokeObjectURL(noteUrl);
+  noteUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+  const w = window.open(noteUrl, '_blank');
+  const msg = $('#note-msg');
+  if (w) msg.textContent = t('noteOpened');
+  else msg.innerHTML = `${esc(t('noteBlocked'))} <a href="${noteUrl}" target="_blank" rel="noopener">${esc(t('noteLink'))}</a>`;
+});
+
 /* ---------- langue ---------- */
 function setLang(l) {
   lang = l === 'ar' ? 'ar' : 'fr';
@@ -1956,6 +2831,7 @@ function setLang(l) {
   $('#method-body').innerHTML = t('method', t('vCriteria'));
   $('#bar-sub').textContent = t('barSub', P);
   $('#lede').textContent = t('lede', P);
+  $('#eyebrow').textContent = t('eyebrow', P);
   try { localStorage.setItem('mv-lang', lang); } catch (e) { /* stockage indisponible */ }
   setHash();
   readColors();
@@ -1965,6 +2841,7 @@ function setLang(l) {
     layoutAll();
     verdictHTML = ''; lastTable = '';
     updateKpis(); clock();
+    buildNoteUI();
   }
   buildForm();
 }
@@ -2030,7 +2907,8 @@ requestAnimationFrame(frame);
 if (document.readyState === 'complete') renderThumbs(); else window.addEventListener('load', renderThumbs);
 
 // accès console pour vérification
-window.__mv = { stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P };
+window.__mv = { stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P,
+  note: id => buildNote(id), setLang: l => setLang(l) };
 })();
 </script>
 </body>

@@ -2888,7 +2888,8 @@ Object.assign(I18N.fr, {
   mapClick: 'Cliquez sur la carte pour placer le passage piéton.',
   mapPoint: (la, lo) => `Passage placé en ${la.toFixed(5)}, ${lo.toFixed(5)}. Cliquez sur « Analyser le lieu ».`,
   notFound: 'Adresse introuvable.', searching: 'Recherche…', analysing: 'Analyse du lieu (OpenStreetMap)…', analysed: 'Lieu analysé. Les résultats figurent ci-dessous et dans la note de calcul.',
-  mapOffline: 'La carte demande une connexion Internet.', osmFail: 'OpenStreetMap n’a pas répondu. Réessayez dans un instant.',
+  mapOffline: 'La carte demande une connexion Internet.', osmFail: 'Les serveurs OpenStreetMap sont surchargés. Réessayez dans une minute.',
+  osmRetry: s => `OpenStreetMap est chargé : nouvel essai dans ${s} s…`,
   popRun: 'calcul en cours chez WorldPop (10 à 40 s)…', popOffline: 'disponible sur le site en ligne seulement', popFail: 'WorldPop n’a pas répondu',
   colon: ' : ', hRoad: 'Rue', roadNone: 'Aucune rue trouvée à moins de 35 m du point : placez-le sur la chaussée.',
   roadLine: (n, ty) => `${n || 'Rue sans nom'} (${ty})`,
@@ -2942,7 +2943,8 @@ Object.assign(I18N.ar, {
   mapClick: 'اضغط على الخريطة لوضع ممرّ المترجّلين.',
   mapPoint: (la, lo) => `وُضع الممرّ في ${la.toFixed(5)}، ${lo.toFixed(5)}. اضغط على «تحليل الموقع».`,
   notFound: 'العنوان غير موجود.', searching: 'جارٍ البحث…', analysing: 'جارٍ تحليل الموقع (OpenStreetMap)…', analysed: 'تمّ تحليل الموقع. النتائج أدناه وفي مذكّرة الحساب.',
-  mapOffline: 'تتطلّب الخريطة اتصالًا بالإنترنت.', osmFail: 'لم يستجب OpenStreetMap. أعد المحاولة بعد لحظات.',
+  mapOffline: 'تتطلّب الخريطة اتصالًا بالإنترنت.', osmFail: 'خوادم OpenStreetMap مُثقلة. أعد المحاولة بعد دقيقة.',
+  osmRetry: s => `OpenStreetMap مُثقل: محاولة جديدة بعد ${s} ث…`,
   popRun: 'الحساب جارٍ لدى WorldPop (من 10 إلى 40 ث)…', popOffline: 'متاحة على الموقع الإلكتروني فقط', popFail: 'لم يستجب WorldPop',
   colon: ': ', hRoad: 'النهج', roadNone: 'لم يُعثر على أيّ نهج على أقلّ من 35 م من النقطة: ضعها على المعبّد.',
   roadLine: (n, ty) => `${n || 'نهج دون اسم'} (${ty})`,
@@ -3073,16 +3075,21 @@ nwr(around:400,${lat},${lon})[amenity~"^(school|kindergarten|college|university|
 out tags geom;
 node(around:150,${lat},${lon})[highway~"^(crossing|traffic_signals|bus_stop)$"];
 out body;`;
-  // serveur principal, nouvel essai après une pause (il limite les appels rapprochés), puis miroir ouvert aux navigateurs
-  const servers = ['https://overpass-api.de/api/interpreter', 'https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
-  for (let k = 0; k < servers.length; k++) {
-    if (k) await new Promise(r => setTimeout(r, 2500));
-    try {
-      const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 30000);
-      const r = await fetch(servers[k], { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ctrl.signal });
-      clearTimeout(tm);
-      if (r.ok) return await r.json();
-    } catch (e) { /* essai suivant */ }
+  const get = async (url, opts, ms) => {
+    const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), ms);
+    try { const r = await fetch(url, Object.assign({ signal: ctrl.signal }, opts)); return r.ok ? await r.json() : null; }
+    catch (e) { return null; } finally { clearTimeout(tm); }
+  };
+  // site en ligne : la fonction Cloudflare essaie plusieurs serveurs Overpass et garde le résultat en cache
+  if (/^https?:$/.test(location.protocol)) {
+    const j = await get(`api/osm?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}`, {}, 90000);
+    if (j && j.elements) return j;
+  }
+  // fichier ouvert en local, ou fonction indisponible : appel direct, avec nouvel essai après une pause
+  for (let k = 0; k < 3; k++) {
+    if (k) { $('#map-msg').textContent = t('osmRetry', 3 * k); await new Promise(r => setTimeout(r, 3000 * k)); }
+    const j = await get('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }, 30000);
+    if (j && j.elements) return j;
   }
   throw new Error('overpass');
 }

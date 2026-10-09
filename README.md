@@ -39,7 +39,7 @@ Adresses directes :
 
 Un code de contrôle du calibrage (6 caractères) s’affiche sous la synthèse. Si quelqu'un déverrouille le calibrage (mode expert) et le modifie, la page l'affiche en rouge sur les résultats.
 
-Le code de contrôle rend une modification visible, elle ne l'empêche pas : le fichier est public et peut être copié puis modifié. La référence fait donc foi seulement si elle est publiée à une adresse officielle, avec son code de contrôle.
+Le code de contrôle rend une modification visible, il ne l'empêche pas : le fichier est public et peut être copié puis modifié. La référence fait donc foi seulement si elle est publiée à une adresse officielle, avec son code de contrôle.
 
 ## Avant toute diffusion aux communes
 

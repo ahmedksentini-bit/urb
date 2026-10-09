@@ -3073,13 +3073,16 @@ nwr(around:400,${lat},${lon})[amenity~"^(school|kindergarten|college|university|
 out tags geom;
 node(around:150,${lat},${lon})[highway~"^(crossing|traffic_signals|bus_stop)$"];
 out body;`;
-  for (const url of ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+  // serveur principal, nouvel essai après une pause (il limite les appels rapprochés), puis miroir ouvert aux navigateurs
+  const servers = ['https://overpass-api.de/api/interpreter', 'https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+  for (let k = 0; k < servers.length; k++) {
+    if (k) await new Promise(r => setTimeout(r, 2500));
     try {
       const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 30000);
-      const r = await fetch(url, { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ctrl.signal });
+      const r = await fetch(servers[k], { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ctrl.signal });
       clearTimeout(tm);
       if (r.ok) return await r.json();
-    } catch (e) { /* miroir suivant */ }
+    } catch (e) { /* essai suivant */ }
   }
   throw new Error('overpass');
 }

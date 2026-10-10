@@ -145,6 +145,20 @@ main { padding-block: 6px 48px; }
 body.mod-jx #donnees, body.mod-jx .bar, body.mod-jx #compact-head, body.mod-jx main { display: none; }
 body:not(.mod-jx) #carrefour { display: none; }
 #jx-site-slot .site-map { margin-bottom: 6px; }
+body.mod-pv #donnees, body.mod-pv .bar, body.mod-pv #compact-head, body.mod-pv main { display: none; }
+body:not(.mod-pv) #chaussee { display: none; }
+#pv-site-slot .site-map { margin-bottom: 6px; }
+.pv-warn { margin: 6px 0 12px; padding: 12px 14px; border: 1px solid var(--warn); border-inline-start-width: 5px; border-radius: 6px; background: var(--surface); font-size: 14px; max-width: 120ch; }
+#pv-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 14px; align-items: start; margin: 14px 0 18px; }
+.pv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 14px; margin: 12px 0 18px; }
+.pv-card { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 12px; min-width: 0; }
+.pv-card h4 { margin: 0 0 8px; font: 600 15px/1.3 var(--font-display); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.pv-card svg { display: block; width: 100%; max-width: 420px; height: auto; background: #fff; border-radius: 4px; direction: ltr; }
+.pv-card ul { margin: 8px 0 0; padding-inline-start: 18px; font-size: 13px; }
+.pv-card.st-no { opacity: .72; }
+.pv-tot { margin: 4px 0 0; font: 600 13px/1.3 var(--font-display); }
+#pv-note .note-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px 18px; margin-bottom: 12px; }
+#pv-note { margin-top: 22px; padding-top: 6px; border-top: 1px solid var(--line); }
 #jx-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 14px; align-items: start; margin: 14px 0 18px; }
 #jx-form .jx-obj { grid-column: 1 / -1; }
 #jx-form .jx-obj { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); column-gap: 18px; }
@@ -357,7 +371,7 @@ body.compact #compact-head { display: grid; }
 body.no3d #compact-head { grid-template-columns: 0 var(--leftcol) minmax(0, 1fr); }
 #compact-head .ch-kpis { grid-column: 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 8px; align-items: end; }
 #compact-head #ch-view { grid-column: 3; }
-body.compact header.top, body.compact #guide, body.compact #donnees, body.compact #resultats, body.compact #note-gen, body.compact #calibrage, body.compact #carrefour,
+body.compact header.top, body.compact #guide, body.compact #donnees, body.compact #resultats, body.compact #note-gen, body.compact #calibrage, body.compact #carrefour, body.compact #chaussee,
 body.compact #methode, body.compact .desc, body.compact .ped-key:first-of-type { display: none; }
 body.compact .bar { position: static; }
 body.compact .bar .wrap { padding-block: 6px; gap: 6px 14px; }
@@ -519,6 +533,16 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
   <form id="jx-form" novalidate></form>
   <div id="jx-res"></div>
   <div id="jx-note"></div>
+</section>
+<section class="wrap block-top" id="chaussee">
+  <h2 id="pv-title"></h2>
+  <div class="pv-warn" id="pv-warn" role="note"></div>
+  <p class="note" id="pv-intro"></p>
+  <div id="pv-site-slot"></div>
+  <p class="note" id="pv-site-hint"></p>
+  <form id="pv-form" novalidate></form>
+  <div id="pv-res"></div>
+  <div id="pv-note"></div>
 </section>
 
 <dialog id="dlg3d">
@@ -3079,7 +3103,7 @@ function computeCompactRowH() {
   document.documentElement.style.setProperty('--rowh', Math.max(40, compactRowH) + 'px');
 }
 function setHash() {
-  const tok = [isCompact() ? 'presentation' : '', typeof MOD !== 'undefined' && MOD === 'jx' ? 'carrefour' : '', lang !== 'fr' ? lang : ''].filter(Boolean).join('-');
+  const tok = [isCompact() ? 'presentation' : '', typeof MOD !== 'undefined' && MOD !== 'cross' ? { jx: 'carrefour', pv: 'chaussee' }[MOD] : '', lang !== 'fr' ? lang : ''].filter(Boolean).join('-');
   try { history.replaceState(null, '', tok ? '#' + tok : location.href.split('#')[0]); } catch (e) { /* adresse non modifiable : sans effet */ }
 }
 function setCompact(on) {
@@ -3961,6 +3985,8 @@ Object.assign(I18N.fr, {
     </ol>
     <h3>Le module « Carrefour »</h3>
     <p>Le bouton « Carrefour », sous le titre, ouvre l’aide au choix du type de carrefour selon le guide Certu « Carrefours urbains » (2010). Décrivez le contexte (hiérarchie des voies, vitesses), la géométrie (branches, emprise, pente, visibilité), le trafic de pointe des deux voies, les usagers et les objectifs de la commune. L’outil écarte les types contre-indiqués, vérifie la capacité (attente sur la voie secondaire, graphique « feux ou pas de feux », réserve des feux, ordres de grandeur des giratoires) et propose les types à comparer, avec les aménagements associés. Choisissez ensuite le type retenu pour produire sa note.</p>
+    <h3>Le module « Chaussée »</h3>
+    <p>Le bouton « Chaussée », sous le titre, propose un prédimensionnement de la structure de chaussée — couches et épaisseurs — dans plusieurs matériaux, d’après le guide Cerema « Voirie urbaine » (2016) et le catalogue tunisien de 1984 : il suffit d’indiquer l’espace (rue, giratoire, bus, stationnement, piste cyclable, trottoir), le trafic de poids lourds et la nature du sol. C’est un ordre de grandeur : en cas de doute, une étude approfondie est nécessaire.</p>
     <h3>Enregistrer et ouvrir un projet</h3>
     <p>« Enregistrer le projet », en haut de la page, télécharge un fichier qui contient tout : lieu, données, profils, journée, carrefour. « Ouvrir un projet » le recharge. Une copie de chaque enregistrement et l’adresse IP de l’ordinateur sont transmises à l’administrateur de l’application.</p>
     <h3>Les données nécessaires</h3>
@@ -4050,6 +4076,8 @@ Object.assign(I18N.ar, {
     </ol>
     <h3>وحدة «المفترق»</h3>
     <p>يفتح زرّ «المفترق»، تحت العنوان، أداة المساعدة على اختيار نوع المفترق وفق دليل Certu «Carrefours urbains» (2010). صف السياق (تسلسل الطرق والسرعات)، والهندسة (الفروع، والعرض المتاح، والانحدار، والرؤية)، وحركة الذروة على الطريقين، والمستعملين، وأهداف البلدية. تستبعد الأداة الأنواع غير الملائمة، وتتثبّت من طاقة الاستيعاب (الانتظار على الطريق الثانوية، ومنحنى «إشارات ضوئية أم لا»، واحتياطي الإشارات، والقيم التقريبية للمفترقات الدائرية)، وتقترح الأنواع الواجب مقارنتها مع التهيئات المصاحبة. ثم اختر النوع المعتمد لإعداد مذكّرته.</p>
+    <h3>وحدة «المعبّد»</h3>
+    <p>يقترح زرّ «المعبّد»، تحت العنوان، تصميمًا أوّليًا لهيكل المعبّد — الطبقات وسُمكها — بعدّة موادّ، وفق دليل Cerema «Voirie urbaine» (2016) والدليل التونسي لسنة 1984: يكفي تحديد الفضاء (نهج، مفترق دائري، حافلات، أماكن وقوف، مسلك درّاجات، رصيف)، وحركة العربات الثقيلة، وطبيعة التربة. وهي قيم تقريبية: عند الشكّ تلزم دراسة معمّقة.</p>
     <h3>حفظ مشروع وفتحه</h3>
     <p>يُنزّل زرّ «حفظ المشروع»، أعلى الصفحة، ملفًّا يحتوي على كل شيء: الموقع، والمعطيات، والمقاطع، واليوم، والمفترق. ويعيد زرّ «فتح مشروع» تحميله. وتُرسَل نسخة من كل حفظ وعنوان IP للحاسوب إلى مشرف التطبيق.</p>
     <h3>المعطيات اللازمة</h3>
@@ -4139,6 +4167,8 @@ Object.assign(I18N.en, {
     </ol>
     <h3>The “Intersection” module</h3>
     <p>The “Intersection” button, below the title, opens the decision aid for choosing an intersection type according to the Certu guide “Carrefours urbains” (2010). Describe the context (road hierarchy, speeds), the geometry (legs, available space, gradient, visibility), the peak traffic on both roads, the users and the municipality’s objectives. The tool rules out contraindicated types, checks capacity (delay on the minor road, the “signals or no signals” chart, signal reserve capacity, roundabout orders of magnitude) and proposes the types to compare, with the associated features. Then choose the selected type to produce its report.</p>
+    <h3>The “Pavement” module</h3>
+    <p>The “Pavement” button, below the title, gives a preliminary design of the pavement structure — layers and thicknesses — in several materials, based on the Cerema guide “Voirie urbaine” (2016) and the 1984 Tunisian catalogue: just enter the space (street, roundabout, bus lane, parking, cycle track, sidewalk), the heavy-vehicle traffic and the soil type. These are orders of magnitude: when in doubt, a detailed study is required.</p>
     <h3>Saving and opening a project</h3>
     <p>“Save the project”, at the top of the page, downloads a file containing everything: site, data, cross-sections, daily traffic, intersection. “Open a project” reloads it. A copy of each save and the computer’s IP address are sent to the application administrator.</p>
     <h3>Data needed</h3>
@@ -4760,6 +4790,7 @@ function setLang(l) {
   $('#guide-body').innerHTML = t('guideBody');
   buildProfileUI();
   buildJxUI();
+  buildPvUI();
   buildProjBar();
   try { localStorage.setItem('mv-lang', lang); } catch (e) { /* stockage indisponible */ }
   setHash();
@@ -5943,26 +5974,598 @@ function buildJxNote(id) {
 }
 const fm2 = v => (Number.isInteger(v) ? nf0 : nfa).format(v);
 
-/* ---------- navigation entre modules ---------- */
+/* =====================================================================================================
+   MODULE CHAUSSÉE : prédimensionnement simplifié de la structure, d'après le guide Cerema « Voirie urbaine »
+   (2016, fiches 22, 41, 42, 58, 66) ; variantes en matériaux tunisiens d'après le catalogue DGPC 1984 (rase
+   campagne, à titre indicatif) et la note circulaire 2017. Ce n'est PAS un dimensionnement : la page et la note
+   le disent et listent les cas où une étude est nécessaire.
+   ===================================================================================================== */
+const PVT = { fr: {
+  modPv: 'Chaussée',
+  pvEyebrow: 'Prédimensionnement · guide Cerema « Voirie urbaine » (2016)',
+  pvH1: 'Quelle structure de chaussée ?',
+  pvLede: 'Indiquez l’espace à aménager, le trafic de poids lourds et la nature du sol. L’outil propose plusieurs structures, dans différents matériaux, avec leurs épaisseurs. C’est un prédimensionnement : une étude de chaussée s’impose en cas de doute.',
+  title: 'Prédimensionnement de la structure de chaussée',
+  warnTitle: 'Prédimensionnement indicatif',
+  warn: 'Les épaisseurs proposées sont des ordres de grandeur pour préparer un projet et comparer des matériaux. Elles ne remplacent ni l’étude géotechnique du sol, ni le dimensionnement de la chaussée par un bureau d’études (norme NF P 98-086). En cas de doute — sol médiocre ou humide, trafic lourd, bus, nombreux réseaux enterrés — faites réaliser une étude approfondie.',
+  intro: 'Les résultats se mettent à jour à chaque modification. Chaque règle renvoie à la page du guide Cerema « Voirie urbaine » (2016).',
+  siteHint: 'Le lieu pointé sur la carte figure dans la note (plan de situation et vue aérienne).',
+  g: { use: 'Espace à aménager', traf: 'Trafic', soil: 'Sol support', opt: 'Conditions de réalisation' },
+  f: { space: 'Type d’espace', pl: 'Poids lourds (plus de 3,5 t) par jour et par sens', plPreset: 'Situation la plus proche', n: 'Durée de service', tau: 'Croissance annuelle du trafic lourd',
+    soil: 'Nature du sol (si aucun essai)', cbr: 'Indice CBR mesuré (laisser vide si inconnu)', drain: 'Sol mal drainé (nappe proche, point bas)', q2: 'Chantier urbain (contraintes de réalisation)' },
+  u: { pl: 'PL/j/sens', an: 'ans', pct: '%', cm: 'cm', m: 'm' },
+  o: {
+    space: { chaussee: 'Chaussée de rue ou d’avenue', giratoire: 'Chaussée de giratoire', bus: 'Voie ou arrêt de bus', parking: 'Stationnement', cycle: 'Piste cyclable', trottoir: 'Trottoir ou espace piéton' },
+    plPreset: { custom: 'Valeur saisie', desserte: 'Rue de desserte : livraisons et benne à ordures (environ 10)', distrib: 'Rue de distribution : livraisons régulières (environ 40)', artere: 'Artère avec quelques bus (environ 100)', artereBus: 'Artère avec lignes de bus (environ 250)', axe: 'Axe principal, trafic lourd important (environ 600)' },
+    soil: { roche: 'Rocher, grave compacte ou tuf (portance élevée)', grave: 'Sable ou grave propre et sec (portance moyenne)', limon: 'Limon ou argile peu humide (portance faible)', argile: 'Argile humide, remblai récent ou vase (très faible)' },
+    yes: 'Oui', no: 'Non'
+  },
+  // résultats
+  resTitle: 'Résultat', classLine: (T, mja, ne, pf, q, r) => `Classe de trafic ${T} (${mja} PL/j/sens) ; trafic cumulé ${ne} essieux de 13 t ; plate-forme ${pf}, ${q} ; risque de calcul ${r} %.`,
+  pfFromCbr: (cbr, e) => `Plate-forme déduite du CBR ${cbr} : module d’environ ${e} MPa (module ≤ 5 × CBR, note circulaire 2017).`,
+  pfFromSoil: 'Plate-forme estimée d’après la nature du sol : hypothèse de l’outil, à confirmer par un essai (CBR, plaque ou déflexion). Le guide ne propose pas de reconnaissance visuelle (p. 216).',
+  drainDown: 'Sol mal drainé : la plate-forme est déclassée d’une classe (règle du catalogue tunisien 1984).',
+  sol: { a: 'Enrobé sur grave-bitume (guide Cerema)', tn: 'Variantes en matériaux tunisiens (catalogue 1984)', pav: 'Pavés ou dalles (béton ou pierre)', enduit: 'Enduit superficiel', beton: 'Béton de ciment', cyc: 'Structures de piste cyclable (guide Cerema)', side: 'Trottoir et espace piéton', perc: 'Enrobé percolé' },
+  st: { ok: 'Adapté', cond: 'Sous conditions', study: 'Étude spécifique', no: 'Déconseillé' },
+  lay: { BBSG: 'Enrobé BBSG', GB3: 'Grave-bitume GB3', GNT: 'Grave non traitée (réglage)', GNTf: 'Grave non traitée', FORME: 'Couche de forme', BB: 'Béton bitumineux', BC: 'Enduit bicouche', MC: 'Enduit monocouche', GR: 'Grave concassée reconstituée', G: 'Tout-venant de concassage', GB: 'Grave-bitume', GC: 'Grave-ciment', T: 'Tuf compact', PAV: 'Pavés', LIT: 'Lit de pose', SUPP: 'Support rigide (béton)', STAB: 'Stabilisé 0/10', MTLH: 'Grave traitée aux liants hydrauliques', ENDUIT: 'Enduit 0/10', PLAT: 'Plate-forme' },
+  total: t => `Épaisseur totale : ${t}`, toStudy: 'à déterminer par l’étude',
+  // raisons
+  aOk: 'Structure lue sur l’abaque du guide (p. 213) : couche de roulement BBSG sur assise en grave-bitume GB3, avec une couche de réglage de 3 à 5 cm de grave non traitée.',
+  aRead: 'Épaisseurs lues graphiquement sur l’abaque (± 0,5 cm) puis arrondies au centimètre supérieur ; à confirmer par le calcul.',
+  aGir: 'Giratoire : assise majorée de 15 % et couche de roulement d’au moins 6 cm (p. 216).',
+  aBus: 'Voie bus : trafic canalisé, agressivité majorée (coefficient 1,6 pour une voie de 3 m, p. 324) ; béton conseillé aux arrêts ; dimensionnement spécifique requis (fiche 66, p. 324-325).',
+  aOver: 'Trafic au-delà de l’abaque (plus de 10 millions d’essieux) : dimensionnement par le calcul (NF P 98-086).',
+  aSplit: 'Grave-bitume de plus de 14 cm : à mettre en œuvre en deux couches (épaisseur maximale par couche de 14 à 15 cm, catalogue tunisien, tableau X).',
+  aPF1: 'Plate-forme PF1 (portance faible) : améliorer le sol par une couche de forme d’au moins 30 cm ou un traitement en place, pour atteindre au moins PF2 (p. 296 ; note 2017 : au moins 50 MPa).',
+  aSouple: 'Structure bitumineuse épaisse (plus de 12 cm de matériaux bitumineux) : convient à tous trafics ; entretien peu coûteux, réparation aisée (p. 221).',
+  tnRef: 'Catalogue tunisien de 1984 : conçu pour la rase campagne, il ne vise pas le milieu urbain (p. 6 du catalogue) ; variantes données à titre de comparaison, en matériaux locaux.',
+  tnClass: (T, S) => `Classes du catalogue : trafic ${T}, sol ${S}.`,
+  tnBB: 'Couche de roulement : 5 cm de béton bitumineux au lieu de l’enduit prévu par le catalogue, le guide Cerema réservant l’enduit aux trafics les plus faibles (classe T5, p. 221).',
+  tnNone: 'Pas de solution du catalogue pour ce trafic et ce sol.',
+  tnTuf: 'Tuf compact : fiches valables en région C du catalogue ; à partir de T3, préférer un enrobé de 6 cm à un enduit (risque d’arrachement).',
+  tnOut: 'Trafic au-delà de T1 (plus de 1 200 PL/j) : hors du catalogue.',
+  tnS0: 'Sol très médiocre et mal drainé (classe S0) : hors du catalogue, dispositions constructives à étudier.',
+  pavOk: 'Moins de 50 PL/j : pavés d’environ 8 cm (p. 112).', pavMid: 'Entre 50 et 150 PL/j : pavés de 8 à 14 cm, étude spécifique obligatoire au-delà de 50 PL/j (p. 111-112).',
+  pavNo: 'Au-delà de 150 PL/j (classe T3) : ne pas employer de pavés, sauf études particulières à risques importants (p. 111).',
+  pavSupp: 'Support rigide en béton de ciment requis, joints décalés, pavés bloqués en rive, drainage efficace obligatoire (p. 111).',
+  pavUse: 'Surtout pour les espaces piétons et les sites patrimoniaux ; bruyants sous les voitures, inconfortables pour les cyclistes (p. 111-112).',
+  enOk: 'Possible pour les trafics les plus faibles (classe T5 au plus) sur une structure souple (p. 221).', enNo: 'Réservé aux trafics les plus faibles (classe T5) ; arrachements dans les virages et les zones de freinage (p. 108, 221).',
+  enUse: 'Économique et imperméable, mais bruyant et peu confortable pour les piétons et les cyclistes ; à réaliser d’avril à octobre (p. 108-109).',
+  btUse: 'Insensible à l’orniérage et au poinçonnement : conseillé aux arrêts de bus et aires lourdes ; en ville, dalles courtes de 3 à 5 m ; réparations délicates en cas de tranchée (p. 109-110, 222).',
+  btStudy: 'Le guide ne donne pas d’épaisseur : dimensionnement par un bureau d’études (NF P 98-086).',
+  cycPF: pf => `Structures du guide pour une plate-forme ${pf} (p. 296).`,
+  cycPF1: 'Plate-forme PF1 : traiter le sol ou poser une couche de forme de plus de 30 cm, puis appliquer les structures PF2 (p. 296).',
+  cycPF4: 'Plate-forme PF4 (très bonne) : l’assise peut être supprimée ; 5 à 10 cm de grave non traitée de réglage sous la couche de roulement (p. 296).',
+  cycWide: 'La plate-forme dépasse de 0,30 m de chaque côté de la piste ; une bande cyclable fait partie de la chaussée et se dimensionne comme elle (p. 296).',
+  sideTxt: 'Le guide ne chiffre pas les structures de trottoir : on choisit d’abord le revêtement (enrobé, béton, pavés ou dalles, asphalte de 3 cm environ, stabilisé pour les cheminements), puis l’assise (béton, grave-ciment ou grave-bitume) selon les véhicules autorisés : nettoyage, secours, livraisons (p. 268-271).',
+  sideAcc: 'Accessibilité : sol non meuble et non glissant, trous et joints de moins de 2 cm, dévers de 2 % au plus, cheminement libre d’au moins 1,40 m (p. 89, 137, 230).',
+  sideHyp: 'Ordre de grandeur proposé par l’outil : structure de piste cyclable (p. 296) pour un trottoir où ne passent que des engins d’entretien ; à faire valider.',
+  percTxt: 'Stationnement de charges lourdes ou aires d’arrêt : enrobé percolé (environ 4 cm), insensible aux hydrocarbures et au poinçonnement, à mettre en œuvre par temps sec (p. 107).',
+  parkTxt: 'Stationnement de voitures : structure de chaussée de la classe de trafic la plus faible ; les places réservées aux personnes handicapées ont une pente de 2 % au plus (p. 88, 105).',
+  studyTitle: 'Quand faire une étude approfondie',
+  study: { pf1: 'Sol de faible portance (PF1) ou très médiocre : étude géotechnique et amélioration du sol.', drain: 'Sol mal drainé : étude du drainage et de l’assainissement (fil d’eau sous la couche de forme, p. 221).', heavy: 'Trafic lourd (plus de 150 PL/j/sens) : dimensionnement par le calcul.', bus: 'Bus et trafic canalisé : dimensionnement spécifique (fiche 66).', gir: 'Giratoire très sollicité : dimensionnement selon NF P 98-086.', pav: 'Pavés ou dalles au-delà de 50 PL/j : étude spécifique obligatoire.', over: 'Trafic au-delà de l’abaque : calcul.', always: 'Toujours : reconnaissance du sol avant travaux, réseaux enterrés à protéger, tranchées remblayées selon NF P 98-331.' },
+  chooseTitle: 'Structure retenue et note', chooseLabel: 'Structure retenue', btnNote: 'Générer la note de chaussée',
+  chooseIntro: 'Choisissez la structure retenue. La note reprend les données, la démarche, les structures comparées avec leurs coupes, et les cas où une étude approfondie est nécessaire.',
+  n: { title: 'Note de prédimensionnement de chaussée', sub: 'Structure de chaussée urbaine — prédimensionnement indicatif', objet: 'Prédimensionnement de la structure de chaussée',
+    cover: [['commune', 'Commune'], ['lieu', 'Lieu'], ['objet', 'Objet'], ['name', 'Structure retenue'], ['date', 'Date'], ['auteur', 'Établie par'], ['outil', 'Outil']],
+    s: { warn: 'Avertissement', site: 'Le lieu', data: 'Les données', method: 'La démarche', sols: 'Les structures comparées', chosen: 'La structure retenue', study: 'Quand faire une étude approfondie', annex: 'Annexe — Hypothèses et sources' },
+    dataCols: ['Donnée', 'Valeur'], cmpCols: ['Structure', 'Avis', 'Épaisseur totale', 'Remarque'],
+    method: ['Le guide Cerema propose, pour un outil simple, des structures précalculées avec deux données d’entrée : le trafic de poids lourds et la portance de la plate-forme (p. 212).', 'Trafic cumulé TC = 365 × MJA × C, avec C = n × (1 + (n − 1) × τ / 2) ; essieux équivalents NE = TC × CAM (p. 215-216).', 'La portance de la plate-forme est exprimée en classes PF1 à PF3 ; un chantier urbain est en qualité Q2, qui réduit les performances des matériaux (p. 216-217).'],
+    hyp: ['CAM (agressivité des poids lourds) des structures bitumineuses : 0,3 (T5, T4), 0,4 (T3−), 0,5 (T3+ et au-delà), d’après la note circulaire tunisienne 2017 (milieu péri-urbain), le guide Cerema n’en donnant pas pour la voirie courante.', 'Risque de calcul : 25 % jusqu’à la classe T3, 5 % au-delà, conformément aux deux familles de courbes de l’abaque (p. 213) et à l’ordre de grandeur de la note 2017.', 'Épaisseurs de grave-bitume lues graphiquement sur l’abaque p. 213 (± 0,5 cm), interpolées selon le logarithme du trafic, arrondies au centimètre supérieur.', 'Nature du sol sans essai : correspondance indicative choisie par l’outil (rocher ou tuf : PF3 ; sable ou grave sec : PF2 ; limon ou argile peu humide : PF1 ; argile humide ou remblai récent : sol très médiocre).', 'Classes du catalogue tunisien : trafic T5 < 50, T4 50-150, T3 150-300, T2 300-600, T1 600-1 200 PL/j sur la voie la plus chargée ; sol S1 à S4 selon le CBR (5-8, 8-12, 12-20, > 20).'],
+    sources: ['Cerema (2016). Voirie urbaine – Guide d’aménagement. Collection Références (fiches 22, 41, 42, 51, 58, 66).', 'DGPC Tunisie (1984). Catalogue des structures types pour chaussées neuves et renforcement.', 'DGPC Tunisie (2017). Note circulaire, additif au catalogue de 1984.', 'NF P 98-086 (2011). Dimensionnement structurel des chaussées routières.'],
+    chosenIntro: n => `Structure retenue par la commune : ${n}.`, figSec: 'Coupe de principe de la structure (épaisseurs en centimètres, sans échelle d’exécution).' }
+} };
+PVT.ar = {
+  modPv: 'المعبّد',
+  pvEyebrow: 'تصميم أوّلي · دليل Cerema « Voirie urbaine » (2016)',
+  pvH1: 'أيّ هيكل للمعبّد؟',
+  pvLede: 'حدّدوا الفضاء المراد تهيئته وحركة العربات الثقيلة وطبيعة التربة. تقترح الأداة عدّة هياكل بمواد مختلفة مع سماكاتها. هذا تصميم أوّلي: تتعيّن دراسة للمعبّد في حالة الشكّ.',
+  title: 'التصميم الأوّلي لهيكل المعبّد',
+  warnTitle: 'تصميم أوّلي استرشادي',
+  warn: 'السماكات المقترحة قيم تقريبية لإعداد مشروع والمقارنة بين المواد. ولا تعوّض الدراسة الجيوتقنية للتربة ولا حساب المعبّد من قِبل مكتب دراسات (المواصفة NF P 98-086). وفي حالة الشكّ — تربة رديئة أو رطبة، حركة ثقيلة، حافلات، شبكات مدفونة عديدة — يجب إنجاز دراسة معمّقة.',
+  intro: 'تُحيَّن النتائج عند كلّ تعديل. وتحيل كلّ قاعدة إلى صفحة دليل Cerema « Voirie urbaine » (2016).',
+  siteHint: 'يظهر المكان المحدّد على الخريطة في المذكّرة (مخطّط الموقع وصورة جوّية).',
+  g: { use: 'الفضاء المراد تهيئته', traf: 'حركة المرور', soil: 'تربة الأرضية', opt: 'ظروف الإنجاز' },
+  f: { space: 'نوع الفضاء', pl: 'العربات الثقيلة (أكثر من 3,5 طن) في اليوم وفي الاتجاه الواحد', plPreset: 'الوضعية الأقرب', n: 'مدّة الخدمة', tau: 'النموّ السنوي لحركة العربات الثقيلة',
+    soil: 'طبيعة التربة (في غياب أيّ تجربة)', cbr: 'مؤشّر CBR المقيس (يُترك فارغًا إن كان مجهولًا)', drain: 'تربة سيّئة الصرف (مائدة مائية قريبة، نقطة منخفضة)', q2: 'حضيرة حضرية (قيود الإنجاز)' },
+  u: { pl: 'ع.ث/يوم/اتجاه', an: 'سنة', pct: '%', cm: 'صم', m: 'م' },
+  o: {
+    space: { chaussee: 'معبّد نهج أو شارع', giratoire: 'معبّد مفترق دائري', bus: 'مسلك حافلات أو محطّة حافلات', parking: 'وقوف السيّارات', cycle: 'مسلك درّاجات', trottoir: 'رصيف أو فضاء للمترجّلين' },
+    plPreset: { custom: 'القيمة المُدخلة', desserte: 'نهج خدمة محلّية: تزويد بالبضائع وشاحنة جمع الفضلات (حوالي 10)', distrib: 'نهج توزيع: تزويد منتظم بالبضائع (حوالي 40)', artere: 'شريان مع بعض الحافلات (حوالي 100)', artereBus: 'شريان مع خطوط حافلات (حوالي 250)', axe: 'محور رئيسي، حركة ثقيلة كثيفة (حوالي 600)' },
+    soil: { roche: 'صخر أو حصى متراصّ أو تُف (قدرة تحمّل مرتفعة)', grave: 'رمل أو حصى نظيف وجافّ (قدرة تحمّل متوسّطة)', limon: 'طمي أو طين قليل الرطوبة (قدرة تحمّل ضعيفة)', argile: 'طين رطب أو ردم حديث أو وحل (ضعيفة جدًّا)' },
+    yes: 'نعم', no: 'لا'
+  },
+  // résultats
+  resTitle: 'النتيجة', classLine: (T, mja, ne, pf, q, r) => `صنف الحركة ${T} (${mja} ع.ث/يوم/اتجاه)؛ الحركة المتراكمة ${ne} محور بـ 13 طنًا؛ أرضية المعبّد ${pf}، ${q}؛ مخاطرة الحساب ${r} %.`,
+  pfFromCbr: (cbr, e) => `أرضية المعبّد مستنتجة من CBR ${cbr}: معامل في حدود ${e} ميغاباسكال (المعامل ≤ 5 × CBR، المذكّرة الدورية لسنة 2017).`,
+  pfFromSoil: 'أرضية المعبّد مقدَّرة حسب طبيعة التربة: فرضية من الأداة يجب تأكيدها بتجربة (CBR أو تجربة اللوحة أو قياس الانحراف). ولا يقترح الدليل التعرّف البصري على التربة (ص 216).',
+  drainDown: 'تربة سيّئة الصرف: تُخفَّض أرضية المعبّد بصنف واحد (قاعدة الكتالوج التونسي 1984).',
+  sol: { a: 'خرسانة إسفلتية على حصى معالج بالإسفلت (دليل Cerema)', tn: 'بدائل بمواد تونسية (كتالوج 1984)', pav: 'بلاط الرصف أو البلاطات (خرسانة أو حجارة)', enduit: 'طلاء سطحي', beton: 'خرسانة إسمنتية', cyc: 'هياكل مسلك الدرّاجات (دليل Cerema)', side: 'الرصيف وفضاء المترجّلين', perc: 'إسفلت مشرّب بالإسمنت (enrobé percolé)' },
+  st: { ok: 'ملائم', cond: 'بشروط', study: 'دراسة خاصّة', no: 'غير مستحسن' },
+  lay: { BBSG: 'خرسانة إسفلتية BBSG', GB3: 'حصى معالج بالإسفلت GB3', GNT: 'حصى غير معالج (طبقة ضبط)', GNTf: 'حصى غير معالج', FORME: 'طبقة التسوية (couche de forme)', BB: 'خرسانة إسفلتية', BC: 'طلاء ثنائي الطبقة', MC: 'طلاء أحادي الطبقة', GR: 'حصى مكسّر معاد التركيب', G: 'حصى مكسّر غير مصنّف (tout-venant)', GB: 'حصى معالج بالإسفلت', GC: 'حصى معالج بالإسمنت', T: 'التُّف المتماسك', PAV: 'بلاط الرصف', LIT: 'فرشة الرصف', SUPP: 'حامل صلب (خرسانة)', STAB: 'تربة مثبّتة 0/10', MTLH: 'حصى معالج بالرابطات الهيدروليكية', ENDUIT: 'طلاء 0/10', PLAT: 'أرضية المعبّد' },
+  total: t => `السماكة الجملية: ${t}`, toStudy: 'تُحدَّد بالدراسة',
+  // raisons
+  aOk: 'هيكل مقروء على المخطّط البياني للدليل (ص 213): طبقة سير من BBSG على طبقات أساس من حصى معالج بالإسفلت GB3، مع طبقة ضبط من 3 إلى 5 صم من حصى غير معالج.',
+  aRead: 'سماكات مقروءة بيانيًّا على المخطّط البياني (± 0,5 صم) ثمّ مقرَّبة إلى السنتيمتر الأعلى؛ يجب تأكيدها بالحساب.',
+  aGir: 'مفترق دائري: طبقات الأساس مزادة بـ 15 % وطبقة سير لا تقلّ عن 6 صم (ص 216).',
+  aBus: 'مسلك حافلات: حركة مُقنّاة وعدوانية مرتفعة (معامل 1,6 لمسلك عرضه 3 م، ص 324)؛ تُستحسن الخرسانة في المحطّات؛ ويُشترط تصميم خاصّ (البطاقة 66، ص 324-325).',
+  aOver: 'حركة تتجاوز المخطّط البياني (أكثر من 10 ملايين محور): التصميم بالحساب (NF P 98-086).',
+  aSplit: 'حصى معالج بالإسفلت بسماكة تفوق 14 صم: يُنفَّذ على طبقتين (السماكة القصوى للطبقة الواحدة من 14 إلى 15 صم، الكتالوج التونسي، الجدول X).',
+  aPF1: 'أرضية المعبّد PF1 (قدرة تحمّل ضعيفة): تحسين التربة بطبقة تسوية لا تقلّ عن 30 صم أو بمعالجة في الموقع، لبلوغ PF2 على الأقلّ (ص 296؛ مذكّرة 2017: 50 ميغاباسكال على الأقلّ).',
+  aSouple: 'هيكل إسفلتي سميك (أكثر من 12 صم من المواد الإسفلتية): يلائم جميع أصناف الحركة؛ صيانة قليلة الكلفة وإصلاح سهل (ص 221).',
+  tnRef: 'الكتالوج التونسي لسنة 1984: أُعدّ للطرقات خارج المناطق العمرانية ولا يستهدف الوسط الحضري (ص 6 من الكتالوج)؛ البدائل مقدَّمة على سبيل المقارنة، بمواد محلّية.',
+  tnClass: (T, S) => `أصناف الكتالوج: الحركة ${T}، التربة ${S}.`,
+  tnBB: 'طبقة السير: 5 صم من الخرسانة الإسفلتية عوضًا عن الطلاء الذي ينصّ عليه الكتالوج، إذ يخصّص دليل Cerema الطلاء لأضعف أصناف الحركة (الصنف T5، ص 221).',
+  tnNone: 'لا يوجد حلّ في الكتالوج لهذه الحركة وهذه التربة.',
+  tnTuf: 'التُّف المتماسك: البطاقات صالحة في المنطقة C من الكتالوج؛ وابتداءً من T3 تُفضَّل خرسانة إسفلتية بسماكة 6 صم على الطلاء (خطر الاقتلاع).',
+  tnOut: 'حركة تتجاوز T1 (أكثر من 1 200 ع.ث/يوم): خارج الكتالوج.',
+  tnS0: 'تربة رديئة جدًّا وسيّئة الصرف (الصنف S0): خارج الكتالوج، ويجب دراسة الترتيبات الإنشائية.',
+  pavOk: 'أقلّ من 50 ع.ث/يوم: بلاط رصف بسماكة 8 صم تقريبًا (ص 112).', pavMid: 'بين 50 و150 ع.ث/يوم: بلاط رصف من 8 إلى 14 صم، والدراسة الخاصّة إلزامية فوق 50 ع.ث/يوم (ص 111-112).',
+  pavNo: 'فوق 150 ع.ث/يوم (الصنف T3): لا يُستعمل بلاط الرصف، إلّا في دراسات خاصّة ذات مخاطر كبيرة (ص 111).',
+  pavSupp: 'يُشترط حامل صلب من الخرسانة الإسمنتية، وفواصل متخالفة، وبلاط مثبّت عند الحواف، وتصريف فعّال إلزامي (ص 111).',
+  pavUse: 'يُستعمل خاصّة في فضاءات المترجّلين والمواقع التراثية؛ صاخب تحت مرور السيّارات وغير مريح لراكبي الدرّاجات (ص 111-112).',
+  enOk: 'ممكن لأضعف أصناف الحركة (الصنف T5 على الأكثر) على هيكل مرن (ص 221).', enNo: 'مخصّص لأضعف أصناف الحركة (الصنف T5)؛ اقتلاع في المنعطفات ومناطق الكبح (ص 108، 221).',
+  enUse: 'اقتصادي وكتيم، لكنّه صاخب وقليل الراحة للمترجّلين وراكبي الدرّاجات؛ يُنجَز من أفريل إلى أكتوبر (ص 108-109).',
+  btUse: 'لا يتأثّر بالتخدّد ولا بالانغراز: يُستحسن في محطّات الحافلات والمساحات المعرّضة لأحمال ثقيلة؛ وفي المدينة تُعتمد بلاطات قصيرة من 3 إلى 5 م؛ والإصلاحات دقيقة في حالة حفر خندق (ص 109-110، 222).',
+  btStudy: 'لا يقدّم الدليل أيّ سماكة: التصميم من قِبل مكتب دراسات (NF P 98-086).',
+  cycPF: pf => `هياكل الدليل لأرضية معبّد ${pf} (ص 296).`,
+  cycPF1: 'أرضية المعبّد PF1: معالجة التربة أو وضع طبقة تسوية تفوق 30 صم، ثمّ تطبيق هياكل PF2 (ص 296).',
+  cycPF4: 'أرضية المعبّد PF4 (جيّدة جدًّا): يمكن الاستغناء عن طبقات الأساس؛ من 5 إلى 10 صم من الحصى غير المعالج للضبط تحت طبقة السير (ص 296).',
+  cycWide: 'تتجاوز أرضية المعبّد مسلك الدرّاجات بـ 0,30 م من كلّ جانب؛ أمّا شريط الدرّاجات فهو جزء من المعبّد ويُصمَّم مثله (ص 296).',
+  sideTxt: 'لا يحدّد الدليل أرقامًا لهياكل الأرصفة: يُختار أوّلًا الكساء (خرسانة إسفلتية، خرسانة، بلاط رصف أو بلاطات، أسفلت مصبوب بسماكة 3 صم تقريبًا، تربة مثبّتة للممرّات)، ثمّ طبقات الأساس (خرسانة، حصى معالج بالإسمنت أو حصى معالج بالإسفلت) حسب العربات المسموح بها: التنظيف، الإسعاف، التزويد بالبضائع (ص 268-271).',
+  sideAcc: 'إمكانية النفاذ: أرضية غير رخوة وغير زلقة، ثقوب وفواصل أقلّ من 2 صم، ميل عرضي لا يتجاوز 2 %، ممرّ حرّ لا يقلّ عرضه عن 1,40 م (ص 89، 137، 230).',
+  sideHyp: 'قيمة تقريبية تقترحها الأداة: هيكل مسلك الدرّاجات (ص 296) لرصيف لا تمرّ عليه سوى آليات الصيانة؛ يجب المصادقة عليها.',
+  percTxt: 'وقوف الأحمال الثقيلة أو مساحات التوقّف: إسفلت مشرّب بالإسمنت (enrobé percolé، حوالي 4 صم)، لا يتأثّر بالمحروقات ولا بالانغراز، يُنفَّذ في طقس جافّ (ص 107).',
+  parkTxt: 'وقوف السيّارات: هيكل معبّد لأضعف صنف حركة؛ وتكون للأماكن المخصّصة للأشخاص ذوي الإعاقة نسبة ميل لا تتجاوز 2 % (ص 88، 105).',
+  studyTitle: 'متى تُجرى دراسة معمّقة',
+  study: { pf1: 'تربة ضعيفة قدرة التحمّل (PF1) أو رديئة جدًّا: دراسة جيوتقنية وتحسين التربة.', drain: 'تربة سيّئة الصرف: دراسة التصريف والتطهير (خطّ سيلان المياه تحت طبقة التسوية، ص 221).', heavy: 'حركة ثقيلة (أكثر من 150 ع.ث/يوم/اتجاه): التصميم بالحساب.', bus: 'حافلات وحركة مُقنّاة: تصميم خاصّ (البطاقة 66).', gir: 'مفترق دائري كثيف الاستعمال: التصميم وفق NF P 98-086.', pav: 'بلاط رصف أو بلاطات فوق 50 ع.ث/يوم: دراسة خاصّة إلزامية.', over: 'حركة تتجاوز المخطّط البياني: حساب.', always: 'دائمًا: استكشاف التربة قبل الأشغال، وحماية الشبكات المدفونة، وردم الخنادق وفق NF P 98-331.' },
+  chooseTitle: 'الهيكل المعتمد والمذكّرة', chooseLabel: 'الهيكل المعتمد', btnNote: 'إعداد مذكّرة المعبّد',
+  chooseIntro: 'اختاروا الهيكل المعتمد. تتضمّن المذكّرة المعطيات والمنهجية والهياكل المقارنة مع مقاطعها، والحالات التي تستوجب دراسة معمّقة.',
+  n: { title: 'مذكّرة التصميم الأوّلي للمعبّد', sub: 'هيكل المعبّد الحضري — تصميم أوّلي استرشادي', objet: 'التصميم الأوّلي لهيكل المعبّد',
+    cover: [['commune', 'البلدية'], ['lieu', 'المكان'], ['objet', 'الموضوع'], ['name', 'الهيكل المعتمد'], ['date', 'التاريخ'], ['auteur', 'أعدّها'], ['outil', 'الأداة']],
+    s: { warn: 'تنبيه', site: 'المكان', data: 'المعطيات', method: 'المنهجية', sols: 'الهياكل المقارنة', chosen: 'الهيكل المعتمد', study: 'متى تُجرى دراسة معمّقة', annex: 'ملحق — الفرضيات والمصادر' },
+    dataCols: ['المعطى', 'القيمة'], cmpCols: ['الهيكل', 'الرأي', 'السماكة الجملية', 'ملاحظة'],
+    method: ['يقترح دليل Cerema، كأداة بسيطة، هياكل محسوبة مسبقًا انطلاقًا من معطيين: حركة العربات الثقيلة وقدرة تحمّل أرضية المعبّد (ص 212).', 'الحركة المتراكمة TC = 365 × MJA × C، حيث C = n × (1 + (n − 1) × τ / 2)؛ المحاور المكافئة NE = TC × CAM (ص 215-216).', 'يُعبَّر عن قدرة تحمّل أرضية المعبّد بأصناف من PF1 إلى PF3؛ والحضيرة الحضرية من الجودة Q2 التي تخفّض أداء المواد (ص 216-217).'],
+    hyp: ['CAM (عدوانية العربات الثقيلة) للهياكل الإسفلتية: 0,3 (T5، T4)، 0,4 (T3−)، 0,5 (T3+ وما فوق)، حسب المذكّرة الدورية التونسية لسنة 2017 (الوسط شبه الحضري)، إذ لا يقدّم دليل Cerema قيمًا للطرقات الحضرية العادية.', 'مخاطرة الحساب: 25 % حتّى الصنف T3، و5 % فوق ذلك، وفقًا لعائلتي المنحنيات في المخطّط البياني (ص 213) وللقيمة التقريبية الواردة في مذكّرة 2017.', 'سماكات الحصى المعالج بالإسفلت مقروءة بيانيًّا على المخطّط البياني ص 213 (± 0,5 صم)، ومستكملة حسب لوغاريتم الحركة، ومقرَّبة إلى السنتيمتر الأعلى.', 'طبيعة التربة دون تجربة: تقابل استرشادي اختارته الأداة (صخر أو تُف: PF3؛ رمل أو حصى جافّ: PF2؛ طمي أو طين قليل الرطوبة: PF1؛ طين رطب أو ردم حديث: تربة رديئة جدًّا).', 'أصناف الكتالوج التونسي: الحركة T5 < 50، T4 50-150، T3 150-300، T2 300-600، T1 600-1 200 ع.ث/يوم على المسلك الأكثر حمولة؛ التربة من S1 إلى S4 حسب CBR (5-8، 8-12، 12-20، > 20).'],
+    sources: ['Cerema (2016). Voirie urbaine – Guide d’aménagement (الطرقات الحضرية – دليل التهيئة). سلسلة Références (البطاقات 22، 41، 42، 51، 58، 66).', 'DGPC تونس (1984). Catalogue des structures types pour chaussées neuves et renforcement (كتالوج الهياكل النموذجية للمعبّدات الجديدة والتدعيم).', 'DGPC تونس (2017). مذكّرة دورية، ملحق لكتالوج 1984.', 'NF P 98-086 (2011). Dimensionnement structurel des chaussées routières (التصميم الإنشائي لمعبّدات الطرقات).'],
+    chosenIntro: n => `الهيكل الذي اعتمدته البلدية: ${n}.`, figSec: 'مقطع مبدئي للهيكل (السماكات بالسنتيمتر، دون مقياس تنفيذ).' }
+};
+
+PVT.en = {
+  modPv: 'Pavement',
+  pvEyebrow: 'Preliminary design · Cerema guide “Voirie urbaine” (2016)',
+  pvH1: 'Which pavement structure?',
+  pvLede: 'Enter the space to be designed, the heavy-vehicle traffic and the type of soil. The tool proposes several structures in different materials, with their thicknesses. This is a preliminary design: a pavement study is required whenever there is any doubt.',
+  title: 'Preliminary design of the pavement structure',
+  warnTitle: 'Indicative preliminary design',
+  warn: 'The proposed thicknesses are orders of magnitude for preparing a project and comparing materials. They replace neither the geotechnical study of the soil nor the pavement design by a design consultant (standard NF P 98-086). If in doubt — poor or wet soil, heavy traffic, buses, many underground utilities — have a detailed study carried out.',
+  intro: 'Results update with every change. Each rule refers to the relevant page of the Cerema guide “Voirie urbaine” (2016).',
+  siteHint: 'The location marked on the map appears in the report (location plan and aerial view).',
+  g: { use: 'Space to be designed', traf: 'Traffic', soil: 'Subgrade soil', opt: 'Construction conditions' },
+  f: { space: 'Type of space', pl: 'Heavy vehicles (over 3.5 t) per day per direction', plPreset: 'Closest situation', n: 'Design life', tau: 'Annual growth of heavy-vehicle traffic',
+    soil: 'Soil type (if no test is available)', cbr: 'Measured CBR value (leave blank if unknown)', drain: 'Poorly drained soil (shallow water table, low point)', q2: 'Urban worksite (construction constraints)' },
+  u: { pl: 'HV/day/direction', an: 'years', pct: '%', cm: 'cm', m: 'm' },
+  o: {
+    space: { chaussee: 'Street or avenue carriageway', giratoire: 'Roundabout carriageway', bus: 'Bus lane or bus stop', parking: 'Parking', cycle: 'Cycle track', trottoir: 'Sidewalk or pedestrian area' },
+    plPreset: { custom: 'Entered value', desserte: 'Local access street: deliveries and garbage truck (about 10)', distrib: 'Distributor street: regular deliveries (about 40)', artere: 'Arterial with a few buses (about 100)', artereBus: 'Arterial with bus routes (about 250)', axe: 'Main route, heavy truck traffic (about 600)' },
+    soil: { roche: 'Rock, compact gravel or tuff (high bearing capacity)', grave: 'Clean, dry sand or gravel (medium bearing capacity)', limon: 'Silt or slightly moist clay (low bearing capacity)', argile: 'Wet clay, recent fill or mud (very low)' },
+    yes: 'Yes', no: 'No'
+  },
+  // résultats
+  resTitle: 'Result', classLine: (T, mja, ne, pf, q, r) => `Traffic class ${T} (${mja} HV/day/direction); cumulative traffic ${ne} 13-t equivalent axle loads; subgrade (formation) ${pf}, ${q}; design risk ${r}%.`,
+  pfFromCbr: (cbr, e) => `Subgrade derived from CBR ${cbr}: modulus of about ${e} MPa (modulus ≤ 5 × CBR, 2017 circular note).`,
+  pfFromSoil: 'Subgrade estimated from the soil type: this is an assumption made by the tool, to be confirmed by a test (CBR, plate load or deflection). The guide does not provide for visual identification (p. 216).',
+  drainDown: 'Poorly drained soil: the subgrade is downgraded by one class (rule of the 1984 Tunisian catalog).',
+  sol: { a: 'Asphalt concrete on bitumen-bound gravel (Cerema guide)', tn: 'Alternatives in Tunisian materials (1984 catalog)', pav: 'Pavers or slabs (concrete or stone)', enduit: 'Chip seal (surface dressing)', beton: 'Cement concrete', cyc: 'Cycle track structures (Cerema guide)', side: 'Sidewalk and pedestrian area', perc: 'Grouted macadam (enrobé percolé)' },
+  st: { ok: 'Suitable', cond: 'Conditional', study: 'Specific study', no: 'Not recommended' },
+  lay: { BBSG: 'Asphalt concrete (BBSG)', GB3: 'Bitumen-bound gravel (grave-bitume) GB3', GNT: 'Unbound granular material (leveling course)', GNTf: 'Unbound granular material', FORME: 'Capping layer', BB: 'Asphalt concrete', BC: 'Double chip seal', MC: 'Single chip seal', GR: 'Crushed graded aggregate', G: 'Crusher run', GB: 'Bitumen-bound gravel', GC: 'Cement-bound gravel', T: 'Compact tuff', PAV: 'Pavers', LIT: 'Bedding layer', SUPP: 'Rigid base (concrete)', STAB: 'Stabilized soil surfacing 0/10', MTLH: 'Hydraulically bound granular material', ENDUIT: 'Chip seal 0/10', PLAT: 'Subgrade' },
+  total: t => `Total thickness: ${t}`, toStudy: 'to be determined by the study',
+  // raisons
+  aOk: 'Structure read from the guide’s design chart (p. 213): BBSG wearing course on base layers of GB3 bitumen-bound gravel, with a 3 to 5 cm leveling course of unbound granular material.',
+  aRead: 'Thicknesses read graphically from the chart (± 0.5 cm), then rounded up to the next centimeter; to be confirmed by calculation.',
+  aGir: 'Roundabout: base layers increased by 15% and a wearing course at least 6 cm thick (p. 216).',
+  aBus: 'Bus lane: channelized traffic, increased aggressiveness (factor of 1.6 for a 3 m lane, p. 324); concrete recommended at stops; specific design required (fact sheet 66, p. 324-325).',
+  aOver: 'Traffic beyond the chart (more than 10 million axle loads): design by calculation (NF P 98-086).',
+  aSplit: 'Bitumen-bound gravel thicker than 14 cm: to be placed in two lifts (maximum thickness per lift 14 to 15 cm, Tunisian catalog, table X).',
+  aPF1: 'PF1 subgrade (low bearing capacity): improve the soil with a capping layer at least 30 cm thick or with in-place treatment, to reach at least PF2 (p. 296; 2017 note: at least 50 MPa).',
+  aSouple: 'Thick bituminous structure (more than 12 cm of bituminous materials): suitable for all traffic levels; low-cost maintenance, easy repair (p. 221).',
+  tnRef: '1984 Tunisian catalog: designed for rural roads, it does not address urban areas (p. 6 of the catalog); alternatives are given for comparison, using local materials.',
+  tnClass: (T, S) => `Catalog classes: traffic ${T}, soil ${S}.`,
+  tnBB: 'Wearing course: 5 cm of asphalt concrete instead of the chip seal specified in the catalog, since the Cerema guide restricts chip seals to the lightest traffic (class T5, p. 221).',
+  tnNone: 'The catalog offers no solution for this traffic and this soil.',
+  tnTuf: 'Compact tuff: structure sheets valid in region C of the catalog; from T3 upward, prefer a 6 cm asphalt layer to a chip seal (risk of chip loss).',
+  tnOut: 'Traffic above T1 (more than 1,200 HV/day): outside the scope of the catalog.',
+  tnS0: 'Very poor and poorly drained soil (class S0): outside the scope of the catalog; construction measures to be studied.',
+  pavOk: 'Fewer than 50 HV/day: pavers about 8 cm thick (p. 112).', pavMid: 'Between 50 and 150 HV/day: pavers 8 to 14 cm thick; a specific study is mandatory above 50 HV/day (p. 111-112).',
+  pavNo: 'Above 150 HV/day (class T3): do not use pavers, except with special studies and at significant risk (p. 111).',
+  pavSupp: 'Rigid cement-concrete base required, staggered joints, pavers restrained at the edges, effective drainage mandatory (p. 111).',
+  pavUse: 'Mainly for pedestrian areas and heritage sites; noisy under car traffic, uncomfortable for cyclists (p. 111-112).',
+  enOk: 'Possible for the lightest traffic (class T5 at most) on a flexible structure (p. 221).', enNo: 'Restricted to the lightest traffic (class T5); chip loss on bends and in braking zones (p. 108, 221).',
+  enUse: 'Economical and waterproof, but noisy and uncomfortable for pedestrians and cyclists; to be laid between April and October (p. 108-109).',
+  btUse: 'Not susceptible to rutting or indentation: recommended at bus stops and heavy-load areas; in town, short slabs of 3 to 5 m; repairs are difficult when trenches are dug (p. 109-110, 222).',
+  btStudy: 'The guide gives no thickness: design by a design consultant (NF P 98-086).',
+  cycPF: pf => `Guide structures for a ${pf} subgrade (p. 296).`,
+  cycPF1: 'PF1 subgrade: treat the soil or place a capping layer more than 30 cm thick, then apply the PF2 structures (p. 296).',
+  cycPF4: 'PF4 subgrade (very good): the base layers can be omitted; 5 to 10 cm of unbound granular leveling course under the wearing course (p. 296).',
+  cycWide: 'The subgrade extends 0.30 m beyond each side of the track; a cycle lane is part of the carriageway and is designed like it (p. 296).',
+  sideTxt: 'The guide does not quantify sidewalk structures: first choose the surfacing (asphalt concrete, concrete, pavers or slabs, mastic asphalt about 3 cm thick, stabilized soil surfacing for footpaths), then the base layers (concrete, cement-bound gravel or bitumen-bound gravel) according to the vehicles allowed: cleaning, emergency services, deliveries (p. 268-271).',
+  sideAcc: 'Accessibility: firm, non-slip surface, holes and joints under 2 cm, cross slope of 2% at most, clear walkway at least 1.40 m wide (p. 89, 137, 230).',
+  sideHyp: 'Order of magnitude proposed by the tool: cycle track structure (p. 296) for a sidewalk used only by maintenance vehicles; to be validated.',
+  percTxt: 'Parking for heavy loads or stopping areas: grouted macadam (about 4 cm), resistant to hydrocarbons and indentation, to be placed in dry weather (p. 107).',
+  parkTxt: 'Car parking: pavement structure of the lowest traffic class; spaces reserved for people with disabilities have a slope of 2% at most (p. 88, 105).',
+  studyTitle: 'When to carry out a detailed study',
+  study: { pf1: 'Low bearing capacity soil (PF1) or very poor soil: geotechnical study and soil improvement.', drain: 'Poorly drained soil: drainage and stormwater study (drain invert below the capping layer, p. 221).', heavy: 'Heavy traffic (more than 150 HV/day/direction): design by calculation.', bus: 'Buses and channelized traffic: specific design (fact sheet 66).', gir: 'Heavily loaded roundabout: design according to NF P 98-086.', pav: 'Pavers or slabs above 50 HV/day: specific study mandatory.', over: 'Traffic beyond the chart: calculation.', always: 'Always: soil investigation before works, protection of underground utilities, trenches backfilled according to NF P 98-331.' },
+  chooseTitle: 'Selected structure and report', chooseLabel: 'Selected structure', btnNote: 'Generate the pavement report',
+  chooseIntro: 'Choose the selected structure. The report includes the input data, the approach, the compared structures with their cross-sections, and the cases where a detailed study is needed.',
+  n: { title: 'Pavement preliminary design report', sub: 'Urban pavement structure — indicative preliminary design', objet: 'Preliminary design of the pavement structure',
+    cover: [['commune', 'Municipality'], ['lieu', 'Location'], ['objet', 'Subject'], ['name', 'Selected structure'], ['date', 'Date'], ['auteur', 'Prepared by'], ['outil', 'Tool']],
+    s: { warn: 'Disclaimer', site: 'The site', data: 'Input data', method: 'Approach', sols: 'Compared structures', chosen: 'Selected structure', study: 'When to carry out a detailed study', annex: 'Appendix — Assumptions and sources' },
+    dataCols: ['Parameter', 'Value'], cmpCols: ['Structure', 'Assessment', 'Total thickness', 'Remark'],
+    method: ['For a simple tool, the Cerema guide offers precalculated structures based on two inputs: heavy-vehicle traffic and subgrade bearing capacity (p. 212).', 'Cumulative traffic TC = 365 × MJA × C, where MJA (annual average daily traffic) counts heavy vehicles and C = n × (1 + (n − 1) × τ / 2); equivalent axle loads NE = TC × CAM (p. 215-216).', 'Subgrade bearing capacity is expressed in classes PF1 to PF3; an urban worksite is rated quality Q2, which reduces material performance (p. 216-217).'],
+    hyp: ['CAM (heavy-vehicle aggressiveness factor) for bituminous structures: 0.3 (T5, T4), 0.4 (T3−), 0.5 (T3+ and above), based on the 2017 Tunisian circular note (peri-urban setting), since the Cerema guide gives none for ordinary streets.', 'Design risk: 25% up to class T3, 5% above, consistent with the two families of curves on the chart (p. 213) and with the order of magnitude given in the 2017 note.', 'Bitumen-bound gravel thicknesses read graphically from the chart on p. 213 (± 0.5 cm), interpolated on the logarithm of traffic and rounded up to the next centimeter.', 'Soil type without testing: indicative correspondence chosen by the tool (rock or tuff: PF3; dry sand or gravel: PF2; silt or slightly moist clay: PF1; wet clay or recent fill: very poor soil).', 'Tunisian catalog classes: traffic T5 < 50, T4 50-150, T3 150-300, T2 300-600, T1 600-1,200 HV/day on the most heavily loaded lane; soil S1 to S4 according to CBR (5-8, 8-12, 12-20, > 20).'],
+    sources: ['Cerema (2016). Voirie urbaine – Guide d’aménagement [Urban streets – Design guide]. Collection Références (fact sheets 22, 41, 42, 51, 58, 66).', 'DGPC Tunisia (1984). Catalogue des structures types pour chaussées neuves et renforcement [Catalog of standard structures for new pavements and overlays].', 'DGPC Tunisia (2017). Note circulaire [Circular note], addendum to the 1984 catalog.', 'NF P 98-086 (2011). Dimensionnement structurel des chaussées routières [Structural design of road pavements].'],
+    chosenIntro: n => `Structure selected by the municipality: ${n}.`, figSec: 'Typical cross-section of the structure (thicknesses in centimeters, not to construction scale).' }
+};
+
+const pt = (k, ...a) => { const d = PVT[lang] || PVT.fr, v = k in d ? d[k] : PVT.fr[k]; return typeof v === 'function' ? v(...a) : v; };
+// mode d'emploi propre au module chaussée
+Object.assign(PVT.fr, { guideBody: `<p><strong>Objectif.</strong> Donner à la commune un <strong>prédimensionnement</strong> de la structure de chaussée — les couches et leurs épaisseurs — dans plusieurs matériaux, pour préparer un projet et comparer des solutions. Il s’appuie sur le guide Cerema « Voirie urbaine » (2016) et, pour les matériaux locaux, sur le catalogue tunisien de 1984. <strong>Ce n’est pas un dimensionnement :</strong> en cas de doute, une étude géotechnique et de chaussée par un bureau d’études est nécessaire.</p>
+    <h3>Les étapes</h3>
+    <ol>
+      <li><strong>Choisir l’espace</strong> : chaussée de rue, giratoire, voie de bus, stationnement, piste cyclable ou trottoir.</li>
+      <li><strong>Indiquer le trafic de poids lourds</strong> (véhicules de plus de 3,5 t : camions, bus, bennes) par jour et par sens, en choisissant la situation la plus proche ou en saisissant un comptage ; la durée de service et la croissance du trafic.</li>
+      <li><strong>Décrire le sol</strong> : sa nature, ou mieux l’indice CBR s’il a été mesuré ; signaler un sol mal drainé.</li>
+      <li><strong>Lire les structures proposées</strong> : chacune a son avis (adapté, sous conditions, étude spécifique, déconseillé), sa coupe et ses épaisseurs.</li>
+      <li><strong>Choisir la structure retenue et produire la note</strong>.</li>
+    </ol>
+    <h3>Les données nécessaires</h3>
+    <div class="table-wrap"><table><thead><tr><th>Donnée</th><th>Comment l’obtenir</th><th>Indispensable ?</th></tr></thead><tbody>
+      <tr><td>Poids lourds par jour et par sens</td><td>Comptage, ou situation la plus proche proposée par l’outil</td><td>Oui</td></tr>
+      <tr><td>Nature du sol</td><td>Observation lors d’un sondage ou des travaux voisins</td><td>Oui</td></tr>
+      <tr><td>Indice CBR</td><td>Essai de laboratoire ou in situ</td><td>Fortement conseillé</td></tr>
+      <tr><td>Drainage du sol</td><td>Nappe proche, point bas, eaux stagnantes</td><td>Oui</td></tr>
+      <tr><td>Durée de service</td><td>Choix de la commune (15 ans en général)</td><td>Oui</td></tr>
+    </tbody></table></div>
+    <h3>Où trouver les résultats</h3>
+    <ul>
+      <li><strong>Dans « Résultat »</strong> : la classe de trafic, le trafic cumulé, la classe de plate-forme, puis les structures comparées avec leurs coupes.</li>
+      <li><strong>Dans « Quand faire une étude approfondie »</strong> : les cas où le prédimensionnement ne suffit pas.</li>
+      <li><strong>Dans la note</strong> (bouton « Générer la note de chaussée ») : l’avertissement, les données, la démarche, la comparaison, la structure retenue et les sources.</li>
+    </ul>
+    <p class="note">Les épaisseurs sont des ordres de grandeur. Le sol doit être reconnu avant les travaux, et les réseaux enterrés protégés.</p>` });
+Object.assign(PVT.ar, { guideBody: `<p><strong>الهدف.</strong> تمكين البلدية من <strong>تصميم أوّلي</strong> لهيكل المعبّد — الطبقات وسُمكها — بعدّة موادّ، لإعداد مشروع ومقارنة الحلول. ويستند إلى دليل Cerema «Voirie urbaine» (2016)، وبالنسبة إلى الموادّ المحلية إلى الدليل التونسي لسنة 1984. <strong>ليس تصميمًا نهائيًا:</strong> عند الشكّ، تلزم دراسة جيوتقنية ودراسة للمعبّد من قِبل مكتب دراسات.</p>
+    <h3>المراحل</h3>
+    <ol>
+      <li><strong>اختيار الفضاء</strong>: معبّد نهج، مفترق دائري، مسلك حافلات، أماكن وقوف، مسلك درّاجات أو رصيف.</li>
+      <li><strong>تحديد حركة العربات الثقيلة</strong> (أكثر من 3,5 طن: شاحنات، حافلات، شاحنات الفضلات) في اليوم وفي كل اتجاه، باختيار الوضعية الأقرب أو بإدخال عدّ؛ ومدّة الخدمة ونموّ الحركة.</li>
+      <li><strong>وصف التربة</strong>: طبيعتها، أو أفضل من ذلك مؤشّر CBR إن قيس؛ والإشارة إلى تربة سيّئة الصرف.</li>
+      <li><strong>قراءة الهياكل المقترحة</strong>: لكلّ منها رأي (ملائم، بشروط، دراسة خاصّة، غير مستحسن)، ومقطع وسُمك.</li>
+      <li><strong>اختيار الهيكل المعتمد وإعداد المذكّرة</strong>.</li>
+    </ol>
+    <h3>المعطيات اللازمة</h3>
+    <div class="table-wrap"><table><thead><tr><th>المعطى</th><th>كيفية الحصول عليه</th><th>ضروري؟</th></tr></thead><tbody>
+      <tr><td>العربات الثقيلة في اليوم وفي كل اتجاه</td><td>عدّ، أو أقرب وضعية تقترحها الأداة</td><td>نعم</td></tr>
+      <tr><td>طبيعة التربة</td><td>ملاحظة عند سبر أو أشغال مجاورة</td><td>نعم</td></tr>
+      <tr><td>مؤشّر CBR</td><td>تجربة مخبرية أو ميدانية</td><td>يُنصح به بشدّة</td></tr>
+      <tr><td>صرف مياه التربة</td><td>مائدة مائية قريبة، نقطة منخفضة، مياه راكدة</td><td>نعم</td></tr>
+      <tr><td>مدّة الخدمة</td><td>اختيار البلدية (15 سنة عادةً)</td><td>نعم</td></tr>
+    </tbody></table></div>
+    <h3>أين توجد النتائج</h3>
+    <ul>
+      <li><strong>في «النتيجة»</strong>: صنف الحركة، والحركة المتراكمة، وصنف أرضية المعبّد، ثم الهياكل المقارنة مع مقاطعها.</li>
+      <li><strong>في «متى تلزم دراسة معمّقة»</strong>: الحالات التي لا يكفي فيها التصميم الأوّلي.</li>
+      <li><strong>في المذكّرة</strong> (زرّ «إعداد مذكّرة المعبّد»): التنبيه، والمعطيات، والمنهجية، والمقارنة، والهيكل المعتمد، والمصادر.</li>
+    </ul>
+    <p class="note">السُّمك المقترح تقريبي. يجب التعرّف على التربة قبل الأشغال وحماية الشبكات المدفونة.</p>` });
+Object.assign(PVT.en, { guideBody: `<p><strong>Purpose.</strong> Give the municipality a <strong>preliminary design</strong> of the pavement structure — the layers and their thicknesses — in several materials, to prepare a project and compare solutions. It is based on the Cerema guide “Voirie urbaine” (2016) and, for local materials, on the 1984 Tunisian catalogue. <strong>It is not a structural design:</strong> when in doubt, a geotechnical and pavement study by a design consultant is required.</p>
+    <h3>The steps</h3>
+    <ol>
+      <li><strong>Choose the space</strong>: street carriageway, roundabout, bus lane, parking, cycle track or sidewalk.</li>
+      <li><strong>Enter the heavy-vehicle traffic</strong> (over 3.5 t: trucks, buses, refuse trucks) per day and per direction, by choosing the closest situation or entering a count; the design life and traffic growth.</li>
+      <li><strong>Describe the soil</strong>: its nature, or better the CBR value if it was measured; flag poorly drained soil.</li>
+      <li><strong>Read the proposed structures</strong>: each has a rating (suitable, with conditions, specific study, not recommended), a cross-section and thicknesses.</li>
+      <li><strong>Choose the selected structure and produce the report</strong>.</li>
+    </ol>
+    <h3>Data needed</h3>
+    <div class="table-wrap"><table><thead><tr><th>Data</th><th>How to obtain it</th><th>Required?</th></tr></thead><tbody>
+      <tr><td>Heavy vehicles per day and per direction</td><td>Count, or the closest situation offered by the tool</td><td>Yes</td></tr>
+      <tr><td>Soil type</td><td>Observation from a test pit or nearby works</td><td>Yes</td></tr>
+      <tr><td>CBR value</td><td>Laboratory or field test</td><td>Strongly recommended</td></tr>
+      <tr><td>Soil drainage</td><td>Shallow water table, low point, standing water</td><td>Yes</td></tr>
+      <tr><td>Design life</td><td>Municipality’s choice (usually 15 years)</td><td>Yes</td></tr>
+    </tbody></table></div>
+    <h3>Where to find the results</h3>
+    <ul>
+      <li><strong>In “Result”</strong>: the traffic class, cumulative traffic, subgrade class, then the compared structures with their cross-sections.</li>
+      <li><strong>In “When to commission a detailed study”</strong>: the cases where the preliminary design is not enough.</li>
+      <li><strong>In the report</strong> (“Generate the pavement report” button): the warning, data, method, comparison, selected structure and sources.</li>
+    </ul>
+    <p class="note">Thicknesses are orders of magnitude. The soil must be investigated before works and buried utilities protected.</p>` });
+
+/* ---------- données du module chaussée (enregistrées dans le navigateur) ---------- */
+const PV_DEF = { space: 'chaussee', plPreset: 'distrib', pl: 40, n: 15, tau: 2, soil: 'grave', cbr: '', drain: false, q2: true };
+const PV = { ...PV_DEF };
+try { const s = JSON.parse(localStorage.getItem('mv-pv') || 'null'); if (s) for (const k of Object.keys(PV_DEF)) if (k in s && typeof s[k] === typeof PV_DEF[k]) PV[k] = s[k]; } catch (e) { /* stockage indisponible */ }
+const savePv = () => { try { localStorage.setItem('mv-pv', JSON.stringify(PV)); } catch (e) { /* stockage indisponible */ } };
+let pvPicked = null;
+const PV_PRESET = { desserte: 10, distrib: 40, artere: 100, artereBus: 250, axe: 600 };
+const PVF = {
+  use: [['space', 'sel', ['chaussee', 'giratoire', 'bus', 'parking', 'cycle', 'trottoir'], 'space']],
+  traf: [['plPreset', 'sel', ['custom', 'desserte', 'distrib', 'artere', 'artereBus', 'axe'], 'plPreset'], ['pl', 'num', [0, 3000, 5], 'pl'], ['n', 'num', [5, 30, 1], 'an'], ['tau', 'num', [0, 8, 0.5], 'pct']],
+  soil: [['soil', 'sel', ['roche', 'grave', 'limon', 'argile'], 'soil'], ['cbr', 'txt', [0, 80], ''], ['drain', 'chk']],
+  opt: [['q2', 'chk']]
+};
+
+/* ---------- règles ---------- */
+// classes de trafic du guide (p. 215) : borne supérieure en PL/j/sens, nom
+const PV_TCLS = [[25, 'T5'], [50, 'T4'], [85, 'T3−'], [150, 'T3+'], [200, 'T2−'], [300, 'T2+'], [500, 'T1−'], [750, 'T1+'], [1200, 'T0−'], [2000, 'T0+'], [3000, 'TS−'], [5000, 'TS+'], [Infinity, 'TEX']];
+// abaque BBSG / GB3 (p. 213), lectures graphiques en cm : risque 25 % et 5 %
+const PV_ABA = {
+  25: { ne: [1e4, 2e4, 5e4, 1e5, 2e5, 5e5, 9e5], PF1Q2: [12, 14, 16.5, 18.5, 20.5, 22.5, 24], PF1Q1: [9, 10.5, 12.5, 14.5, 16.5, 18.5, 20], PF2Q2: [8, 10, 12.5, 14, 15.5, 18, 19.5],
+    PF2Q1: [8, 8, 9, 10.5, 12, 14, 15.5], PF3Q2: [8, 8, 9, 10.5, 12, 14, 15.5], PF3Q1: [8, 8, 8, 8, 8, 9.5, 10.5], BB: [6, 6, 6, 6, 6, 7, 8] },
+  5: { ne: [7e5, 1e6, 2e6, 5e6, 1e7], PF1Q2: [27.5, 29, 32.5, 36.5, 40], PF1Q1: [22, 23.5, 26, 30, 32.5], PF2Q2: [21.5, 22.5, 25.5, 29.5, 32],
+    PF2Q1: [17, 18.5, 21, 24.5, 27], PF3Q2: [17, 18.5, 21, 24.5, 27], PF3Q1: [12, 13, 16, 19, 22], BB: [8, 8, 8, 8, 8] }
+};
+function pvAbaque(NE, pf, q, risk) {
+  const tb = PV_ABA[risk], xs = tb.ne.map(Math.log10), x = Math.log10(Math.min(tb.ne[tb.ne.length - 1], Math.max(tb.ne[0], NE)));
+  let k = 0; while (k < xs.length - 2 && x > xs[k + 1]) k++;
+  const f = (x - xs[k]) / (xs[k + 1] - xs[k]), lerp = a => a[k] + (a[k + 1] - a[k]) * Math.max(0, Math.min(1, f));
+  return { gb: lerp(tb['PF' + pf + q]), bb: lerp(tb.BB) };
+}
+function pvDerive(V) {
+  const mja = Math.max(0, +V.pl || 0), n = V.n, tau = V.tau / 100, C = n * (1 + (n - 1) * tau / 2), TC = 365 * mja * C;
+  const T = PV_TCLS.find(c => mja <= c[0])[1], cam = mja <= 50 ? 0.3 : mja <= 85 ? 0.4 : 0.5, kBus = V.space === 'bus' ? 1.6 : 1;
+  const NE = TC * cam * kBus;
+  const cbr = parseFloat(String(V.cbr).replace(',', '.')), hasCbr = Number.isFinite(cbr) && cbr > 0;
+  // plate-forme : 0 = sol très médiocre (moins que PF1), 1 = PF1, 2 = PF2, 3 = PF3, 4 = PF4
+  let pf, E = null, S;
+  if (hasCbr) { E = 5 * cbr; pf = E < 20 ? 0 : E < 50 ? 1 : E < 120 ? 2 : E < 200 ? 3 : 4; S = cbr < 5 ? 0 : cbr < 8 ? 1 : cbr < 12 ? 2 : cbr < 20 ? 3 : 4; }
+  else { pf = { roche: 3, grave: 2, limon: 1, argile: 0 }[V.soil]; S = { roche: 4, grave: 3, limon: 1, argile: 0 }[V.soil]; }
+  if (V.drain) { pf = Math.max(0, pf - 1); S = Math.max(0, S - 1); }
+  const risk = mja <= 150 && NE <= 9e5 ? 25 : 5, q = V.q2 ? 'Q2' : 'Q1';
+  const Ttn = mja < 50 ? 4 : mja < 150 ? 3 : mja < 300 ? 2 : mja < 600 ? 1 : mja <= 1200 ? 0 : -1;   // 0 = T1 … 4 = T5 (catalogue tunisien)
+  return { mja, C, TC, T, cam, kBus, NE, hasCbr, cbr, E, pf, S, risk, q, Ttn };
+}
+const pfName = pf => pf === 0 ? '< PF1' : 'PF' + pf;
+
+// structure de base (abaque) : couche de roulement BBSG, assise GB3, réglage GNT ; giratoire +15 %
+function pvSolA(V, d) {
+  const pfA = Math.min(3, Math.max(1, d.pf < 2 ? 2 : d.pf)), r = pvAbaque(d.NE, pfA, d.q, d.risk);
+  let gb = Math.ceil(r.gb), bb = Math.ceil(r.bb);
+  if (V.space === 'giratoire') { gb = Math.ceil(r.gb * 1.15); bb = Math.max(6, bb); }
+  const L = [{ m: 'BBSG', e: bb }, { m: 'GB3', e: gb }, { m: 'GNT', e: 4, txt: '3-5' }];
+  if (d.pf < 2) L.push({ m: 'FORME', e: 30, txt: '≥ 30' });
+  const notes = [pt('aOk'), pt('aRead')];
+  if (V.space === 'giratoire') notes.push(pt('aGir'));
+  if (V.space === 'bus') notes.push(pt('aBus'));
+  if (gb > 14) notes.push(pt('aSplit'));
+  if (d.pf < 2) notes.push(pt('aPF1'));
+  if (bb + gb > 12) notes.push(pt('aSouple'));
+  const over = d.NE > 1e7; if (over) notes.unshift(pt('aOver'));
+  const st = over || d.pf === 0 || V.space === 'bus' ? 'study' : d.mja > 150 ? 'cond' : 'ok';
+  return { id: 'a', name: pt('sol').a, st, layers: L, notes };
+}
+// variantes du catalogue tunisien 1984 (fiches 1 : GR ; 6 : GB sur G ; 4 : tuf compact, région C)
+const PV_TN = {
+  f1: { base: 'GR', fond: 'GR', S: { 1: [null, '5BB/20/35', 'BC/20/40', 'BC/20/30', 'MC/20/20'], 2: [null, '5BB/20/30', 'BC/20/30', 'BC/20/25', 'MC/15/20'], 3: [null, '5BB/20/25', 'BC/20/25', 'BC/15/20', 'MC/30'], 4: [null, '5BB/15/20', 'BC/15/20', 'BC/30', 'MC/20'] } },
+  f6: { base: 'GB', fond: 'G', S: { 1: ['5BB/16GB/40G', '5BB/14GB/35G', 'BC/14GB/20G+20G', null, null], 2: ['5BB/16GB/35G', '5BB/14GB/30G', 'BC/14GB/15G+20G', null, null], 3: ['5BB/14GB/30G', '5BB/12GB/25G', 'BC/12GB/30G', null, null], 4: ['5BB/14GB/25G', '5BB/12GB/20G', 'BC/10GB/25G', null, null] } },
+  f4: { base: 'T', fond: 'T', S: { 1: [null, null, null, null, null], 2: [null, null, '6BB/20/30', 'BC/20/35', 'MC/20/30'], 3: [null, null, '6BB/20/20', 'BC/20/25', 'MC/40'], 4: [null, null, '6BB/30', 'BC/40', 'MC/30'] } }
+};
+function pvParse(cell, f) {
+  const tk = cell.split('/'), r = tk.shift().match(/^(\d+)?(BB|BC|MC)$/), L = [];
+  L.push(r[2] === 'BB' ? { m: 'BB', e: +r[1] } : { m: r[2], e: 1.5, txt: '≈ 1,5' });
+  const rest = tk, mat = (s, def) => { const m = s.match(/^(\d+)([A-Z]*)$/); return { m: m[2] || def, e: +m[1] }; };
+  if (rest.length === 1 && !rest[0].includes('+')) L.push(mat(rest[0], f.base));
+  else rest.forEach((s, j) => s.split('+').forEach(p => L.push(mat(p, j === 0 && rest.length > 1 ? f.base : f.fond))));
+  return L;
+}
+function pvSolTN(V, d) {
+  const out = [], nm = { f1: 'GR', f6: 'GB', f4: 'T' };
+  if (d.Ttn < 0) return [{ id: 'tn', name: pt('sol').tn, st: 'study', layers: [], notes: [pt('tnOut'), pt('tnRef')] }];
+  if (d.S === 0) return [{ id: 'tn', name: pt('sol').tn, st: 'study', layers: [], notes: [pt('tnS0'), pt('tnRef')] }];
+  const TT = ['T1', 'T2', 'T3', 'T4', 'T5'][d.Ttn], SS = 'S' + d.S;
+  for (const k of ['f1', 'f6', 'f4']) {
+    const f = PV_TN[k], cell = f.S[d.S][d.Ttn];
+    if (!cell) continue;
+    let L = pvParse(cell, f); const notes = [pt('tnClass', TT, SS), pt('tnRef')];
+    // le guide Cerema réserve l'enduit aux trafics T5 : au-delà, roulement de 5 cm de béton bitumineux
+    if ((L[0].m === 'BC' || L[0].m === 'MC') && d.mja > 25) { L[0] = { m: 'BB', e: 5 }; notes.unshift(pt('tnBB')); }
+    if (k === 'f4') notes.push(pt('tnTuf'));
+    out.push({ id: 'tn-' + k, name: `${pt('sol').tn} — ${pt('lay')[nm[k]]}`, st: 'cond', layers: L, notes });
+  }
+  if (!out.length) out.push({ id: 'tn', name: pt('sol').tn, st: 'study', layers: [], notes: [pt('tnNone'), pt('tnRef')] });
+  return out;
+}
+function pvSolPav(d) {
+  const st = d.mja <= 50 ? 'ok' : d.mja <= 150 ? 'study' : 'no';
+  const notes = [st === 'ok' ? pt('pavOk') : st === 'study' ? pt('pavMid') : pt('pavNo'), pt('pavSupp'), pt('pavUse')];
+  return { id: 'pav', name: pt('sol').pav, st, layers: [{ m: 'PAV', e: d.mja <= 50 ? 8 : 14, txt: d.mja <= 50 ? '8' : '8-14' }, { m: 'LIT', e: 4, txt: '' }, { m: 'SUPP', e: 20, txt: '?' }], notes, open: true };
+}
+function pvSolEnduit(V, d) {
+  const ok = d.mja <= 25;
+  const f = PV_TN.f1, cell = d.S >= 1 ? f.S[d.S][4] : null;
+  return { id: 'enduit', name: pt('sol').enduit, st: ok ? (cell ? 'cond' : 'study') : 'no', layers: ok && cell ? pvParse(cell, f) : [], notes: [ok ? pt('enOk') : pt('enNo'), pt('enUse')].concat(ok && cell ? [pt('tnRef')] : []) };
+}
+function pvSolBeton(V) {
+  return { id: 'beton', name: pt('sol').beton, st: 'study', layers: [], notes: [pt('btUse'), pt('btStudy')].concat(V.space === 'bus' ? [pt('aBus')] : []) };
+}
+function pvSolCycle(d) {
+  const pf = d.pf >= 4 ? 4 : d.pf >= 3 ? 3 : 2, base = pf === 3 ? 'PF3' : 'PF2';
+  const S = { PF2: [[['BB', 5], ['GNTf', 20]], [['STAB', 10], ['GNTf', 30]], [['ENDUIT', 1.5, '≈ 1'], ['MTLH', 17]], [['MTLH', 14]]],
+    PF3: [[['BB', 5], ['GNTf', 15]], [['BB', 4], ['GB', 8]], [['ENDUIT', 1.5, '≈ 1'], ['MTLH', 14]], [['MTLH', 12]]] }[base];
+  const forme = d.pf < 2 ? [{ m: 'FORME', e: 30, txt: '> 30' }] : [];
+  return S.map((s, j) => ({ id: 'cyc' + j, name: `${pt('sol').cyc} ${'abcd'[j]}`, st: d.pf === 0 ? 'study' : 'ok',
+    layers: s.map(([m, e, txt]) => ({ m, e, txt })).concat(forme),
+    notes: [pf === 4 ? pt('cycPF4') : pt('cycPF', base)].concat(d.pf < 2 ? [pt('cycPF1')] : [], j === 0 ? [pt('cycWide')] : []) }));
+}
+function pvEval(V) {
+  const d = pvDerive(V), sols = [];
+  if (V.space === 'cycle') sols.push(...pvSolCycle(d));
+  else if (V.space === 'trottoir') {
+    sols.push({ id: 'side', name: pt('sol').side, st: 'cond', layers: [], notes: [pt('sideTxt'), pt('sideAcc')] });
+    const c = pvSolCycle(d)[0]; sols.push({ ...c, id: 'side-hyp', name: pt('sol').side + ' — ' + pt('lay').BB, st: 'cond', notes: [pt('sideHyp')].concat(c.notes) });
+    sols.push(pvSolPav({ ...d, mja: 0 }));
+  } else {
+    sols.push(pvSolA(V, d));
+    if (V.space === 'parking') sols.push({ id: 'perc', name: pt('sol').perc, st: 'cond', layers: [{ m: 'BBSG', e: 4, txt: '4' }], notes: [pt('percTxt'), pt('parkTxt')] });
+    if (V.space !== 'bus') sols.push(...pvSolTN(V, d));
+    sols.push(pvSolPav(d));
+    if (V.space === 'chaussee' || V.space === 'parking') sols.push(pvSolEnduit(V, d));
+    sols.push(pvSolBeton(V));
+  }
+  // quand faire une étude approfondie
+  const SD = pt('study'), study = [];
+  if (d.pf <= 1) study.push(SD.pf1);
+  if (V.drain) study.push(SD.drain);
+  if (d.mja > 150) study.push(SD.heavy);
+  if (V.space === 'bus') study.push(SD.bus);
+  if (V.space === 'giratoire' && d.mja > 50) study.push(SD.gir);
+  if (d.mja > 50 && V.space !== 'cycle') study.push(SD.pav);
+  if (d.NE > 1e7) study.push(SD.over);
+  study.push(SD.always);
+  return { d, sols, study };
+}
+
+/* ---------- coupe de principe d'une structure ---------- */
+const PV_COL = { BBSG: '#3a3d42', BB: '#3a3d42', BC: '#56595e', MC: '#56595e', ENDUIT: '#56595e', GB3: '#6b5a45', GB: '#6b5a45', GNT: '#b9a98c', GNTf: '#b9a98c', G: '#c4b48f', GR: '#a8977a',
+  GC: '#9aa0a6', MTLH: '#9aa0a6', T: '#d8c9a3', FORME: '#c9b896', PAV: '#a5503d', LIT: '#d9cfb6', SUPP: '#a7adb3', STAB: '#cdbb8a' };
+function pvSection(layers, w = 320) {
+  if (!layers.length) return '';
+  // coupe : une bande par couche, épaisseur à l'échelle (minimum lisible), libellé écrit dans la bande
+  const sc = 3.2, minH = 22, o = [], LAY = pt('lay'), x0 = 2, bw = w - 4;
+  const dark = c => { const n = parseInt(c.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return 0.299 * r + 0.587 * g + 0.114 * b < 150; };
+  const hs = layers.map(l => Math.max(minH, l.e * sc));
+  let y = 2;
+  layers.forEach((l, i) => {
+    const h = hs[i], col = PV_COL[l.m] || '#bbbbbb';
+    o.push(`<rect x="${x0}" y="${y.toFixed(1)}" width="${bw}" height="${h.toFixed(1)}" fill="${col}" stroke="#fff" stroke-width="1.5"/>`);
+    if (l.m === 'PAV') for (let k = 1; k < 12; k++) o.push(`<line x1="${x0 + k * bw / 12}" y1="${y.toFixed(1)}" x2="${x0 + k * bw / 12}" y2="${(y + h).toFixed(1)}" stroke="#fff" stroke-width="1"/>`);
+    const th = l.txt !== undefined ? l.txt : fm2(l.e), lab = `${LAY[l.m] || l.m}${th ? ` — ${th} ${pt('u').cm}` : ''}`;
+    o.push(`<text x="${x0 + 10}" y="${(y + h / 2 + 4.5).toFixed(1)}" font-size="13" fill="${dark(col) ? '#fff' : '#1d1d1d'}"${l.m === 'PAV' ? ' paint-order="stroke" stroke="#a5503d" stroke-width="3"' : ''}>${esc(lab)}</text>`);
+    y += h;
+  });
+  o.push(`<rect x="${x0}" y="${y.toFixed(1)}" width="${bw}" height="20" fill="url(#pvh)"/><text x="${x0 + 10}" y="${(y + 14).toFixed(1)}" font-size="12" fill="#4a3f2c" paint-order="stroke" stroke="#e8e0cc" stroke-width="3">${esc(LAY.PLAT)}</text>`);
+  const tot = layers.some(l => l.txt === '?') ? null : layers.reduce((a, l) => a + (l.m === 'FORME' ? 0 : l.e), 0);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${(y + 24).toFixed(0)}" font-family="Arial, Tahoma, sans-serif" role="img"><defs><pattern id="pvh" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#e8e0cc"/><line x1="0" y1="0" x2="0" y2="8" stroke="#a89878" stroke-width="2"/></pattern></defs>${o.join('')}</svg>`
+    + (tot !== null ? `<p class="pv-tot">${esc(pt('total', fm2(Math.round(tot)) + ' ' + pt('u').cm))}</p>` : `<p class="pv-tot">${esc(pt('total', pt('toStudy')))}</p>`);
+}
+
+/* ---------- interface ---------- */
+let PVR = null;
+function buildPvForm() {
+  const F = pt('f'), O = pt('o'), U = pt('u'), G = pt('g');
+  const field = ([k, kind, opt, unit]) => {
+    if (kind === 'chk') return `<label class="jx-chk"><input type="checkbox" data-pv="${k}"${PV[k] ? ' checked' : ''}> <span>${esc(F[k])}</span></label>`;
+    if (kind === 'sel') return `<label class="jx-f"><span>${esc(F[k])}</span><select data-pv="${k}">${opt.map(v => `<option value="${v}"${String(PV[k]) === String(v) ? ' selected' : ''}>${esc(O[unit][v])}</option>`).join('')}</select></label>`;
+    if (kind === 'txt') return `<label class="jx-f"><span>${esc(F[k])}</span><span class="jx-num"><input type="text" inputmode="decimal" data-pv="${k}" value="${esc(PV[k])}" placeholder="–"></span></label>`;
+    return `<label class="jx-f"><span>${esc(F[k])}</span><span class="jx-num"><input type="number" data-pv="${k}" min="${opt[0]}" max="${opt[1]}" step="${opt[2]}" value="${PV[k]}" inputmode="decimal"><small>${esc(U[unit] || '')}</small></span></label>`;
+  };
+  $('#pv-form').innerHTML = Object.keys(PVF).map(g => `<fieldset class="jx-g"><legend>${esc(G[g])}</legend>${PVF[g].map(field).join('')}</fieldset>`).join('');
+}
+function renderPv() {
+  if (!$('#pv-res')) return;
+  const R = PVR = pvEval(PV), d = R.d, ST = pt('st');
+  const pill = st => `<span class="pill ${{ ok: 'ok', cond: 'warn', study: 'warn', no: 'bad' }[st]}">${esc(ST[st])}</span>`;
+  let h = `<h3>${esc(pt('resTitle'))}</h3><div class="verdict"><p>${esc(pt('classLine', d.T, f0(d.mja), nf0.format(Math.round(d.NE)), pfName(d.pf), d.q, d.risk))}</p>`;
+  h += `<p class="note">${esc(d.hasCbr ? pt('pfFromCbr', fm2(d.cbr), f0(d.E)) : pt('pfFromSoil'))}${PV.drain ? ' ' + esc(pt('drainDown')) : ''}</p></div>`;
+  h += `<div class="pv-grid">${R.sols.map(s => `<article class="pv-card st-${s.st}"><h4>${esc(s.name)} ${pill(s.st)}</h4>${pvSection(s.layers)}<ul>${s.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></article>`).join('')}</div>`;
+  h += `<h3>${esc(pt('studyTitle'))}</h3><ul class="jx-assoc">${R.study.map(s => `<li>${esc(s)}</li>`).join('')}</ul>`;
+  $('#pv-res').innerHTML = h;
+  const pick = pvPicked && R.sols.some(s => s.id === pvPicked) ? pvPicked : R.sols[0].id;
+  $('#pv-note').innerHTML = `<h3>${esc(pt('chooseTitle'))}</h3><p class="note">${esc(pt('chooseIntro'))}</p>
+    <div class="note-grid"><label class="nf"><span>${esc(pt('chooseLabel'))}</span><select id="pv-pick">${R.sols.map(s => `<option value="${s.id}"${s.id === pick ? ' selected' : ''}>${esc(s.name)} — ${esc(ST[s.st])}</option>`).join('')}</select></label>
+    <label class="nf"><span>${t('mCommune')}</span><input id="pv-commune" type="text" value="${esc(META.commune)}" autocomplete="off"></label>
+    <label class="nf"><span>${t('mLieu')}</span><input id="pv-lieu" type="text" value="${esc(META.lieu)}" autocomplete="off"></label>
+    <label class="nf"><span>${t('mAuteur')}</span><input id="pv-auteur" type="text" value="${esc(META.auteur)}" autocomplete="off"></label></div>
+    <div class="form-actions"><button class="btn primary" type="button" id="pv-btn-note">${esc(pt('btnNote'))}</button><span class="msg" id="pv-note-msg"></span></div>`;
+}
+$('#pv-form').addEventListener('input', e => {
+  const el = e.target, k = el.dataset.pv; if (!k) return;
+  if (el.type === 'checkbox') PV[k] = el.checked;
+  else if (el.tagName === 'SELECT') PV[k] = typeof PV_DEF[k] === 'number' ? +el.value : el.value;
+  else if (k === 'cbr') PV.cbr = el.value.trim();
+  else { const v = parseFloat(el.value); if (!Number.isFinite(v)) return; PV[k] = Math.min(+el.max, Math.max(+el.min, v)); }
+  if (k === 'plPreset' && PV_PRESET[PV.plPreset] !== undefined) { PV.pl = PV_PRESET[PV.plPreset]; $('[data-pv="pl"]').value = PV.pl; }
+  if (k === 'pl') { PV.plPreset = 'custom'; $('[data-pv="plPreset"]').value = 'custom'; }
+  savePv(); renderPv();
+});
+$('#pv-note').addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'pv-pick') { pvPicked = el.value; return; }
+  if (/^pv-(commune|lieu|auteur)$/.test(el.id)) { META[el.id.slice(3)] = el.value; try { localStorage.setItem('mv-meta', JSON.stringify(META)); } catch (err) { /* stockage indisponible */ } }
+});
+let pvNoteUrl = null;
+$('#pv-note').addEventListener('click', async e => {
+  if (e.target.id !== 'pv-btn-note') return;
+  const id = $('#pv-pick').value;
+  pvNoteUrl = await openNote(() => buildPvNote(id), '#pv-note-msg', pvNoteUrl);
+});
+
+/* ---------- note de prédimensionnement ---------- */
+function buildPvNote(id) {
+  const R = PVR || pvEval(PV), d = R.d, s = R.sols.find(x => x.id === id) || R.sols[0], N = pt('n'), ST = pt('st'), F = pt('f'), O = pt('o'), U = pt('u'), NN = NOTE[lang] || NOTE.fr;
+  const meta = { commune: META.commune || NN.unknown, lieu: META.lieu || NN.unknown, auteur: META.auteur || NN.unknown, objet: N.objet, name: s.name, outil: NN.outil,
+    date: new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR', lang === 'en' ? { day: 'numeric', month: 'long', year: 'numeric' } : undefined) };
+  const li = arr => '<ul>' + arr.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
+  const tbl = (cols, rows) => `<table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  let sn = 0; const H2 = k => `<h2>${++sn}. ${esc(N.s[k])}</h2>`;
+  const genLine = esc(NN.genBy).replace('urbain.ksr-infra.org', '<a href="https://urbain.ksr-infra.org" class="num">urbain.ksr-infra.org</a>');
+  const tot = L => L.length && !L.some(l => l.txt === '?') ? `${fm2(Math.round(L.reduce((a, l) => a + (l.m === 'FORME' ? 0 : l.e), 0)))} ${U.cm}` : pt('toStudy');
+  let h = `<h1>${esc(N.title)}</h1><p class="sub">${esc(N.sub)}</p><p class="small gen">${genLine}</p>`;
+  h += `<table class="cover"><tbody>${N.cover.map(([k, l]) => `<tr><td>${esc(l)}</td><td>${esc(meta[k])}</td></tr>`).join('')}</tbody></table>`;
+  h += `${H2('warn')}<div class="box"><strong>${esc(pt('warnTitle'))}.</strong> ${esc(pt('warn'))}</div>`;
+  if (SITE.lat !== null) {
+    const la = SITE.lat, lo = SITE.lon;
+    h += `${H2('site')}<p>${esc(NN.siteCoords(la, lo))} <a href="https://www.google.com/maps/search/?api=1&query=${la.toFixed(5)},${lo.toFixed(5)}">${esc(NN.gmLink)}</a></p>`;
+    h += `<figure class="map-fig">${tileMapSVG(la, lo, 17, 'osm', 700, 470, SITE.data)}<figcaption class="small">${esc(SITE.data ? NN.siteFig : NN.siteFig0)} ${esc(NN.osmAttr)}</figcaption></figure>`;
+  }
+  const rows = [];
+  for (const g of Object.keys(PVF)) for (const [k, kind, , unit] of PVF[g]) {
+    const v = kind === 'chk' ? (PV[k] ? O.yes : O.no) : kind === 'sel' ? O[unit][PV[k]] : kind === 'txt' ? (PV[k] || '–') : `${fm2(PV[k])} ${U[unit] || ''}`;
+    rows.push(`<tr><td>${esc(F[k])}</td><td>${esc(v)}</td></tr>`);
+  }
+  h += `${H2('data')}${tbl(N.dataCols, rows)}<p>${esc(pt('classLine', d.T, f0(d.mja), nf0.format(Math.round(d.NE)), pfName(d.pf), d.q, d.risk))}</p><p class="small">${esc(d.hasCbr ? pt('pfFromCbr', fm2(d.cbr), f0(d.E)) : pt('pfFromSoil'))}</p>`;
+  h += `${H2('method')}${li(N.method)}`;
+  h += `${H2('sols')}${tbl(N.cmpCols, R.sols.map(x => `<tr${x.id === s.id ? ' style="font-weight:600"' : ''}><td>${esc(x.name)}</td><td>${esc(ST[x.st])}</td><td>${esc(tot(x.layers))}</td><td>${esc(x.notes[0] || '')}</td></tr>`))}`;
+  h += `${H2('chosen')}<p><strong>${esc(N.chosenIntro(s.name))}</strong> (${esc(ST[s.st])})</p>`;
+  if (s.layers.length) h += `<figure class="pf-fig pv-fig" style="max-width:110mm">${pvSection(s.layers)}<figcaption class="small">${esc(N.figSec)}</figcaption></figure>`;
+  h += li(s.notes);
+  h += `${H2('study')}${li(R.study)}`;
+  h += `<section class="annex"><h2>${esc(N.s.annex)}</h2>${li(N.hyp)}<ol dir="ltr">${N.sources.map(x => `<li>${esc(x)}</li>`).join('')}</ol></section>`;
+  h += `<p class="small gen gen-end">${genLine} · ${esc(meta.date)}</p>`;
+  const dir = lang === 'ar' ? 'rtl' : 'ltr';
+  return `<!doctype html><html lang="${lang}" dir="${dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(N.title)}</title><style>${NOTE_CSS} .pv-fig svg{width:100%;height:auto} .pv-tot{font-size:9.5pt;margin:1mm 0}</style></head><body>
+<div class="toolbar"><button type="button" onclick="window.print()">${esc(NN.print)}</button><span>${esc(N.title)}</span></div>
+<div class="sheet">${h}</div></body></html>`;
+}
+function buildPvUI() {
+  $('#pv-title').textContent = pt('title'); $('#pv-warn').innerHTML = `<strong>${esc(pt('warnTitle'))}.</strong> ${esc(pt('warn'))}`;
+  $('#pv-intro').textContent = pt('intro'); $('#pv-site-hint').textContent = pt('siteHint');
+  buildPvForm(); renderPv();
+}
+
+/* ---------- navigation entre modules : traversée piétonne, carrefour, chaussée ---------- */
 let MOD = 'cross', modWasPlaying = false;
+const MOD_SLOT = { jx: '#jx-site-slot', pv: '#pv-site-slot' };
 function setModule(m) {
-  MOD = m === 'jx' ? 'jx' : 'cross';
-  document.body.classList.toggle('mod-jx', MOD === 'jx');
+  MOD = m === 'jx' || m === 'pv' ? m : 'cross';
+  document.body.classList.toggle('mod-jx', MOD === 'jx'); document.body.classList.toggle('mod-pv', MOD === 'pv');
   document.querySelectorAll('[data-mod]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mod === MOD)));
-  // la carte du lieu est commune aux deux modules : on la déplace dans le module affiché
+  // la carte du lieu est commune aux modules : on la déplace dans le module affiché ; l'animation s'arrête hors du module traversée
   const map = $('#site-map');
-  if (MOD === 'jx') { if (isCompact()) setCompact(false); modWasPlaying = playing; setPlaying(false); $('#jx-site-slot').appendChild(map); }
-  else { $('#donnees').insertBefore(map, $('#profil')); if (modWasPlaying) setPlaying(true); }
+  if (MOD !== 'cross') { if (isCompact()) setCompact(false); if (playing) { modWasPlaying = true; setPlaying(false); } $(MOD_SLOT[MOD]).appendChild(map); }
+  else { $('#donnees').insertBefore(map, $('#profil')); if (modWasPlaying) { modWasPlaying = false; setPlaying(true); } }
   if (MAP) setTimeout(() => MAP.invalidateSize(), 0);
   setHeaderTexts(); setHash();
 }
 function setHeaderTexts() {
-  $('#guide-body').innerHTML = MOD === 'jx' ? jt('guideBody') : t('guideBody');
-  if (MOD === 'jx') { $('#eyebrow').textContent = jt('jxEyebrow'); $('h1[data-i18n="h1"]').textContent = jt('jxH1'); $('#lede').textContent = jt('jxLede'); }
+  const tr = MOD === 'jx' ? jt : MOD === 'pv' ? pt : null;
+  $('#guide-body').innerHTML = tr ? tr('guideBody') : t('guideBody');
+  if (tr) { $('#eyebrow').textContent = tr(MOD + 'Eyebrow'); $('h1[data-i18n="h1"]').textContent = tr(MOD + 'H1'); $('#lede').textContent = tr(MOD + 'Lede'); }
   else { $('#eyebrow').textContent = t('eyebrow', P); $('h1[data-i18n="h1"]').textContent = t('h1'); $('#lede').textContent = t('lede', P); }
 }
 function buildJxUI() {
-  $('#mod-switch').innerHTML = `<button class="btn" type="button" data-mod="cross">${esc(jt('modCross'))}</button><button class="btn" type="button" data-mod="jx">${esc(jt('modJx'))}</button>`;
+  $('#mod-switch').innerHTML = `<button class="btn" type="button" data-mod="cross">${esc(jt('modCross'))}</button><button class="btn" type="button" data-mod="jx">${esc(jt('modJx'))}</button><button class="btn" type="button" data-mod="pv">${esc(pt('modPv'))}</button>`;
   document.querySelectorAll('[data-mod]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mod === MOD)));
   $('#jx-title').textContent = jt('title'); $('#jx-intro').textContent = jt('intro'); $('#jx-site-hint').textContent = jt('siteHint');
   buildJxForm(); renderJx(); setHeaderTexts();
@@ -6001,7 +6604,7 @@ function projSnapshot() {
   return { app: 'urbain.ksr-infra.org', kind: 'urb-projet', version: 1, savedAt: new Date().toISOString(), lang, module: MOD,
     meta: { ...META }, site: SITE.lat === null ? null : { lat: SITE.lat, lon: SITE.lon, data: SITE.data, pop: SITE.pop, popState: SITE.popState === 'run' ? '' : SITE.popState },
     params, calibModified, profile: { total: PROF.total, segs: PROF.segs, proj: PROJ, cross: CROSS }, day: { mode: DAY.mode, counts: DAY.counts },
-    variant: pickedVariant, prices: { ...PRICES }, rate: RATE, jx: { ...JX }, jxPicked };
+    variant: pickedVariant, prices: { ...PRICES }, rate: RATE, jx: { ...JX }, jxPicked, pv: { ...PV }, pvPicked };
 }
 function projApply(s) {
   if (!s || s.kind !== 'urb-projet' || !s.params) throw new Error('bad');
@@ -6024,6 +6627,8 @@ function projApply(s) {
   pickedVariant = scenariosIds().includes(s.variant) ? s.variant : null;
   if (s.jx) { for (const k of Object.keys(JX_DEF)) if (k in s.jx && typeof s.jx[k] === typeof JX_DEF[k]) JX[k] = s.jx[k]; saveJx(); }
   jxPicked = JX_TYPES.includes(s.jxPicked) ? s.jxPicked : null;
+  if (s.pv) { for (const k of Object.keys(PV_DEF)) if (k in s.pv && typeof s.pv[k] === typeof PV_DEF[k]) PV[k] = s.pv[k]; savePv(); }
+  pvPicked = typeof s.pvPicked === 'string' ? s.pvPicked : null;
   if (s.site && Number.isFinite(s.site.lat) && Number.isFinite(s.site.lon)) {
     if (MAP) { MAP.setView([s.site.lat, s.site.lon], 17); setPoint(s.site.lat, s.site.lon); } else Object.assign(SITE, { lat: s.site.lat, lon: s.site.lon });
     Object.assign(SITE, { data: s.site.data || null, pop: s.site.pop || null, popState: s.site.popState || '' });
@@ -6031,7 +6636,7 @@ function projApply(s) {
   }
   restart(true);
   setLang(LANGS.includes(s.lang) ? s.lang : lang);
-  setModule(s.module === 'jx' ? 'jx' : 'cross');
+  setModule(s.module);
 }
 const scenariosIds = () => scenarios.map(sc => sc.id);
 async function projSave() {
@@ -6073,7 +6678,7 @@ function fillMissing(dst, src) {
   const obj = v => v && typeof v === 'object' && !Array.isArray(v);
   for (const k of Object.keys(src)) { if (!(k in dst)) dst[k] = src[k]; else if (obj(src[k]) && obj(dst[k])) fillMissing(dst[k], src[k]); }
 }
-fillMissing(I18N.en, I18N.fr); fillMissing(NOTE.en, NOTE.fr); fillMissing(JXT.ar, JXT.fr); fillMissing(JXT.en, JXT.fr);
+fillMissing(I18N.en, I18N.fr); fillMissing(NOTE.en, NOTE.fr); fillMissing(JXT.ar, JXT.fr); fillMissing(JXT.en, JXT.fr); fillMissing(PVT.ar, PVT.fr); fillMissing(PVT.en, PVT.fr);
 for (const p of PRICE_DEF) { if (!p.en) p.en = p.fr; if (p.u[2] === undefined) p.u[2] = p.u[0]; }
 for (const k of Object.keys(COND)) if (!COND[k].en) COND[k].en = COND[k].fr;
 for (const k of Object.keys(VDOC)) if (!VDOC[k].en) VDOC[k].en = VDOC[k].fr;
@@ -6094,6 +6699,7 @@ setLang(lang);
 setView(viewMode);
 if (hashTok.includes('presentation')) setCompact(true);
 if (hashTok.includes('carrefour')) setModule('jx');
+else if (hashTok.includes('chaussee')) setModule('pv');
 updateKpis(); clock();
 startEvaluation();
 requestAnimationFrame(frame);
@@ -6106,7 +6712,7 @@ const onLibs = () => {
 if (document.readyState === 'complete') onLibs(); else window.addEventListener('load', onLibs);
 
 // accès console pour vérification
-window.__mv = { proj: { snap: () => projSnapshot(), apply: s => projApply(s) }, jx: () => JXR, prof: { get: () => PROF, proj: () => PROJ, cross: () => CROSS, PRESETS, presetProfile, crossProfile, crossOf, profChecks, crossStages, profileSVG }, stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P,
+window.__mv = { pvNote: id => buildPvNote(id), jxNote: id => buildJxNote(id), proj: { snap: () => projSnapshot(), apply: s => projApply(s) }, jx: () => JXR, prof: { get: () => PROF, proj: () => PROJ, cross: () => CROSS, PRESETS, presetProfile, crossProfile, crossOf, profChecks, crossStages, profileSVG }, stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P,
   note: id => buildNote(id), setLang: l => setLang(l),
   site: (la, lo) => { if (MAP) MAP.setView([la, lo], 17); setPoint(la, lo); return analyseSite(); }, siteData: () => SITE, day: () => DAY };
 })();

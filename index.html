@@ -2292,7 +2292,7 @@ const NOTE = {
 fr: {
   title: 'Note de calcul', sub: 'Modération de la vitesse au droit d’un passage piéton', print: 'Imprimer ou enregistrer en PDF',
   cover: [['commune', 'Commune'], ['lieu', 'Lieu'], ['objet', 'Objet'], ['name', 'Variante retenue'], ['date', 'Date'], ['auteur', 'Établie par'], ['fp', 'Calibrage'], ['outil', 'Outil']],
-  objet: 'Choix d’un aménagement pour la sécurité des piétons', outil: 'Comparateur de modération des vitesses (microsimulation)', unknown: 'non renseigné',
+  objet: 'Choix d’un aménagement pour la sécurité des piétons', outil: 'Application urbain.ksr-infra.org : comparateur de modération des vitesses (microsimulation)', unknown: 'non renseigné', genBy: 'Note générée avec l’application urbain.ksr-infra.org',
   glossTitle: 'Mots utiles',
   gloss: [['V85', 'Vitesse en dessous de laquelle roulent 85 % des conducteurs. C’est la vitesse réelle de la rue, plus parlante que la limitation affichée.'],
     ['Débit', 'Nombre de véhicules qui passent en une heure, dans un sens.'],
@@ -2382,7 +2382,7 @@ fr: {
 ar: {
   title: 'مذكّرة حساب', sub: 'تهدئة السرعة عند ممرّ للمترجّلين', print: 'طباعة أو حفظ بصيغة PDF',
   cover: [['commune', 'البلدية'], ['lieu', 'الموقع'], ['objet', 'الموضوع'], ['name', 'التهيئة المعتمدة'], ['date', 'التاريخ'], ['auteur', 'أعدّها'], ['fp', 'المعايرة'], ['outil', 'الأداة']],
-  objet: 'اختيار تهيئة لسلامة المترجّلين', outil: 'أداة مقارنة تهدئة السرعة (محاكاة مجهرية)', unknown: 'غير مُحدَّد',
+  objet: 'اختيار تهيئة لسلامة المترجّلين', outil: 'التطبيق urbain.ksr-infra.org: أداة مقارنة تهدئة السرعة (محاكاة مجهرية)', unknown: 'غير مُحدَّد', genBy: 'مذكّرة أُعدّت بواسطة التطبيق urbain.ksr-infra.org',
   glossTitle: 'مصطلحات مفيدة',
   gloss: [['V85', 'السرعة التي لا يتجاوزها 85 % من السائقين. هي السرعة الفعلية في النهج، وهي أبلغ من السرعة القصوى المعلنة.'],
     ['التدفّق', 'عدد العربات التي تمرّ في ساعة واحدة في اتجاه واحد.'],
@@ -2472,7 +2472,7 @@ ar: {
 en: {
   title: 'Design report', sub: 'Speed moderation at a pedestrian crossing', print: 'Print or save as PDF',
   cover: [['commune', 'Municipality'], ['lieu', 'Location'], ['objet', 'Subject'], ['name', 'Selected option'], ['date', 'Date'], ['auteur', 'Prepared by'], ['fp', 'Calibration'], ['outil', 'Tool']],
-  objet: 'Choice of a measure to improve pedestrian safety', outil: 'Speed-moderation comparison tool (microsimulation)', unknown: 'not provided',
+  objet: 'Choice of a measure to improve pedestrian safety', outil: 'urbain.ksr-infra.org application: speed-moderation comparison tool (microsimulation)', unknown: 'not provided', genBy: 'Report generated with the urbain.ksr-infra.org application',
   glossTitle: 'Useful terms',
   gloss: [['V85', 'Speed below which 85% of drivers travel. It is the actual speed on the street, and says more than the posted speed limit.'],
     ['Flow', 'Number of vehicles passing in one hour, in one direction.'],
@@ -2732,6 +2732,7 @@ function planSVG(sc, meta, N) {
   line(x0, ySb, x0 + sbL, ySb, 0.3); for (const t of [0, sb / 2, sb]) { line(x0 + t * k, ySb - 1, x0 + t * k, ySb + 1, 0.25); txt(x0 + t * k, ySb - 1.6, String(t), 1.8); }
   txt(x0 + sbL + 3, ySb + 0.7, `m — ${D.scale} 1:${S}`, 2.0, 'start');
   txt(ar ? 287 : 10, 145.8, D.disclaimer, 1.9, 'start');
+  txt(148.5, 203.4, N.genBy, 1.9, 'middle');
   // coupe A-A (dispositif surélevé) ou B-B (profil en travers au droit du passage)
   const bx = 100, by = 148, bw = 80, bh = 52;
   o.push(`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="none" stroke="#000" stroke-width="0.25"/>`);
@@ -2825,6 +2826,7 @@ tr { break-inside: avoid; }
 .annex { break-before: page; }
 .small { font-size: 9pt; color: #444; }
 .gloss td:first-child { width: 34mm; font-weight: 600; }
+.gen { margin: -3mm 0 5mm; } .gen-end { margin: 8mm 0 0; padding-top: 2mm; border-top: 0.2mm solid #999; }
 .map-fig { margin: 3mm 0; break-inside: avoid; } .map-fig svg { display: block; width: 100%; height: auto; }
 .pf-fig { margin: 2mm 0; break-inside: avoid; } .pf-fig svg { display: block; width: 100%; height: auto; }
 .ck-bad { color: #b3261e; } .ck-warn { color: #a86400; } .ck-ok { color: #1e7a3c; }
@@ -2849,7 +2851,9 @@ function buildNote(id) {
   if (hasDay) { const sat = DAY.res[i].filter(r => r.state === 'sat').map(r => r.h); c.daySat = sat.length ? hourRanges(sat) : ''; }
   if (SITE.data && SITE.data.school && SITE.data.school.dist <= 300) c.school = SITE.data.school;
   let sn = 0; const H2 = key => `<h2>${++sn}. ${esc(N.s[key])}</h2>`;
-  let h1 = `<h1>${esc(N.title)}</h1><p class="sub">${esc(N.sub)}</p>`;
+  // mention de l’application, avec lien, en page de garde, en fin de note et sur le plan
+  const genLine = esc(N.genBy).replace('urbain.ksr-infra.org', '<a href="https://urbain.ksr-infra.org" class="num">urbain.ksr-infra.org</a>');
+  let h1 = `<h1>${esc(N.title)}</h1><p class="sub">${esc(N.sub)}</p><p class="small gen">${genLine}</p>`;
   h1 += `<table class="cover"><tbody>${N.cover.map(([k2, l]) => `<tr><td>${esc(l)}</td><td>${esc(meta[k2])}</td></tr>`).join('')}</tbody></table>`;
   h1 += `<h3>${esc(N.glossTitle)}</h3><table class="gloss"><tbody>${N.gloss.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table>`;
   const briefKeys = ['site', 'variant', 'speed', 'risk', 'ped', 'traffic'].concat(hasDay ? ['day'] : [], ['cost', 'cond', 'rec']);
@@ -2939,6 +2943,7 @@ function buildNote(id) {
   const calibRows = FIELDS.find(g => g.lock).items.map(f => `<tr><td>${esc(f[lang])}</td><td class="n">${esc(nfa.format(P[f.k]))} ${esc(f.u[ui])}</td></tr>`);
   h2 += `<section><h2>${esc(N.s.annB)}</h2>${li(N.method)}${tbl(N.calibCols, calibRows)}<p class="small">${esc(fpTxt)}</p></section>`;
   h2 += `<section><h2>${esc(N.s.annC)}</h2><ol dir="ltr">${SOURCES}</ol></section>`;
+  h2 += `<p class="small gen gen-end">${genLine} · ${esc(meta.date)}</p>`;
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
   return `<!doctype html><html lang="${lang}" dir="${dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(N.title)} — ${esc(name)}</title><style>${NOTE_CSS}</style></head><body>
 <div class="toolbar"><button type="button" onclick="window.print()">${esc(N.print)}</button><span>${esc(N.title)} — ${esc(name)}</span></div>

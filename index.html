@@ -175,6 +175,13 @@ main { padding-block: 6px 48px; }
 .pseg .mini { padding: 3px 7px; font-size: 12px; line-height: 1.2; }
 .pseg .mini.dir { width: 100%; }
 .prof-checks { margin-top: 6px; font-size: 13.5px; display: grid; gap: 3px; }
+@keyframes pf-blink { 0%, 100% { opacity: 1; } 50% { opacity: .12; } }
+@keyframes pf-card-bad { 0%, 100% { box-shadow: 0 0 0 3px var(--bad); } 50% { box-shadow: 0 0 0 3px transparent; } }
+@keyframes pf-card-warn { 0%, 100% { box-shadow: 0 0 0 3px var(--warn); } 50% { box-shadow: 0 0 0 3px transparent; } }
+.prof-draw .pf-flag { animation: pf-blink 1.1s ease-in-out infinite; }
+.pseg.flag-bad { border-color: var(--bad); animation: pf-card-bad 1.1s ease-in-out infinite; }
+.pseg.flag-warn { border-color: var(--warn); animation: pf-card-warn 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .prof-draw .pf-flag, .pseg.flag-bad, .pseg.flag-warn { animation: none; } .pseg.flag-bad { box-shadow: 0 0 0 3px var(--bad); } .pseg.flag-warn { box-shadow: 0 0 0 3px var(--warn); } }
 .prof-checks .bad { color: var(--bad); } .prof-checks .warn { color: var(--warn); } .prof-checks .ok { color: var(--ok); } .prof-checks .info { color: var(--muted); }
 .site-map { margin-bottom: 18px; padding: 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
 .site-map h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
@@ -2818,6 +2825,7 @@ tr { break-inside: avoid; }
 .annex { break-before: page; }
 .small { font-size: 9pt; color: #444; }
 .gloss td:first-child { width: 34mm; font-weight: 600; }
+.map-fig { margin: 3mm 0; break-inside: avoid; } .map-fig svg { display: block; width: 100%; height: auto; }
 .pf-fig { margin: 2mm 0; break-inside: avoid; } .pf-fig svg { display: block; width: 100%; height: auto; }
 .ck-bad { color: #b3261e; } .ck-warn { color: #a86400; } .ck-ok { color: #1e7a3c; }
 @media print { body { background: #fff; } .toolbar { display: none; } .sheet { width: auto; margin: 0; padding: 0; box-shadow: none; } .plan-sheet { margin: 0; box-shadow: none; } }
@@ -2836,10 +2844,10 @@ function buildNote(id) {
   const u = N.u, B = N.brief;
   const tbl = (cols, rows) => `<table><thead><tr>${cols.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
   // sections facultatives : le lieu (carte analysée) et la journée (simulée)
-  const hasSite = !!SITE.data, hasDay = !!DAY.res;
+  const hasSite = SITE.lat !== null, hasDay = !!DAY.res;
   c.condNo = 3 + (hasSite ? 1 : 0) + (hasDay ? 1 : 0);
   if (hasDay) { const sat = DAY.res[i].filter(r => r.state === 'sat').map(r => r.h); c.daySat = sat.length ? hourRanges(sat) : ''; }
-  if (hasSite && SITE.data.school && SITE.data.school.dist <= 300) c.school = SITE.data.school;
+  if (SITE.data && SITE.data.school && SITE.data.school.dist <= 300) c.school = SITE.data.school;
   let sn = 0; const H2 = key => `<h2>${++sn}. ${esc(N.s[key])}</h2>`;
   let h1 = `<h1>${esc(N.title)}</h1><p class="sub">${esc(N.sub)}</p>`;
   h1 += `<table class="cover"><tbody>${N.cover.map(([k2, l]) => `<tr><td>${esc(l)}</td><td>${esc(meta[k2])}</td></tr>`).join('')}</tbody></table>`;
@@ -2849,15 +2857,22 @@ function buildNote(id) {
   if (c.school) briefItems.splice(1, 0, `<li>${esc(B.school(c))}</li>`);
   h1 += `${H2('brief')}<ul class="brief">${briefItems.join('')}</ul>`;
   if (hasSite) {
-    const d = SITE.data, F = siteFacts(d), K = t('poiKind'), osm = `https://www.openstreetmap.org/?mlat=${d.lat.toFixed(5)}&mlon=${d.lon.toFixed(5)}#map=18/${d.lat.toFixed(5)}/${d.lon.toFixed(5)}`;
-    h1 += `${H2('site')}<p>${esc(N.siteCoords(d.lat, d.lon))} <a href="${osm}">${esc(N.osmLink)}</a></p>`;
-    if (F.roadTitle) h1 += `<h3>${esc(t('hRoad'))}</h3><p>${esc(F.roadTitle)}</p>${li(F.road)}`;
-    if (F.warn.length) h1 += li(F.warn);
-    if (F.pop) h1 += `<h3>${esc(t('hPop'))}</h3><p>${esc(F.pop)}</p>`;
-    h1 += `<h3>${esc(t('hPoi'))}</h3>` + (d.pois.length ? tbl(t('poiCols'), d.pois.map((p, j) => `<tr><td class="n">${j + 1}</td><td>${esc(p.name || t('unnamed'))}</td><td>${esc(K[p.kind] || p.kind)}</td><td class="n">${f0(p.dist)} m</td></tr>`)) : `<p>${esc(t('poiNone'))}</p>`);
-    h1 += `<h3>${esc(t('hAround'))}</h3>${li(F.around)}`;
-    if (F.recos.length) h1 += `<h3>${esc(t('hReco'))}</h3>${li(F.recos)}${F.measures ? `<p>${esc(t('schoolMeasuresTitle'))}</p>${li(t('schoolMeasures'))}` : ''}`;
-    h1 += `<figure style="margin:3mm 0;break-inside:avoid">${siteSVG(d)}<figcaption class="small">${esc(N.siteFig)} ${esc(t('osmCredit'))}</figcaption></figure>`;
+    // le lieu : cartes dès que le passage est pointé, détails de la rue et des abords si le lieu a été analysé
+    const d = SITE.data, la = SITE.lat, lo = SITE.lon, ll = `${la.toFixed(5)},${lo.toFixed(5)}`;
+    const osm = `https://www.openstreetmap.org/?mlat=${la.toFixed(5)}&mlon=${lo.toFixed(5)}#map=18/${la.toFixed(5)}/${lo.toFixed(5)}`, gm = `https://www.google.com/maps/search/?api=1&query=${ll}`;
+    h1 += `${H2('site')}<p>${esc(N.siteCoords(la, lo))} <a href="${osm}">${esc(N.osmLink)}</a> · <a href="${gm}">${esc(N.gmLink)}</a></p>`;
+    h1 += `<figure class="map-fig">${tileMapSVG(la, lo, 17, 'osm', 700, 470, d)}<figcaption class="small">${esc(d ? N.siteFig : N.siteFig0)} ${esc(d ? t('osmCredit') : N.osmAttr)}</figcaption></figure>`;
+    h1 += `<figure class="map-fig">${tileMapSVG(la, lo, 18, 'sat', 700, 400, null)}<figcaption class="small">${esc(N.satFig)} ${esc(N.satAttr)}</figcaption></figure>`;
+    if (!d) h1 += `<p class="small">${esc(N.siteNoData)}</p>`;
+    else {
+      const F = siteFacts(d), K = t('poiKind');
+      if (F.roadTitle) h1 += `<h3>${esc(t('hRoad'))}</h3><p>${esc(F.roadTitle)}</p>${li(F.road)}`;
+      if (F.warn.length) h1 += li(F.warn);
+      if (F.pop) h1 += `<h3>${esc(t('hPop'))}</h3><p>${esc(F.pop)}</p>`;
+      h1 += `<h3>${esc(t('hPoi'))}</h3>` + (d.pois.length ? tbl(t('poiCols'), d.pois.map((p, j) => `<tr><td class="n">${j + 1}</td><td>${esc(p.name || t('unnamed'))}</td><td>${esc(K[p.kind] || p.kind)}</td><td class="n">${f0(p.dist)} m</td></tr>`)) : `<p>${esc(t('poiNone'))}</p>`);
+      h1 += `<h3>${esc(t('hAround'))}</h3>${li(F.around)}`;
+      if (F.recos.length) h1 += `<h3>${esc(t('hReco'))}</h3>${li(F.recos)}${F.measures ? `<p>${esc(t('schoolMeasuresTitle'))}</p>${li(t('schoolMeasures'))}` : ''}`;
+    }
   }
   const M = N.mean, ind = N.ind;
   const rows2 = [
@@ -2886,12 +2901,12 @@ function buildNote(id) {
   const segRow = s => `<tr><td>${esc(SN[s.t][0] + (SEG[s.t].dir ? ` (${s.d > 0 ? t('dir1') : t('dir2')})` : ''))}</td><td class="n">${fm(s.w)}</td></tr>`;
   const totRow = `<tr><th>${esc(t('pfTotal'))}</th><th class="n">${fm(PROF.total)}</th></tr>`;
   h1 += `${H2('profile')}<p>${esc(N.profIntro)}</p>`;
-  h1 += `<h3>${esc(t('pfExisting'))}</h3><figure class="pf-fig">${profileSVG(PROF.segs, PROF.total)}</figure>`;
+  h1 += `<h3>${esc(t('pfExisting'))}</h3><figure class="pf-fig">${profileSVG(PROF.segs, PROF.total, { flags: profFlags(profChecks(PROF)) })}</figure>`;
   h1 += tbl(N.profCols, PROF.segs.map(segRow).concat(totRow)) + ckl(profChecks(PROF));
   h1 += `<h3>${esc(t('pfProjected'))}</h3>`;
   if (!PROJ || sameSegs(PROJ, PROF.segs)) h1 += `<p>${esc(t('pfProjSame'))}</p>`;
-  else h1 += `<figure class="pf-fig">${profileSVG(PROJ, PROF.total)}</figure>` + tbl(N.profCols, PROJ.map(segRow).concat(totRow)) + ckl(profChecks({ total: PROF.total, segs: PROJ }));
-  h1 += `<h3>${esc(t('pfCrossTitle', name))}</h3><figure class="pf-fig">${profileSVG(PC.segs, PROF.total, { stages: PC.stages })}</figure>`;
+  else h1 += `<figure class="pf-fig">${profileSVG(PROJ, PROF.total, { flags: profFlags(profChecks({ total: PROF.total, segs: PROJ })) })}</figure>` + tbl(N.profCols, PROJ.map(segRow).concat(totRow)) + ckl(profChecks({ total: PROF.total, segs: PROJ }));
+  h1 += `<h3>${esc(t('pfCrossTitle', name))}</h3><figure class="pf-fig">${profileSVG(PC.segs, PROF.total, { stages: PC.stages, flags: profFlags(PC.notes) })}</figure>`;
   h1 += tbl(N.profCols, PC.segs.map(segRow).concat(totRow)) + ckl(PC.notes);
   // 5-12
   let h2 = '';
@@ -3426,14 +3441,23 @@ Object.assign(I18N.en, {
 
 Object.assign(NOTE.fr, {
   siteCoords: (la, lo) => `Position du passage : ${la.toFixed(5)}, ${lo.toFixed(5)}.`, osmLink: 'Voir sur OpenStreetMap',
+  gmLink: 'Voir sur Google Maps', osmAttr: 'Fond de plan © contributeurs OpenStreetMap (ODbL).', siteFig0: 'Plan de situation : emplacement du passage (P).',
+  satFig: 'Vue aérienne rapprochée de l’emplacement du passage (P).', satAttr: 'Imagerie © Esri, Maxar, Earthstar Geographics.',
+  siteNoData: 'Le passage a été pointé sur la carte mais le lieu n’a pas été analysé : le bouton « Analyser le lieu » ajoute la rue, les écoles et établissements de santé proches, les arrêts de bus et la densité de population.',
   siteFig: 'Plan de situation : passage (P), établissements numérotés, position proposée (triangle), cercles de 100, 200 et 300 m.'
 });
 Object.assign(NOTE.ar, {
   siteCoords: (la, lo) => `موقع الممرّ: ${la.toFixed(5)}، ${lo.toFixed(5)}.`, osmLink: 'عرض على OpenStreetMap',
+  gmLink: 'عرض على Google Maps', osmAttr: 'الخلفية © مساهمو OpenStreetMap (ODbL).', siteFig0: 'مخطّط الموقع: موضع الممرّ (P).',
+  satFig: 'صورة جوية قريبة لموضع الممرّ (P).', satAttr: 'الصور © Esri وMaxar وEarthstar Geographics.',
+  siteNoData: 'حُدّد الممرّ على الخريطة لكن لم يُحلَّل الموقع: يضيف زرّ «تحليل الموقع» النهجَ، والمدارس والمؤسّسات الصحّية القريبة، ومحطّات الحافلات، وكثافة السكّان.',
   siteFig: 'مخطّط الموقع: الممرّ (P)، المؤسّسات المرقّمة، الموقع المقترح (مثلّث)، دوائر 100 و200 و300 م.'
 });
 Object.assign(NOTE.en, {
   siteCoords: (la, lo) => `Crossing location: ${la.toFixed(5)}, ${lo.toFixed(5)}.`, osmLink: 'View on OpenStreetMap',
+  gmLink: 'View on Google Maps', osmAttr: 'Base map © OpenStreetMap contributors (ODbL).', siteFig0: 'Location map: position of the crossing (P).',
+  satFig: 'Close-up aerial view of the crossing location (P).', satAttr: 'Imagery © Esri, Maxar, Earthstar Geographics.',
+  siteNoData: 'The crossing was placed on the map but the site was not analyzed: the “Analyze the site” button adds the street, nearby schools and health facilities, bus stops and population density.',
   siteFig: 'Location map: crossing (P), numbered facilities, proposed location (triangle), circles of 100, 200 and 300 m.'
 });
 
@@ -3665,35 +3689,51 @@ $('#btn-analyse').addEventListener('click', analyseSite);
 $('#site-info').addEventListener('click', e => { if (e.target.id === 'btn-site-apply') applySite(); });
 
 // plan de situation pour la note (SVG en millimètres, nord en haut)
-function siteSVG(d) {
-  const R = 300, rad = 50, k = rad / R, cx = 66, cy = 60;
-  const cosl = Math.cos(d.lat * Math.PI / 180), PJ = (la, lo) => [(lo - d.lon) * 111320 * cosl, (la - d.lat) * 110540];
-  const X = p => cx + p[0] * k, Y = p => cy - p[1] * k, fx = v => v.toFixed(2), o = [];
-  const T = (x, y, s, size = 2.4, anchor = 'middle') => o.push(`<text x="${fx(x)}" y="${fx(y)}" font-size="${size}" text-anchor="${anchor}" fill="#000">${esc(s)}</text>`);
-  o.push('<defs><clipPath id="cs"><circle cx="' + cx + '" cy="' + cy + '" r="' + (rad + 4) + '"/></clipPath></defs>');
-  o.push('<rect x="0" y="0" width="132" height="122" fill="#fff" stroke="#000" stroke-width="0.3"/>');
-  for (const r of [100, 200, 300]) { o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(r * k)}" fill="none" stroke="#888" stroke-width="0.2" stroke-dasharray="1 1"/>`); T(cx + r * k * 0.72 + 1.5, cy - r * k * 0.72, `${r} m`, 2); }
-  o.push('<g clip-path="url(#cs)">');
-  d.pois.forEach((p, j) => {
-    const col = /hospital|clinic/.test(p.kind) ? '#c62828' : '#ef8f00';
-    for (const ring of p.rings) {
-      if (ring.length === 1) o.push(`<circle cx="${fx(X(ring[0]))}" cy="${fx(Y(ring[0]))}" r="1.4" fill="${col}" stroke="#000" stroke-width="0.15"/>`);
-      else o.push(`<polygon points="${ring.map(q => fx(X(q)) + ',' + fx(Y(q))).join(' ')}" fill="${col}" fill-opacity="0.25" stroke="${col}" stroke-width="0.35"/>`);
+/* carte de la note : tuiles OpenStreetMap (plan) ou Esri (vue aérienne) assemblées dans un SVG, surcharge vectorielle
+   (passage, établissements numérotés, cercles de distance, position proposée), échelle et nord */
+const TILE_SRC = {
+  osm: (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`,
+  sat: (z, x, y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`
+};
+function mercPx(lat, lon, z) { const n = 256 * 2 ** z, s = Math.sin(lat * Math.PI / 180); return [(lon + 180) / 360 * n, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n]; }
+function tileMapSVG(lat, lon, z, src, W, H, d) {
+  const [cx, cy] = mercPx(lat, lon, z), x0 = cx - W / 2, y0 = cy - H / 2, o = [], fx = v => v.toFixed(1);
+  const mpp = 156543.034 * Math.cos(lat * Math.PI / 180) / 2 ** z;   // mètres par pixel
+  const P = (la, lo) => { const p = mercPx(la, lo, z); return [p[0] - x0, p[1] - y0]; };
+  const T = (x, y, s, size, anchor = 'middle', extra = '') => o.push(`<text x="${fx(x)}" y="${fx(y)}" font-size="${size}" text-anchor="${anchor}" fill="#000" paint-order="stroke" stroke="#fff" stroke-width="3"${extra}>${esc(s)}</text>`);
+  for (let tx = Math.floor(x0 / 256); tx * 256 < x0 + W; tx++) for (let ty = Math.floor(y0 / 256); ty * 256 < y0 + H; ty++)
+    o.push(`<image href="${TILE_SRC[src](z, tx, ty)}" x="${fx(tx * 256 - x0)}" y="${fx(ty * 256 - y0)}" width="256" height="256"/>`);
+  if (d) {
+    // établissements et rue : anneaux en mètres autour du point analysé, ramenés en latitude / longitude
+    const cosl = Math.cos(d.lat * Math.PI / 180), M = q => P(d.lat + q[1] / 110540, d.lon + q[0] / (111320 * cosl));
+    for (const r of [100, 200, 300]) { o.push(`<circle cx="${fx(W / 2)}" cy="${fx(H / 2)}" r="${fx(r / mpp)}" fill="none" stroke="#1b5ea8" stroke-width="1.5" stroke-dasharray="6 4"/>`); T(W / 2 + r / mpp * 0.71 + 4, H / 2 - r / mpp * 0.71, `${r} m`, 12, 'start'); }
+    if (d.road) o.push(`<polyline points="${d.road.ll.map(g => P(g[0], g[1]).map(fx).join(',')).join(' ')}" fill="none" stroke="#1b5ea8" stroke-width="6" stroke-opacity="0.45" stroke-linecap="round"/>`);
+    d.pois.forEach((p, j) => {
+      const col = /hospital|clinic/.test(p.kind) ? '#c62828' : '#ef8f00';
+      for (const ring of p.rings) {
+        if (ring.length === 1) { const q = M(ring[0]); o.push(`<circle cx="${fx(q[0])}" cy="${fx(q[1])}" r="5" fill="${col}" stroke="#000" stroke-width="1"/>`); }
+        else o.push(`<polygon points="${ring.map(q => M(q).map(fx).join(',')).join(' ')}" fill="${col}" fill-opacity="0.3" stroke="${col}" stroke-width="2"/>`);
+      }
+      const r0 = p.rings[0] || [[0, 0]], c = M(r0.reduce((a, q) => [a[0] + q[0] / r0.length, a[1] + q[1] / r0.length], [0, 0]));
+      o.push(`<circle cx="${fx(c[0])}" cy="${fx(c[1])}" r="9" fill="#fff" stroke="#000" stroke-width="1.2"/>`); T(c[0], c[1] + 4, String(j + 1), 11, 'middle', ' font-weight="600"');
+    });
+    if (d.proposal) {
+      const q = P(d.proposal.ll[0], d.proposal.ll[1]);
+      o.push(`<line x1="${fx(W / 2)}" y1="${fx(H / 2)}" x2="${fx(q[0])}" y2="${fx(q[1])}" stroke="#ef8f00" stroke-width="2.5" stroke-dasharray="7 4"/>`);
+      o.push(`<polygon points="${fx(q[0])},${fx(q[1] - 10)} ${fx(q[0] + 9)},${fx(q[1] + 6)} ${fx(q[0] - 9)},${fx(q[1] + 6)}" fill="#ef8f00" stroke="#000" stroke-width="1"/>`);
     }
-    const r0 = p.rings[0] || [[0, 0]], c = r0.reduce((a, q) => [a[0] + q[0] / r0.length, a[1] + q[1] / r0.length], [0, 0]);
-    o.push(`<circle cx="${fx(X(c))}" cy="${fx(Y(c))}" r="2.1" fill="#fff" stroke="#000" stroke-width="0.25"/>`); T(X(c), Y(c) + 0.85, String(j + 1), 2.2);
-  });
-  if (d.road) o.push(`<polyline points="${d.road.ll.map(g => PJ(g[0], g[1])).map(q => fx(X(q)) + ',' + fx(Y(q))).join(' ')}" fill="none" stroke="#1b5ea8" stroke-width="1.4" stroke-opacity="0.6"/>`);
-  if (d.proposal) {
-    const pp = PJ(d.proposal.ll[0], d.proposal.ll[1]);
-    o.push(`<line x1="${cx}" y1="${cy}" x2="${fx(X(pp))}" y2="${fx(Y(pp))}" stroke="#ef8f00" stroke-width="0.5" stroke-dasharray="1.5 1"/>`);
-    o.push(`<polygon points="${fx(X(pp))},${fx(Y(pp) - 2.4)} ${fx(X(pp) + 2.1)},${fx(Y(pp) + 1.3)} ${fx(X(pp) - 2.1)},${fx(Y(pp) + 1.3)}" fill="#ef8f00" stroke="#000" stroke-width="0.2"/>`);
   }
-  o.push('</g>');
-  o.push(`<circle cx="${cx}" cy="${cy}" r="1.8" fill="#c62828" stroke="#000" stroke-width="0.2"/>`); T(cx + 3.2, cy - 2, 'P', 2.6, 'start');
-  o.push('<path d="M122 8 L124.5 15 L122 13.4 L119.5 15 Z" fill="#000"/>'); T(122, 19.5, 'N', 2.6);
-  const sb = 100 * k; o.push(`<line x1="8" y1="116" x2="${fx(8 + sb)}" y2="116" stroke="#000" stroke-width="0.4"/>`); T(8, 114, '0', 2, 'middle'); T(8 + sb, 114, '100 m', 2, 'middle');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 122" width="132mm" height="122mm" font-family="Arial, Tahoma, sans-serif">${o.join('')}</svg>`;
+  // passage piéton : épingle rouge
+  o.push(`<path d="M${fx(W / 2)} ${fx(H / 2)}l-9 -16a11 11 0 1 1 18 0z" fill="#c62828" stroke="#fff" stroke-width="2.5"/><circle cx="${fx(W / 2)}" cy="${fx(H / 2 - 21)}" r="4" fill="#fff"/>`);
+  T(W / 2 + 13, H / 2 - 24, 'P', 15, 'start', ' font-weight="700"');
+  // nord, échelle, attribution
+  o.push(`<rect x="${W - 34}" y="8" width="26" height="40" rx="4" fill="#fff" fill-opacity="0.85"/><path d="M${W - 21} 13l7 18-7-5-7 5z" fill="#000"/>`); T(W - 21, 44, 'N', 12);
+  const sbm = [20, 50, 100, 200].find(v => v / mpp >= 70) || 200, sb = sbm / mpp;
+  o.push(`<rect x="8" y="${H - 30}" width="${fx(sb + 24)}" height="22" rx="3" fill="#fff" fill-opacity="0.85"/><path d="M14 ${H - 14}v-6M${fx(14 + sb)} ${H - 14}v-6M14 ${H - 14}h${fx(sb)}" stroke="#000" stroke-width="2" fill="none"/>`);
+  T(14 + sb / 2, H - 19, `${sbm} m`, 11);
+  const attr = src === 'osm' ? '© OpenStreetMap' : '© Esri';
+  o.push(`<rect x="${W - 98}" y="${H - 18}" width="98" height="18" fill="#fff" fill-opacity="0.8"/>`); T(W - 6, H - 5, attr, 10, 'end');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Arial, Tahoma, sans-serif" role="img"><defs><clipPath id="mc${src}${z}"><rect width="${W}" height="${H}"/></clipPath></defs><g clip-path="url(#mc${src}${z})">${o.join('')}</g><rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" fill="none" stroke="#000"/></svg>`;
 }
 
 /* ---------- trafic sur la journée : profil type ou comptages, simulation continue de 5 h à 23 h ---------- */
@@ -3835,7 +3875,7 @@ Object.assign(I18N.fr, {
       <li><strong>Dans le profil en travers</strong> : largeurs à corriger, et profil au droit du passage avec la longueur de traversée.</li>
       <li><strong>Dans chaque bande</strong> : vitesse au passage, temps de parcours, file d’attente, attente des piétons, risque pour un piéton heurté.</li>
       <li><strong>Dans « Résultats »</strong> : la solution la plus adéquate et pourquoi, le tableau comparatif, le trafic heure par heure.</li>
-      <li><strong>Dans la note de calcul</strong> (bouton « Générer la note de calcul ») : tout ce qui précède expliqué simplement, le profil en travers, le plan coté, la signalisation, l’éclairage, les trottoirs, le coût et le plan d’action.</li>
+      <li><strong>Dans la note de calcul</strong> (bouton « Générer la note de calcul ») : tout ce qui précède expliqué simplement, l’emplacement sur un plan de situation et une vue aérienne, le profil en travers, le plan coté, la signalisation, l’éclairage, les trottoirs, le coût et le plan d’action.</li>
     </ul>
     <p class="note">L’outil aide à décider ; il ne remplace pas une étude. Ses valeurs de référence sont des ordres de grandeur, à confirmer par des mesures locales.</p>`,
   pfTitle: 'Profil en travers de la rue',
@@ -3920,7 +3960,7 @@ Object.assign(I18N.ar, {
       <li><strong>في المقطع العرضي</strong>: العروض التي يجب تصحيحها، والمقطع عند الممرّ مع طول العبور.</li>
       <li><strong>في كل شريحة</strong>: السرعة عند الممرّ، وزمن القطع، والطابور، وانتظار المترجّلين، والخطر على مترجّل مصدوم.</li>
       <li><strong>في «النتائج»</strong>: الحلّ الأنسب وأسبابه، والجدول المقارن، وحركة المرور ساعة بساعة.</li>
-      <li><strong>في مذكّرة الحساب</strong> (زرّ «إعداد مذكّرة الحساب»): كل ما سبق مشروحًا ببساطة، والمقطع العرضي، والمخطّط بالأبعاد، والإشارات، والإنارة، والأرصفة، والكلفة، وخطّة العمل.</li>
+      <li><strong>في مذكّرة الحساب</strong> (زرّ «إعداد مذكّرة الحساب»): كل ما سبق مشروحًا ببساطة، والموقع على مخطّط موقع وصورة جوية، والمقطع العرضي، والمخطّط بالأبعاد، والإشارات، والإنارة، والأرصفة، والكلفة، وخطّة العمل.</li>
     </ul>
     <p class="note">الأداة تساعد على القرار ولا تعوّض الدراسة. قيمها المرجعية تقريبية ويجب تأكيدها بقياسات محلية.</p>`,
   pfTitle: 'المقطع العرضي للنهج',
@@ -4005,7 +4045,7 @@ Object.assign(I18N.en, {
       <li><strong>In the cross-section</strong>: widths to correct, and the cross-section at the crossing with the crossing length.</li>
       <li><strong>In each strip</strong>: speed at the crossing, travel time, queue, pedestrian waiting time, risk for a pedestrian who is hit.</li>
       <li><strong>In “Results”</strong>: the most suitable solution and why, the comparison table, hour-by-hour traffic.</li>
-      <li><strong>In the design report</strong> (“Generate the design report” button): everything above explained in plain terms, the cross-section, the dimensioned plan, signage, lighting, sidewalks, cost and action plan.</li>
+      <li><strong>In the design report</strong> (“Generate the design report” button): everything above explained in plain terms, the location on a site map and an aerial view, the cross-section, the dimensioned plan, signage, lighting, sidewalks, cost and action plan.</li>
     </ul>
     <p class="note">The tool supports decision-making; it does not replace a study. Its reference values are orders of magnitude, to be confirmed by local measurements.</p>`,
   pfTitle: 'Street cross-section',
@@ -4114,19 +4154,21 @@ const saveProf = () => { try { localStorage.setItem('mv-prof', JSON.stringify({ 
 const profSum = segs => segs.reduce((a, s) => a + s.w, 0);
 const projProfile = () => ({ total: PROF.total, segs: PROJ || PROF.segs });
 
+// contrôles du profil : [niveau, message, rang de l'élément concerné s'il y en a un] ; le rang sert à faire clignoter l'élément
 function profChecks(pf, atCrossing = false) {
   const out = [], d = pf.total - profSum(pf.segs);
   out.push(Math.abs(d) <= 0.005 ? ['ok', t('pfExact')] : d > 0 ? ['warn', t('pfRest', d)] : ['bad', t('pfOver', -d)]);
-  for (const s of pf.segs) {
-    if (s.t === 'walk') { if (s.w < 1.4) out.push(['bad', t('ckWalkBad', s.w)]); else if (s.w < 2.0) out.push(['warn', t('ckWalkWarn', s.w)]); }
-    else if (s.t === 'lane') { if (s.w < 2.75) out.push(['bad', t('ckLaneBad', s.w)]); else if (s.w < 3.0) out.push(['warn', t('ckLaneNarrow', s.w)]); else if (s.w > 3.5) out.push(['warn', t('ckLaneWide', s.w)]); }
-    else if (s.t === 'bus' && s.w < 3.0) out.push(['bad', t('ckBusBad', s.w)]);
-    else if (s.t === 'park' && s.w < 2.0) out.push(['bad', t('ckParkBad', s.w)]);
-    else if (s.t === 'bike' && s.w < 1.2) out.push(['bad', t('ckBikeBad', s.w)]);
-    else if (s.t === 'track' && s.w < 1.5) out.push(['bad', t('ckTrackBad', s.w)]);
-    else if (s.t === 'median' && s.w < ISLAND_MIN) out.push(['warn', t('ckMedianWarn', s.w)]);
-    else if (s.t === 'island' && s.w < 2.0) out.push([s.w < ISLAND_MIN ? 'bad' : 'warn', t('ckIslandWarn', s.w)]);
-  }
+  pf.segs.forEach((s, i) => {
+    const add = (l, k) => out.push([l, t(k, s.w), i]);
+    if (s.t === 'walk') { if (s.w < 1.4) add('bad', 'ckWalkBad'); else if (s.w < 2.0) add('warn', 'ckWalkWarn'); }
+    else if (s.t === 'lane') { if (s.w < 2.75) add('bad', 'ckLaneBad'); else if (s.w < 3.0) add('warn', 'ckLaneNarrow'); else if (s.w > 3.5) add('warn', 'ckLaneWide'); }
+    else if (s.t === 'bus' && s.w < 3.0) add('bad', 'ckBusBad');
+    else if (s.t === 'park' && s.w < 2.0) add('bad', 'ckParkBad');
+    else if (s.t === 'bike' && s.w < 1.2) add('bad', 'ckBikeBad');
+    else if (s.t === 'track' && s.w < 1.5) add('bad', 'ckTrackBad');
+    else if (s.t === 'median' && s.w < ISLAND_MIN) add('warn', 'ckMedianWarn');
+    else if (s.t === 'island' && s.w < 2.0) add(s.w < ISLAND_MIN ? 'bad' : 'warn', 'ckIslandWarn');
+  });
   const lanes = pf.segs.filter(s => s.t === 'lane'), n1 = lanes.filter(s => s.d > 0).length, n2 = lanes.length - n1;
   if (!lanes.length) out.push(['bad', t('ckNoLane')]);
   else if (!atCrossing) {
@@ -4134,6 +4176,12 @@ function profChecks(pf, atCrossing = false) {
     if (!n1 || !n2) out.push(['warn', t('ckOneWay')]);
   }
   return out;
+}
+// éléments à signaler : rang → 'bad' ou 'warn' (le plus grave l'emporte)
+function profFlags(checks) {
+  const m = new Map();
+  for (const [l, , i] of checks) if (i !== undefined && (l === 'bad' || l === 'warn')) m.set(i, m.get(i) === 'bad' ? 'bad' : l);
+  return m;
 }
 
 // parcours du piéton au droit du passage : suites d'éléments au niveau de la chaussée, séparées par un refuge d'au moins 1,50 m
@@ -4200,7 +4248,8 @@ function crossProfile(pf, id) {
     if (id === 'sig') notes.push(['info', t('pfSigNote')]);
   }
   const stages = crossStages(segs);
-  return { segs, notes: notes.concat(stageNotes(stages), lampNotes(segs)), stages, custom: false };
+  const elem = profChecks({ total: pf.total, segs }, true).filter(x => x[2] !== undefined);
+  return { segs, notes: notes.concat(elem, stageNotes(stages), lampNotes(segs)), stages, custom: false };
 }
 function lampNotes(segs) {
   const n = segs.filter(s => s.t === 'lamp').length;
@@ -4284,6 +4333,8 @@ function profileSVG(segs, total, opts = {}) {
     x += w;
   });
   o.push(...glow);
+  // éléments en défaut : surbrillance (clignotante dans la page, fixe dans la note)
+  if (opts.flags) { let xf = 0; segs.forEach((s, i) => { const lv = opts.flags.get(i), w = s.w * U; if (lv) o.push(`<rect class="pf-flag" x="${fx(xf + 3)}" y="14" width="${fx(Math.max(6, w - 6))}" height="440" rx="10" fill="${lv === 'bad' ? '#d32f2f' : '#f0a000'}" fill-opacity=".16" stroke="${lv === 'bad' ? '#d32f2f' : '#f0a000'}" stroke-width="7"/>`); xf += w; }); }
   o.push(`<line x1="${fx(x)}" y1="385" x2="${fx(x)}" y2="450" stroke="#888" stroke-width="2"/>`);
   o.push(`<rect x="${-M}" y="380" width="${W + 2 * M}" height="4" fill="#555"/>`);
   if (sum < total - 0.005) {
@@ -4355,15 +4406,16 @@ function renderProfile(cards) {
   }
   $('#pf-status').innerHTML = status; $('#pf-status').hidden = !status;
   $('#pf-acts').innerHTML = acts;
-  const segs = tabSegs(false), C = pfTab === 'cr' ? crossOf(id) : null;
-  $('#pf-draw').innerHTML = profileSVG(segs, PROF.total, C ? { stages: C.stages } : {});
+  const segs = tabSegs(false), C = pfTab === 'cr' ? crossOf(id) : null, checks = C ? C.notes : profChecks({ total: PROF.total, segs }), flags = profFlags(checks);
+  $('#pf-draw').innerHTML = profileSVG(segs, PROF.total, { stages: C ? C.stages : null, flags });
   if (cards) $('#pf-segs').innerHTML = segs.map((s, i) => `<div class="pseg" draggable="true" data-i="${i}">
       <div class="nm"><span class="sw" style="background:${SEG[s.t].color}"></span>${esc(N[s.t][0])}</div>
       <div class="wrow"><button class="btn mini" type="button" data-act="minus" data-i="${i}" aria-label="−0,25 m">−</button><input type="number" min="0.25" max="30" step="0.05" value="${Math.round(s.w * 100) / 100}" data-act="w" data-i="${i}" aria-label="${esc(t('pfWidth'))}"><button class="btn mini" type="button" data-act="plus" data-i="${i}" aria-label="+0,25 m">+</button><span>${t('m')}</span></div>
       ${SEG[s.t].dir ? `<button class="btn mini dir" type="button" data-act="dir" data-i="${i}">${s.d > 0 ? '↑ ' + esc(t('dir1')) : '↓ ' + esc(t('dir2'))}</button>` : ''}
       <div class="wrow"><button class="btn mini" type="button" data-act="left" data-i="${i}" aria-label="${esc(t('pfLeft'))}">◀</button><button class="btn mini" type="button" data-act="right" data-i="${i}" aria-label="${esc(t('pfRight'))}">▶</button><button class="btn mini" type="button" data-act="del" data-i="${i}" aria-label="${esc(t('pfDel'))}">✕</button></div>
     </div>`).join('');
-  $('#pf-checks').innerHTML = (C ? C.notes : profChecks({ total: PROF.total, segs })).map(([l, m]) => `<div class="${l}">${esc(m)}</div>`).join('');
+  $('#pf-checks').innerHTML = checks.map(([l, m]) => `<div class="${l}">${esc(m)}</div>`).join('');
+  document.querySelectorAll('#pf-segs .pseg').forEach(c => { const lv = flags.get(+c.dataset.i); c.classList.toggle('flag-bad', lv === 'bad'); c.classList.toggle('flag-warn', lv === 'warn'); });
 }
 // appelée quand la variante choisie ou les paramètres changent : ne reconstruit pas les cartes pendant une saisie
 function renderProfileCross() {

@@ -763,6 +763,7 @@ fr: {
     calib: ['Calibrage du modèle (verrouillé)', 'Comportement des conducteurs et des piétons, effet propre de chaque dispositif, tirages aléatoires. Commun à toutes les communes. Sources : IDM (Treiber et al., 2000) ; risque de décès (Rosén et Sander, 2009) ; chicane V = 8,76 R^0,386 (NCHRP 672). Vitesses de franchissement et courbe de cession : ordres de grandeur à caler sur des mesures locales par l’administration qui diffuse l’outil.']
   },
   apply: 'Appliquer et relancer', defaults: 'Valeurs par défaut', unlock: 'Déverrouiller (mode expert)', lock: 'Verrouiller',
+  msgQHigh: v => `débit de ${v} véh/h par sens : au-delà d’environ 1 800 véh/h, une seule voie ne suffit plus et la rue a au moins deux voies par sens. Le simulateur ne représente qu’une voie par sens et ne s’applique pas à ce cas. Sur une 2 × 2 voies, la traversée doit être gérée par un feu piéton avec un îlot refuge (indispensable à partir de 4 voies sans feux, guide « Carrefours urbains », p. 84 et 114) ; le module « Carrefour » aide à choisir le type de carrefour`,
   msgFix: l => `Valeurs à corriger : ${l}.`, msgRange: (l, a, b) => `${l} : entre ${a} et ${b}`, msgLane: 'la largeur de voie du rétrécissement doit être inférieure à la largeur existante',
   msgApplied: 'Animation et évaluation relancées avec ces valeurs.', msgDefaults: 'Valeurs par défaut rétablies. Cliquez sur « Appliquer et relancer ».',
   msgUnlocked: 'Calibrage déverrouillé : toute modification sera signalée sur les résultats.', msgLocked: 'Calibrage verrouillé.',
@@ -888,6 +889,7 @@ ar: {
     calib: ['معايرة النموذج (مقفلة)', 'سلوك السائقين والمترجّلين، والأثر الخاص لكل تهيئة، والسحوبات العشوائية. موحّدة بين كل البلديات. المصادر: نموذج IDM (Treiber وآخرون، 2000)؛ خطر الوفاة (Rosén وSander، 2009)؛ التعرّج V = 8,76 R^0,386 (NCHRP 672). سرعات العبور ومنحنى الإفساح: قيم تقريبية تعايرها بقياسات محلية الإدارةُ التي تنشر الأداة.']
   },
   apply: 'تطبيق وإعادة التشغيل', defaults: 'القيم الافتراضية', unlock: 'فتح القفل (وضع الخبير)', lock: 'إقفال',
+  msgQHigh: v => `تدفّق ${v} عربة/س في كل اتجاه: فوق حوالي 1800 عربة/س لا يكفي مسلك واحد، فالنهج يضمّ مسلكين على الأقلّ في كل اتجاه. لا تمثّل المحاكاة إلّا مسلكًا واحدًا في كل اتجاه ولا تنطبق على هذه الحالة. في طريق 2 × 2 مسالك، يجب تنظيم العبور بإشارة ضوئية للمترجّلين مع جزيرة ملجأ (ضرورية ابتداءً من 4 مسالك دون إشارات، دليل «Carrefours urbains»، ص 84 و114)؛ وتساعد وحدة «مفترق» على اختيار نوع المفترق`,
   msgFix: l => `قيم يجب تصحيحها: ${l}.`, msgRange: (l, a, b) => `${l}: بين ${a} و${b}`, msgLane: 'يجب أن يكون عرض المسلك في التضييق أقلّ من العرض الحالي',
   msgApplied: 'أُعيد تشغيل الحركة والتقييم بهذه القيم.', msgDefaults: 'أُعيدت القيم الافتراضية. اضغط على «تطبيق وإعادة التشغيل».',
   msgUnlocked: 'المعايرة مفتوحة: كل تعديل سيُشار إليه على النتائج.', msgLocked: 'المعايرة مقفلة.',
@@ -1013,6 +1015,7 @@ en: {
     calib: ['Model calibration (locked)', 'Driver and pedestrian behavior, the specific effect of each device, random draws. The same for all municipalities. Sources: IDM (Treiber et al., 2000); fatality risk (Rosén and Sander, 2009); chicane V = 8.76 R^0.386 (NCHRP 672). Speeds over the devices and the yielding curve: orders of magnitude, to be calibrated against local measurements by the administration that distributes the tool.']
   },
   apply: 'Apply and rerun', defaults: 'Default values', unlock: 'Unlock (expert mode)', lock: 'Lock',
+  msgQHigh: v => `flow of ${v} veh/h per direction: above about 1,800 veh/h one lane is no longer enough, so the street has at least two lanes per direction. The simulator models only one lane per direction and does not apply to this case. On a four-lane road, the crossing must be controlled by a pedestrian signal with a refuge island (essential from 4 lanes without signals, “Carrefours urbains” guide, p. 84 and 114); the “Intersection” module helps choose the intersection type`,
   msgFix: l => `Values to correct: ${l}.`, msgRange: (l, a, b) => `${l}: between ${a} and ${b}`, msgLane: 'the lane width in the narrowing must be less than the existing width',
   msgApplied: 'Animation and evaluation rerun with these values.', msgDefaults: 'Default values restored. Click “Apply and rerun.”',
   msgUnlocked: 'Calibration unlocked: any change will be flagged on the results.', msgLocked: 'Calibration locked.',
@@ -3294,6 +3297,7 @@ function applyParams(e) {
     if (grp.lock && !calibUnlocked) continue;
     const val = parseFloat(String($('#p-' + f.k).value).replace(',', '.'));
     if (!Number.isFinite(val) || val < 0) { bad.push(f[lang]); continue; }
+    if (f.k === 'q' && val > f.max) { bad.push(t('msgQHigh', nfa.format(val))); continue; }
     if (f.min !== undefined && (val < f.min || val > f.max)) { bad.push(t('msgRange', f[lang], nfa.format(f.min), nfa.format(f.max))); continue; }
     next[f.k] = val;
   }

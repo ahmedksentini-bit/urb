@@ -8,6 +8,8 @@ Toute la page tient dans `index.html` : aucun serveur, aucune compilation. La bi
 
 ## Ce que fait la page
 
+- **Mode d'emploi.** En tête de page, une section repliable explique l'objectif de l'outil, ses étapes, les données nécessaires (comment les obtenir, indispensables ou non) et l'endroit où lire chaque résultat.
+- **Profil en travers.** Un éditeur inspiré de Streetmix décrit la rue de façade à façade : trottoirs, bandes plantées, stationnement, voies de circulation, voies bus, bandes et pistes cyclables, terre-plein central. Sept modèles de rues tunisiennes servent de point de départ ; chaque élément se règle (largeur, sens), se déplace (glisser-déposer ou flèches) ou se supprime. La page contrôle les largeurs (trottoir libre de 1,40 m au minimum, voies de 2,75 à 3,50 m, etc.) et déduit le profil au droit du passage pour la variante retenue : avancées de trottoir à la place du stationnement, îlot refuge, largeur reprise sur les trottoirs, longueur de traversée en un ou deux temps. La largeur de voie peut être reportée dans les données de la simulation ; les deux profils figurent dans la note de calcul.
 - **Microsimulation.** Modèle de poursuite IDM pour les véhicules, modèle de traversée pour les piétons (créneau accepté, conducteur qui cède, piéton engagé). Toutes les bandes reçoivent exactement les mêmes véhicules et les mêmes piétons, aux mêmes instants.
 - **Évaluation.** Moyenne de cinq simulations d'une heure, avec des tirages fixés à l'avance.
 - **Indicateurs.** V85 au passage, temps de parcours, débit écoulé, files d'attente, attente des piétons, part des conducteurs qui cèdent le passage, risque de décès pour un piéton qui surgit.
@@ -29,11 +31,16 @@ Adresses directes :
 - `…/#ar` : arabe ;
 - `…/#presentation-ar` : les deux.
 
+## Mode d'emploi à tenir à jour
+
+Le mode d'emploi affiché en tête de page vit dans `I18N.fr.guideBody` et `I18N.ar.guideBody`. Tout nouveau module doit l'y compléter, dans les deux langues et dans la même livraison : une étape, les données qu'il demande, l'endroit où il affiche ses résultats (page et note de calcul).
+
 ## Ce que la commune peut modifier, et ce qui est verrouillé
 
 | Bloc | Contenu | Modifiable |
 |---|---|---|
 | Données du site | débit par sens, part de PL et bus, V85 mesurée en circulation libre, piétons à l'heure de pointe, largeur de voie | oui, dans des bornes |
+| Profil en travers | éléments de la rue, largeurs, sens, largeur disponible de façade à façade | oui (enregistré dans le navigateur) |
 | Choix de conception | largeurs du rétrécissement et de l'îlot, décalage, transition et largeur de voie de la chicane | oui, dans des bornes |
 | Calibrage du modèle | comportement des conducteurs et des piétons, vitesses de franchissement des ralentisseurs, effet du rétrécissement, du revêtement et des bandes rugueuses, courbe de risque, tirages | non : verrouillé |
 

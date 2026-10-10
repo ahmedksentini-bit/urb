@@ -27,18 +27,19 @@ Toute la page tient dans `index.html` : aucun serveur, aucune compilation. La bi
 - **Le lieu.** On pointe le passage sur une carte (plan OpenStreetMap ou satellite, recherche d'adresse). La page récupère la rue la plus proche (type, voies, sens unique, vitesse limite, largeur), les écoles et établissements de santé à moins de 400 m, les arrêts de bus, passages et feux voisins, et la densité de population (WorldPop 2020). Si une école borde la rue, elle propose de rapprocher le passage de l'école et liste les aménagements complémentaires.
 - **Trafic sur la journée.** Profil horaire type ou comptages de la commune ; la journée est simulée de 5 h à 23 h pour chaque variante : heures de saturation, longueur des files, recommandations.
 - **Note de calcul.** La commune choisit la variante retenue ; la page produit une note imprimable (français ou arabe) : résumé pour les élus, résultats expliqués, conditions d'utilisation vérifiées, plan de principe coté au format A4 paysage, implantation, visibilité, signalisation, éclairage, trottoirs, entretien, coût sommaire en dinars et en euros, plan d'action P1/P2/P3 et annexes techniques. Les prix unitaires et le taux de change sont modifiables.
-- **Deux langues.** Français et arabe, avec la mise en page de droite à gauche.
+- **Trois langues.** Français, arabe (mise en page de droite à gauche) et anglais, au choix en haut de la page ; la note de calcul suit la langue choisie, avec les nombres au format de la langue (virgule ou point décimal).
 - **Mode présentation.** Toutes les bandes tiennent sur un seul écran, pour le partage d'écran ou l'enregistrement vidéo.
 
 Adresses directes :
 
 - `…/#presentation` : mode présentation ;
 - `…/#ar` : arabe ;
-- `…/#presentation-ar` : les deux.
+- `…/#en` : anglais ;
+- `…/#presentation-ar`, `…/#presentation-en` : mode présentation dans la langue choisie.
 
 ## Mode d'emploi à tenir à jour
 
-Le mode d'emploi affiché en tête de page vit dans `I18N.fr.guideBody` et `I18N.ar.guideBody`. Tout nouveau module doit l'y compléter, dans les deux langues et dans la même livraison : une étape, les données qu'il demande, l'endroit où il affiche ses résultats (page et note de calcul).
+Le mode d'emploi affiché en tête de page vit dans `I18N.fr.guideBody`, `I18N.ar.guideBody` et `I18N.en.guideBody`. Tout nouveau module doit l'y compléter, dans les trois langues et dans la même livraison : une étape, les données qu'il demande, l'endroit où il affiche ses résultats (page et note de calcul).
 
 ## Ce que la commune peut modifier, et ce qui est verrouillé
 

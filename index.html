@@ -106,7 +106,8 @@ h1 { margin: 0 0 10px; font-size: clamp(26px, 3.4vw, 40px); line-height: 1.12; f
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn[aria-pressed="true"], .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .btn:disabled { opacity: .55; cursor: progress; }
-#btn-lang { font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; }
+.lang-switch { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.lang-switch .btn { font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; letter-spacing: 0; }
 .seg { display: inline-flex; }
 .seg .btn { border-radius: 0; margin-inline-start: -1px; }
 .seg .btn:first-child { border-start-start-radius: 6px; border-end-start-radius: 6px; margin-inline-start: 0; }
@@ -331,6 +332,11 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
 
 <header class="top">
   <div class="wrap">
+    <div class="lang-switch" id="lang-switch" role="group" aria-label="Langue · اللغة · Language">
+      <button class="btn" type="button" data-lang="fr" lang="fr" dir="ltr">Français</button>
+      <button class="btn" type="button" data-lang="ar" lang="ar" dir="rtl">العربية</button>
+      <button class="btn" type="button" data-lang="en" lang="en" dir="ltr">English</button>
+    </div>
     <p class="eyebrow" id="eyebrow"></p>
     <h1 data-i18n="h1"></h1>
     <p class="lede" id="lede"></p>
@@ -368,7 +374,6 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
   <div class="wrap">
     <div class="bar-title compact-only"><span data-i18n="h1"></span><small id="bar-sub"></small></div>
     <div class="group">
-      <button class="btn" id="btn-lang" type="button" data-free="1"></button>
       <button class="btn" id="btn-compact" type="button" aria-pressed="false" data-free="1"></button>
       <button class="btn compact-only" id="btn-fs" type="button" data-free="1"></button>
     </div>
@@ -538,6 +543,21 @@ const FIELDS = [
     { k: 'rugPct', fr: 'Bandes rugueuses : baisse de vitesse', ar: 'الأشرطة الاهتزازية: انخفاض السرعة', u: ['%', '%'], step: 1 },
     { k: 'seed', fr: 'Graine du premier tirage', ar: 'بذرة السحب الأوّل', u: ['', ''], step: 1 } ] }
 ];
+// anglais : libellé et unité de chaque champ
+const FIELDS_EN = {
+  q: ['Flow per direction', 'veh/h'], pPL: ['Heavy vehicles and buses', '%'], v85free: ['V85 measured in free-flowing traffic', 'km/h'],
+  qPed: ['Pedestrians at the crossing (peak hour)', 'ped/h'], laneW: ['Existing lane width', 'm'], vLim: ['Current speed limit', 'km/h'],
+  retLane: ['Narrowing: lane width', 'm'], retIsl: ['Narrowing: island width', 'm'], chOff: ['Chicane: axis offset', 'm'],
+  chTrans: ['Chicane: transition length', 'm'], chLane: ['Chicane: lane width', 'm'], sigGreen: ['Pedestrian signal: minimum vehicle green', 's'],
+  T: ['Time headway', 's'], sdVL: ['Car speed spread (standard deviation)', 'km/h'], sdPL: ['Heavy vehicle speed spread (standard deviation)', 'km/h'],
+  vPed: ['Walking speed', 'm/s'], tSafe: ['Accepted gap margin', 's'], y50: ['Speed at which 50% of drivers yield', 'km/h'],
+  ySlope: ['Slope of the yielding curve', '1/(km/h)'], dSurg: ['Pedestrian stepping out at', 'm'], tReact: ['Reaction time', 's'],
+  bEmerg: ['Emergency braking', 'm/s²'], dosVL: ['Speed hump, cars', 'km/h'], dosPL: ['Speed hump, trucks and buses', 'km/h'],
+  trapVL: ['Trapezoidal hump, cars', 'km/h'], trapPL: ['Trapezoidal hump, trucks and buses', 'km/h'], platVL: ['Raised table, cars', 'km/h'],
+  platPL: ['Raised table, trucks and buses', 'km/h'], cousVL: ['Speed cushion, cars', 'km/h'], cousPL: ['Speed cushion, trucks and buses (straddled)', 'km/h'],
+  retPct: ['Narrowing: speed reduction', '%'], revPct: ['Paving: speed reduction', '%'], rugPct: ['Rumble strips: speed reduction', '%'], seed: ['Seed of the first draw', '']
+};
+for (const g of FIELDS) for (const f of g.items) { f.en = FIELDS_EN[f.k][0]; f.u[2] = FIELDS_EN[f.k][1]; }
 
 /* ---------- utilitaires ---------- */
 function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -550,10 +570,17 @@ const rosen = vk => vk <= 0 ? 0 : 1 / (1 + Math.exp(6.9 - 0.090 * vk));
 const pYield = (vk, P) => 1 / (1 + Math.exp(P.ySlope * (vk - P.y50)));
 function pct(arr, p) { if (!arr.length) return NaN; const a = Float64Array.from(arr).sort(); return a[Math.min(a.length - 1, Math.max(0, Math.ceil(p * a.length) - 1))]; }
 const mean = a => { const b = a.filter(Number.isFinite); return b.length ? b.reduce((x, y) => x + y, 0) / b.length : NaN; };
-const nf0 = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
-const nf1 = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const nf2 = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const nfa = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
+// formats numériques : virgule décimale en français et en arabe, point en anglais (setNumLocale, appelée par setLang)
+let nf0, nf1, nf2, nfa;
+function setNumLocale(l) {
+  const loc = l === 'en' ? 'en-US' : 'fr-FR';
+  nf0 = new Intl.NumberFormat(loc, { maximumFractionDigits: 0 });
+  nf1 = new Intl.NumberFormat(loc, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  nf2 = new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  nfa = new Intl.NumberFormat(loc, { maximumFractionDigits: 2 });
+}
+setNumLocale('fr');
+const uiIdx = () => lang === 'ar' ? 1 : lang === 'en' ? 2 : 0;   // rang de la langue dans les couples d'unités [fr, ar, en]
 const f0 = v => Number.isFinite(v) ? nf0.format(v) : '–';
 const f1 = v => Number.isFinite(v) ? nf1.format(v) : '–';
 const fm = v => nf2.format(v);
@@ -573,6 +600,7 @@ const FP_REF = fingerprint(DEFAULTS);
 const I18N = {
 fr: {
   eyebrow: P => `Sécurité des piétons · traversée urbaine limitée à ${f0(P.vLim)} km/h`,
+  docTitle: 'Comparateur de modération des vitesses',
   h1: 'Neuf aménagements, le même trafic',
   donTitle: 'Données de la rue et de l’aménagement',
   donNote: 'Renseignez les données de votre rue, puis cliquez sur « Appliquer et relancer ». Les simulations et les résultats qui suivent sont alors recalculés.',
@@ -697,6 +725,7 @@ fr: {
 },
 ar: {
   eyebrow: P => `سلامة المترجّلين · عبور حضري بسرعة قصوى ${f0(P.vLim)} كم/س`,
+  docTitle: 'مقارنة تهيئات تهدئة السرعة',
   h1: 'تسع تهيئات، نفس حركة المرور',
   donTitle: 'معطيات النهج والتهيئة',
   donNote: 'أدخل معطيات النهج ثم اضغط على «تطبيق وإعادة التشغيل». تُعاد عندها المحاكاة وحساب النتائج التي تليها.',
@@ -818,7 +847,133 @@ ar: {
       <h3>المصادر</h3>
       <ol dir="ltr">${SOURCES}</ol>
     </div>`
+},
+en: {
+  eyebrow: P => `Pedestrian safety · urban through-road limited to ${f0(P.vLim)} km/h`,
+  docTitle: 'Speed moderation comparator',
+  h1: 'Nine measures, the same traffic',
+  donTitle: 'Street and measure data',
+  donNote: 'Enter your street’s data, then click “Apply and rerun.” The simulations and results below are then recalculated.',
+  stripsAria: 'Animated plan views', resTitle: 'Results',
+  calibTitle: 'Model calibration', calibNote: 'These values are the same for all municipalities and are locked so that results remain comparable. The check code (6 characters) summarizes all of these values: two design reports that carry the same code were calculated with the same assumptions; if a single value changes, the code changes.',
+  applyCalib: 'Apply calibration',
+  noteTitle: 'Selected option and design report',
+  noteIntro: 'Choose the option the municipality selects. The design report opens in a new tab, in the language of the page: results explained in plain terms, conditions of use, dimensioned plan in A4 landscape format, layout, visibility, signage, lighting, sidewalks, rough cost estimate and action plan. It can be printed or saved as a PDF.',
+  selLabel: 'Selected option', recSuffix: ' (recommended)', mCommune: 'Municipality', mLieu: 'Location (street, neighborhood)', mAuteur: 'Prepared by',
+  pricesSum: 'Unit prices (TND excluding taxes) and exchange rate',
+  pricesNote: 'Indicative 2026 values, to be replaced with the municipality’s schedule of unit prices.',
+  rateLabel: 'Exchange rate: dinars per 1 euro',
+  btnNote: 'Generate the design report', noteWait: 'The report will be available once the evaluation is complete.',
+  noteOpened: 'The report opened in a new tab.', noteBlocked: 'The browser blocked the new tab:', noteLink: 'open the report',
+  lede: P => `Each strip receives the same vehicles at the same moments: ${f0(P.q)} veh/h per direction, ${f0(P.pPL)}% heavy vehicles and buses, ${f0(P.qPed)} pedestrians/h at the crossing. Only the measure changes. Speeds, queues, waiting times and risks are calculated by a microsimulation, not drawn by hand. Click a thumbnail to see the measure in 3D.`,
+  barSub: P => `${f0(P.q)} veh/h per direction · ${f0(P.pPL)}% HV and buses · ${f0(P.qPed)} pedestrians/h`,
+  langBtn: 'English', presentation: 'Presentation mode', fullPage: 'Full page', fullscreen: 'Full screen',
+  pause: 'Pause', play: 'Play', speedAria: 'Animation speed',
+  view: 'View', viewAria: 'Plan view extent', viewFull: '500 m', viewZoom: 'Zoom 160 m',
+  colors: 'Colors', colorAria: 'Vehicle color', colSpeed: 'Speed', colPaint: 'Realistic',
+  hour: 'Skip ahead one hour', computing: p => `Computing… ${p}%`, reset: 'Restart',
+  simTime: 'simulated time', clock: (h, m, s) => `${h ? h + ' h ' : ''}${m} min ${s} s`,
+  rampAria: 'Vehicle color by speed', ramp60: '60 km/h', pedKey: 'pedestrian', pedLate: 'waiting for more than 20 s',
+  calibFlag: 'Calibration modified',
+  kmh: 'km/h', s: 's', m: 'm',
+  kV85: 'V85 at crossing', kTT: 'Time over 500 m', kQ: 'Max queue', kPed: 'Pedestrian wait', kRisk: 'Fatality risk if hit',
+  stFluid: ['Free-flowing traffic', 'Free flow'], stFiles: ['Frequent queues', 'Queues'], stSat: ['Saturated: not all demand gets through', 'Saturated'],
+  reg: ['Outside French regulations', 'Non-standard'], regTitle: 'Decree 94-447 and NF P 98-300: fewer than 3,000 veh/day, built-up area, 30 km/h',
+  rec: ['Recommended solution', 'Recommended'],
+  qLong: (k, pend, q) => { const x = pend ? `queue extends past the entry point · ${pend} veh. waiting` : `${f0(q)} m queue, beyond the view`; return k === 0 ? `◀ direction →: ${x}` : `direction ←: ${x} ▶`; },
+  qShort: (k, pend, q) => { const x = pend ? `${pend} veh. waiting at the entry point` : `${f0(q)} m queue`; return k === 0 ? `◀ ${x}` : `${x} ▶`; },
+  chView: (zoom, prof, compact) => (zoom ? 'Plan view: 160 m around the pedestrian crossing' : 'Plan view: 500 m section')
+    + (prof ? (compact ? ' · blue line: average speed (dotted: 30 km/h)' : ' · blue line: average speed by position') : '')
+    + ' · figures: average of 5 one-hour simulations',
+  profLabel: 'Average speed by position, in the direction of travel', prof30: '30 km/h',
+  planAria: n => `Animated plan view: ${n}`,
+  names: { ref: 'Reference (no measure)', dos: 'Speed hump', trap: 'Trapezoidal hump', plat: 'Raised table', cous: 'Speed cushions',
+    ret: 'Lane narrowing with refuge island', chi: 'Two-lane chicane', rev: 'Paving change', rug: 'Rumble strips', sig: 'Pedestrian push-button signal' },
+  short: { ref: 'Reference', dos: 'Speed hump', trap: 'Trapezoidal', plat: 'Raised table', cous: 'Speed cushions',
+    ret: 'Narrowing + island', chi: '2-lane chicane', rev: 'Paved surface', rug: 'Rumble strips', sig: 'Push-button signal' },
+  desc: {
+    ref: P => `Roadway of 2 × ${fm(P.laneW)} m with a marked pedestrian crossing. This is the baseline for comparison.`,
+    dos: P => `Two circular speed humps (4 m long, 10 cm high) placed 10 m on either side of the crossing: the standard does not allow a crossing to be marked on a speed hump. V85 over the hump: ${P.dosVL} km/h (cars), ${P.dosPL} km/h (HV).`,
+    trap: P => `4 m plateau with 1.20 m ramps (10 cm high). The pedestrian crossing is marked on the plateau. V85 over the hump: ${P.trapVL} km/h (cars), ${P.trapPL} km/h (HV).`,
+    plat: P => `8 m table with 1.50 m ramps (slope ≈ 7%), pedestrian crossing on the table. V85 over the table: ${P.platVL} km/h (cars), ${P.platPL} km/h (HV).`,
+    cous: P => `One cushion per lane, 10 m on either side of the crossing. Cars drive up onto it; heavy vehicles and buses straddle it. V85: ${P.cousVL} km/h (cars), ${P.cousPL} km/h (HV).`,
+    ret: (P, i) => `Lanes narrowed from ${fm(P.laneW)} to ${fm(P.retLane)} m around a ${fm(P.retIsl)} m central island${i.island ? ': pedestrians cross in two stages' : ' (too narrow to serve as a refuge)'}. Assumed speed reduction: ${P.retPct}%.`,
+    chi: (P, i) => `Centerline shifted by ${fm(P.chOff)} m over ${f0(P.chTrans)} m, 10 m straight section at the offset, ${fm(P.chLane)} m lanes. Fastest path: R ≈ ${f0(i.R)} m, giving V85 ≈ ${f0(i.vVL)} km/h (cars) and ${f0(i.vPL)} km/h (HV).`,
+    rev: P => `Paving stones over 40 m around the crossing, with no other change. Assumed speed reduction: ${P.revPct}%, to be confirmed by measurements.`,
+    rug: P => `Three groups of transverse rumble strips, 60, 40 and 20 m before the crossing in each direction. They alert drivers through noise and vibration; assumed speed reduction: ${P.rugPct}%. The noise is a nuisance for local residents.`,
+    sig: (P, i) => `Signals triggered by a push button. Cars keep at least ${f0(P.sigGreen)} s of green between two calls, followed by yellow for 3 s, red, pedestrian green for 7 s and a clearance interval of ${f0(i.clear)} s. Apart from the red phase, the signal does not change speeds.`
+  },
+  thumbAria: n => `Computer-generated 3D view: ${n}. Click to enlarge.`,
+  dlgNote: 'Computer-generated image based on the simulated geometry: actual dimensions, hump heights not exaggerated, the same buildings and the same vehicles for all measures.',
+  dlgRendering: 'Rendering at 3840 × 2160 px…', dlgReady: '3840 × 2160 px', dlgDownload: 'Download the image (PNG)', dlgClose: 'Close',
+  sumTitle: 'Summary',
+  thead: [['Measure', ''], ['V85 at crossing', 'km/h'], ['Time over 500 m', 's'], ['Difference from reference', 's per vehicle'], ['Throughput', 'veh/h/direction'],
+    ['Vehicles stopped', '%'], ['Max queue', 'm'], ['Pedestrian wait', 's, average'], ['Drivers who yield', '%'], ['Stops in time', 'darting-out pedestrian'], ['Fatality risk', 'if hit, average']],
+  sumNote: (P, fpTxt) => `Evaluation: ${REPS} one-hour simulations (random draws ${P.seed} to ${P.seed + REPS - 1}, fixed in advance), after a 2 min warm-up; averages of the five. “Stops in time” and “fatality risk”: pedestrian darting out ${f0(P.dSurg)} m ahead, reaction time ${f1(P.tReact)} s, braking at ${f0(P.bEmerg)} m/s². In a saturated strip, the queue and the travel time depend on the simulated duration, here one hour. ${fpTxt}`,
+  sumRunning: p => `Evaluation in progress: ${p}%. In the meantime, the table shows the values from the animation.`,
+  calibRef: fp => `Reference calibration, check code ${fp}.`, calibMod: fp => `Modified calibration, check code ${fp}: results are not comparable with the reference calibration.`,
+  hypTitle: 'Assumptions',
+  hypNote: 'Site data and design choices can be changed within the limits shown. The calibration is locked: it is the same for all municipalities so that results remain comparable. “Apply” reruns the animation and the evaluation.',
+  groups: {
+    site: ['Site data', 'To be filled in by the municipality: peak-hour counts, share of heavy vehicles and buses, free-flow speed measured by radar, pedestrians at the crossing, lane width.'],
+    design: ['Design choices', 'Dimensions of the measures and signal settings, limited to the usual values found in design guides.'],
+    calib: ['Model calibration (locked)', 'Driver and pedestrian behavior, the specific effect of each device, random draws. The same for all municipalities. Sources: IDM (Treiber et al., 2000); fatality risk (Rosén and Sander, 2009); chicane V = 8.76 R^0.386 (NCHRP 672). Speeds over the devices and the yielding curve: orders of magnitude, to be calibrated against local measurements by the administration that distributes the tool.']
+  },
+  apply: 'Apply and rerun', defaults: 'Default values', unlock: 'Unlock (expert mode)', lock: 'Lock',
+  msgFix: l => `Values to correct: ${l}.`, msgRange: (l, a, b) => `${l}: between ${a} and ${b}`, msgLane: 'the lane width in the narrowing must be less than the existing width',
+  msgApplied: 'Animation and evaluation rerun with these values.', msgDefaults: 'Default values restored. Click “Apply and rerun.”',
+  msgUnlocked: 'Calibration unlocked: any change will be flagged on the results.', msgLocked: 'Calibration locked.',
+  methTitle: 'Method and sources',
+  vEyebrow: 'Most suitable solution, traffic and safety',
+  vNoneTitle: 'No solution reconciles traffic and safety',
+  vNone: 'None of the measures tested handles the demand without saturating while staying within the regulatory framework. At this traffic level, a pedestrian push-button signal or a reduction in traffic should be studied.',
+  vCriteria: 'Selection rule, in order: 1) handle the demand (throughput ≥ 96% of demand) and comply with the regulatory framework; 2) lowest fatality risk for a darting-out pedestrian, within 0.25 percentage points; 3) lowest time lost; 4) shortest pedestrian wait.',
+  vMetrics: (e, ref) => `Fatality risk if hit ${f1(e.surgRisk)}% (reference ${f1(ref.surgRisk)}%) · V85 at crossing ${f0(e.v85)} km/h · time over 500 m ${sgn(e.tt - ref.tt)} s compared with the reference · pedestrian wait ${f0(e.pedW)} s.`,
+  vSafeOk: 'Safe System target met: V85 at the crossing ≤ 30 km/h.',
+  vSafeKo: v => `Safe System target not met: V85 at the crossing is ${f0(v)} km/h, above 30 km/h.`,
+  vSmallGain: 'Small safety gain compared with the reference (less than 0.1 percentage point).',
+  vExcluded: 'Ruled out:', sep: '; ',
+  reasonSat: (e, P) => `saturated, ${f0(e.flow)} veh/h handled out of ${f0(P.q)} demanded`, reasonReg: 'outside the regulatory framework',
+  vRunning: p => `Evaluation in progress (${REPS} one-hour simulations): ${p}%…`,
+  vCalib: 'Modified calibration: these results are not comparable with the reference calibration.',
+  method: crit => `
+    <div>
+      <h3>What is calculated</h3>
+      <ul>
+        <li><strong>Traffic.</strong> Each vehicle follows the IDM car-following model: it accelerates toward its desired speed and brakes to keep a safe time gap behind the vehicle ahead. Braking, queues and their dissipation follow from this.</li>
+        <li><strong>Same arrivals everywhere.</strong> Vehicles (arrival time, type, driver temperament) and pedestrians are drawn only once, then fed identically into every strip. Differences between strips therefore come from the measure alone.</li>
+        <li><strong>Pedestrians.</strong> A pedestrian crosses when the gap in traffic is long enough (crossing time + margin) or when a driver yields. Each driver who sees a pedestrian waiting decides once, as long as they can still stop at 3 m/s²; their probability of yielding depends on the speed they would have at the crossing. If the driver sees the pedestrian too late, they do not yield. A driver who stopped for nothing moves off again after 8 s. Without an island, a pedestrian already on the first lane forces vehicles in the second lane to stop if they can stop at 3 m/s². With an island at least 1.50 m wide, pedestrians cross in two stages.</li>
+        <li><strong>Severity.</strong> A pedestrian darts out <em>D</em> meters in front of each vehicle: the driver reacts, then brakes as hard as possible. The speed remaining at impact gives the fatality risk <span class="formula">P = 1 / (1 + e<sup>6.9 − 0.090 v</sup>)</span> (Rosén and Sander, 2009; v in km/h).</li>
+        <li><strong>Evaluation.</strong> The figures shown are the average of five one-hour simulations, with different random draws that are fixed in advance. It is therefore not possible to pick a favorable draw.</li>
+        <li><strong>Indicators.</strong> V85 measured at the center of the crossing. Travel time counted from the scheduled arrival time, including any wait at the entry point. Queue: vehicles traveling below 8 km/h upstream of the device.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What is given as input</h3>
+      <ul>
+        <li><strong>Speed over speed humps</strong> (V85 by vehicle class). No traffic model calculates it: it comes from measurements. The proposed values are orders of magnitude, to be replaced with field measurements on comparable installations.</li>
+        <li><strong>Chicane.</strong> Its speed is derived from the geometry: radius of the fastest path <span class="formula">R = L² / (4 e<sub>eff</sub>)</span>, where <em>e<sub>eff</sub></em> is the offset minus the lateral margin available within the lane, then <span class="formula">V = 8.76 R<sup>0.386</sup></span>.</li>
+        <li><strong>Narrowing, paving, rumble strips.</strong> Percentage reduction in desired speed. Their specific effect is small and not well established.</li>
+        <li><strong>Pedestrian push-button signal.</strong> Yellow 3 s, all-red 2 s, pedestrian green 7 s, clearance calculated at 1 m/s, all-red 1 s. Drivers and pedestrians obey the signal; the signal does not change the desired speed.</li>
+        <li><strong>Probability of yielding.</strong> It decreases as speed increases, as studies have observed. The curve used is an assumption, to be calibrated against local counts.</li>
+      </ul>
+      <h3>Recommended solution</h3>
+      <p>${crit} The rule does not weight the criteria: safety comes before travel time, but only among the solutions that handle the traffic.</p>
+      <h3>Limitations</h3>
+      <ul>
+        <li>Isolated 500 m section: no traffic diversion to other streets, no two-wheelers.</li>
+        <li>Noise, vibration and ride comfort in buses are not assessed.</li>
+        <li>The reference calibration remains an order of magnitude: the administration that distributes the tool must calibrate it against local measurements before using it for any decision.</li>
+        <li>In France, speed humps and trapezoidal humps are restricted to roads in built-up areas limited to 30 km/h and carrying fewer than 3,000 veh/day (Decree 94-447, NF P 98-300). They are included here for comparison.</li>
+        <li>The 3D views are rendered by the three.js library loaded from the Internet; offline, the page works without them.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Sources</h3>
+      <ol>${SOURCES}</ol>
+    </div>`
 }
+
 };
 const SOURCES = `
   <li>Treiber M., Hennecke A., Helbing D. (2000). Congested traffic states in empirical observations and microscopic simulations. <em>Physical Review E</em> 62(2), 1805–1824.</li>
@@ -827,6 +982,7 @@ const SOURCES = `
   <li>Décret n° 94-447 du 27 mai 1994 ; norme NF P 98-300 (ralentisseurs de type dos d’âne et trapézoïdal).</li>
   <li>CERTU (2010). <em>Guide des coussins et plateaux</em>.</li>
   <li>Bertulis T., Dulaski D. M. (2014). Driver approach speed and its impact on driver yielding to pedestrian behavior. <em>Transportation Research Record</em> 2464.</li>`;
+const LANGS = ['fr', 'ar', 'en'];
 let lang = 'fr';
 function t(key, ...a) { const d = I18N[lang], v = key in d ? d[key] : I18N.fr[key]; return typeof v === 'function' ? v(...a) : v; }
 
@@ -1936,8 +2092,8 @@ function dims(sc) {
   const add = (...r) => out.push(...r);
   switch (sc.id) {
     case 'dos': add(['humpL', f(4)], ['height', f(0.10)], ['humpDist', f(10)]); break;
-    case 'trap': add(['tableL', f(4)], ['rampL', f(1.2)], ['height', f(0.10)], ['rampSlope', '8,3 %']); break;
-    case 'plat': add(['tableL', f(8)], ['rampL', f(1.5)], ['height', f(0.10)], ['rampSlope', '6,7 %']); break;
+    case 'trap': add(['tableL', f(4)], ['rampL', f(1.2)], ['height', f(0.10)], ['rampSlope', nf1.format(8.3) + ' %']); break;
+    case 'plat': add(['tableL', f(8)], ['rampL', f(1.5)], ['height', f(0.10)], ['rampSlope', nf1.format(6.7) + ' %']); break;
     case 'cous': add(['cushL', f(3)], ['cushW', f(1.8)], ['cushH', f(0.07)], ['rampL', f(0.8)], ['humpDist', f(10)]); break;
     case 'ret': add(['laneN', f(P.retLane)], ['islW', f(P.retIsl)], ['islL', f(30)], ['taper', f(8)], ['refugeL', f(4)]); break;
     case 'chi': add(['offset', f(P.chOff)], ['transL', f(P.chTrans)], ['palier', f(10)], ['laneC', f(P.chLane)], ['radius', f0(sc.info.R)]); break;
@@ -2053,6 +2209,77 @@ const VDOC = {
       marks: ['خطّ توقّف الإشارات في كل اتجاه.', 'ممرّ مترجّلين بأشرطة عرضها 0,50 م.'], walks: ['أزرار طلب في متناول الجميع (على ارتفاع بين 0,90 و1,30 م) وإشارة صوتية للمكفوفين.'], water: ['عقد صيانة للإشارات (الأعطال، المصابيح، ضبط الدورة).'] })
   }
 };
+
+// anglais : prix unitaires, conditions d'utilisation, textes par variante
+const PRICE_EN = {
+  zebra: ['Pedestrian crossing and triangle markings (resin)', 'm²'],
+  line: ['Line markings (centerline, stop lines)', 'lin. m'],
+  sign: ['Traffic sign on post, installed', 'unit'],
+  light: ['Dedicated LED street light for the crossing (foundation, wiring)', 'unit'],
+  kerbRamp: ['Curb ramp with tactile warning strip', 'unit'],
+  asphalt: ['Asphalt for the speed humps, placed', 't'],
+  table: ['Concrete raised table and ramps with colored surfacing', 'm²'],
+  cushion: ['Precast speed cushion, installed', 'unit'],
+  kerb: ['Concrete curb, installed', 'lin. m'],
+  island: ['Island or curb extension (fill, planting or pavers)', 'm²'],
+  pavement: ['Pavement reconstruction (base and asphalt)', 'm²'],
+  pavers: ['Concrete pavers on a base, installed', 'm²'],
+  rumble: ['Raised resin rumble strips', 'm²'],
+  bollard: ['Island nose bollard', 'unit'],
+  signals: ['Pedestrian push-button signals: controller, signal heads, push buttons, civil works, power connection', 'set'],
+  fees: ['Design, inspection, site setup and temporary signage', '%']
+};
+PRICE_DEF.forEach(p => { p.en = PRICE_EN[p.k][0]; p.u[2] = PRICE_EN[p.k][1]; });
+const COND_EN = {
+  agglo: () => 'Section located in a built-up area',
+  zone30: c => `Street limited to 30 km/h (30 km/h zone); current limit: ${f0(c.P.vLim)} km/h`,
+  mja3000: c => `Average daily traffic below 3,000 veh/day; estimated here at ${f0(c.mja)} veh/day`,
+  noBus: () => 'No regular bus route and no priority access for emergency vehicles',
+  slope4: () => 'Longitudinal grade below 4%',
+  noCurve: () => 'Not on a curve and not on a structure (bridge, tunnel)',
+  v50: c => `Street limited to 50 km/h at most; current limit: ${f0(c.P.vLim)} km/h`,
+  capacity: c => `Peak-hour traffic is still accommodated: ${f0(c.e.flow)} veh/h per direction for a demand of ${f0(c.P.q)}`,
+  safeSys: c => `Speed at the crossing compatible with the presence of pedestrians (V85 ≤ 30 km/h); simulated V85: ${f0(c.e.v85)} km/h`,
+  lane3: c => `Lanes at least 3.00 m wide for buses and heavy vehicles; here ${fm(c.lane)} m`,
+  refuge: c => `Island at least 1.50 m wide to serve as a refuge; here ${fm(c.P.retIsl)} m`,
+  busTurn: () => 'Turning paths of buses and heavy vehicles checked on the plan',
+  drain: () => 'Drainage maintained along the curbs (storm drain inlet upstream)',
+  noise: () => 'No homes immediately adjacent (noise from passing vehicles)',
+  power: () => 'Power supply available nearby',
+  nearSignals: () => 'No other traffic signal within 100 m; otherwise, coordinate the signals',
+  heavyPave: c => `Pavers suited to heavy traffic; share of heavy vehicles (trucks and buses): ${f0(c.P.pPL)}%`,
+  combine: () => 'Weak effect on its own: combine with another measure',
+  visib: c => `Crossing and pedestrians visible from at least ${f0(c.dVis)} m away, in each direction`
+};
+for (const k of Object.keys(COND_EN)) COND[k].en = COND_EN[k];
+const VDOC_EN = {
+  dos: P => ({ implant: ['Two speed humps 10 m on either side of the crossing centerline, perpendicular to the street, across the full roadway width.', 'The pedestrian crossing is not marked on a speed hump (standard NF P 98-300).', 'Circular profile: 4.00 m long, 0.10 m high, tied into the gutter without blocking it.', 'Not on a curve, not on a grade steeper than 4%, and away from bus stops.'],
+    signs: ['A2b “speed hump” sign in each direction, with distance plate.', 'B14 “30 km/h”: speed humps are used only in zones limited to 30 km/h.', 'C20a “pedestrian crossing” sign on each side of the crossing.'],
+    marks: ['White triangles on the approach ramp of each speed hump.', 'Pedestrian crossing in 0.50 m stripes, 4.00 m long.'], walks: [], water: ['Leave a water channel along the curbs under each speed hump.'] }),
+  trap: P => ({ implant: ['One trapezoidal hump centered on the crossing: 4.00 m flat top, 1.20 m ramps, 0.10 m high.', 'The pedestrian crossing is marked on the flat top.', 'Same restrictions as the speed hump: 30 km/h zone, under 3,000 veh/day, no regular bus service, grade under 4%.'],
+    signs: ['A2b in each direction, with distance plate.', 'B14 “30 km/h”.', 'C20a on each side of the crossing.'],
+    marks: ['White triangles on the ramps.', 'Pedestrian crossing on the flat top.'], walks: [], water: ['Storm drain inlet upstream of the hump, on the uphill side.'] }),
+  plat: P => ({ implant: ['Raised table centered on the crossing: 8.00 m table, 1.50 m ramps (grade ≈ 7%), 0.10 m high.', 'Contrasting surface (colored resin or exposed-aggregate concrete) to make the raised table stand out.', 'Gentler ramps (5% grade at most) if the street carries buses.'],
+    signs: ['C27 “raised roadway” sign in each direction.', 'C20a on each side of the crossing.'],
+    marks: ['White triangles on the ramps.', 'Pedestrian crossing on the raised table.'], walks: ['Raised table at or near sidewalk level: the pedestrian path remains continuous.'], water: ['Storm drain inlets upstream of the raised table, since it cuts across the gutter.'] }),
+  cous: P => ({ implant: ['One cushion per lane, centered in the lane, 10 m on either side of the crossing: 3.00 m long, 1.80 m wide, 0.07 m high.', 'Buses and heavy vehicles straddle it: suitable for bus routes.', 'Keep the space between cushion and curb clear for drainage and two-wheelers.'],
+    signs: ['C27 “raised roadway” sign in each direction.', 'C20a on each side of the crossing.'],
+    marks: ['White triangles on the cushion ramps.', 'Pedestrian crossing in 0.50 m stripes.'], walks: [], water: [] }),
+  ret: P => ({ implant: [`Center island ${fm(P.retIsl)} m wide and 30 m long, with 8 m tapered entries and a 4.00 m refuge at the crossing.`, `Lanes narrowed to ${fm(P.retLane)} m on each side of the island.`, 'Island noses visible from a distance, marked with beacons and lit.', 'Two-stage crossing: pedestrians cross only one lane at a time.'],
+    signs: ['B21-1 “keep right (mandatory)” sign on each island nose, with J5 beacon.', 'C20a on each side of the crossing.'],
+    marks: ['Pedestrian crossing interrupted at the refuge.', 'Hatched taper markings ahead of the island noses.'], walks: ['Refuge on the island at roadway level, at least 1.50 m wide, with tactile warning strips.'], water: ['Check that the island does not block drainage toward the storm drain inlets.'] }),
+  chi: P => ({ implant: [`Centerline shifted by ${fm(P.chOff)} m over ${f0(P.chTrans)} m, a 10 m straight section centered on the crossing, then a return over ${f0(P.chTrans)} m.`, `Two ${fm(P.chLane)} m lanes retained.`, 'Planted curb extensions on the inside of the shift.', 'Check the turning paths of buses and heavy vehicles on the plan.'],
+    signs: ['J5 beacons on the curb extensions.', 'C20a on each side of the crossing.'],
+    marks: ['Solid centerline through the chicane to prohibit passing.', 'Edge lines that follow the shift.'], walks: [], water: ['Storm drain inlets at the low point of each curb extension.'] }),
+  rev: P => ({ implant: ['Concrete (or stone) pavers over 40 m centered on the crossing, across the full roadway width.', 'Edge restraint curbs at both ends of the paved area.', 'Weak effect on its own: combine with another measure.'],
+    signs: ['C20a on each side of the crossing.'], marks: ['Resin pedestrian crossing on the pavers, or white pavers.'], walks: [], water: ['Inspect paver joints and settlement every year.'] }),
+  rug: P => ({ implant: ['Three groups of six transverse strips at 60, 40, and 20 m before the crossing, in each direction, on the approach lane only.', 'Strips 0.25 m wide, spaced 0.80 m apart, raised about 1 cm.', 'Avoid in front of homes: noise from passing vehicles.'],
+    signs: ['A14 “other hazards” sign with a “rumble strips” plate, if needed.', 'C20a on each side of the crossing.'], marks: ['Raised white resin strips.'], walks: [], water: ['Replace worn strips.'] }),
+  sig: P => ({ implant: ['Signal stop line about 1 m before the crossing, in each direction.', 'One vehicle signal on the right of each approach, repeated if visibility requires it.', 'Pedestrian signals and push buttons on each side of the crossing.', `Pedestrian green of ${SIG.walk} s, clearance time based on 1 m/s, and at least ${f0(P.sigGreen)} s of vehicle green between two calls.`, 'Coordinate with nearby signals if any are within 100 m.'],
+    signs: ['Three-color vehicle signals (R11v) and pedestrian signals (R12), push buttons with audible signal.', 'A17 “traffic signals” sign upstream if visibility is limited.', 'C20a on each side of the crossing.'],
+    marks: ['Signal stop line in each direction.', 'Pedestrian crossing in 0.50 m stripes.'], walks: ['Accessible push buttons (between 0.90 and 1.30 m high) and an audible signal for people who are blind.'], water: ['Signal maintenance contract (failures, lamps, cycle timing).'] })
+};
+for (const k of Object.keys(VDOC_EN)) VDOC[k].en = VDOC_EN[k];
 
 const NOTE = {
 fr: {
@@ -2234,7 +2461,98 @@ ar: {
   plan: { title: 'مخطّط مبدئي', legend: 'المفتاح', walk: 'رصيف', raised: 'تهيئة مرتفعة', island: 'جزيرة، امتداد رصيف', bev: 'شريط تنبيه لمسي', light: 'عمود إنارة (E1، E2)', sign: 'لافتة (الرمز)', signal: 'إشارة ضوئية (عربات ومترجّلون)', dir: 'اتجاه السير', cotes: 'الأبعاد بالمتر',
     scale: 'السلّم', secA: 'مقطع A-A، الارتفاعات مضاعفة 10 مرات', secB: 'مقطع B-B عند الممرّ، الارتفاعات مضاعفة 10 مرات', formatL: 'القياس', format: 'A4 أفقي', indice: 'المؤشّر', objet: 'الموضوع', commune: 'البلدية', lieu: 'الموقع', date: 'التاريخ', auteur: 'أعدّه', calib: 'المعايرة',
     disclaimer: 'مخطّط مبدئي، يُعاد إنجازه كمخطّط تنفيذ على أساس رفع طوبوغرافي.' }
+},
+en: {
+  title: 'Design report', sub: 'Speed moderation at a pedestrian crossing', print: 'Print or save as PDF',
+  cover: [['commune', 'Municipality'], ['lieu', 'Location'], ['objet', 'Subject'], ['name', 'Selected option'], ['date', 'Date'], ['auteur', 'Prepared by'], ['fp', 'Calibration'], ['outil', 'Tool']],
+  objet: 'Choice of a measure to improve pedestrian safety', outil: 'Speed-moderation comparison tool (microsimulation)', unknown: 'not provided',
+  glossTitle: 'Useful terms',
+  gloss: [['V85', 'Speed below which 85% of drivers travel. It is the actual speed on the street, and says more than the posted speed limit.'],
+    ['Flow', 'Number of vehicles passing in one hour, in one direction.'],
+    ['AADT', 'Annual average daily traffic: average number of vehicles per day, both directions combined.'],
+    ['Saturation', 'More vehicles arrive than the measure can let through: the queue keeps growing.'],
+    ['Safe System', 'Road safety approach that aims to ensure that no mistake is fatal. Where cars and pedestrians meet, it sets a maximum of 30 km/h.'],
+    ['Microsimulation', 'Calculation that moves every vehicle and every pedestrian, one tenth of a second at a time, according to published behavior rules.'],
+    ['Outline plan', 'Plan that sets the dimensions and location of the elements. It does not replace the construction plan prepared from a survey of the site.']],
+  s: { brief: 'In brief', site: 'The site and its surroundings', change: 'What the option changes', day: 'Traffic over the day', cond: 'Conditions of use', dims: 'Dimensions', implant: 'Layout', visib: 'Visibility',
+    signs: 'Signs and markings', light: 'Lighting', walks: 'Sidewalks and accessibility', water: 'Stormwater drainage and maintenance', cost: 'Rough cost estimate', plan: 'Action plan',
+    annA: 'Appendix A — All simulated options', annB: 'Appendix B — Method and assumptions', annC: 'Appendix C — Sources' },
+  brief: {
+    site: c => `The municipality is considering a pedestrian crossing on a street carrying ${f0(c.P.q)} vehicles per hour per direction at peak hour, including ${f0(c.P.pPL)}% heavy vehicles (trucks and buses), and ${f0(c.P.qPed)} pedestrians per hour.`,
+    variant: c => `${c.n} options were simulated under exactly the same traffic. The selected option is: ${c.name}.`,
+    speed: c => `At the crossing, car speed (V85) goes from ${f0(c.r.v85)} km/h today to ${f0(c.e.v85)} km/h.` + (c.e.v85 <= 30 ? ' This is below the 30 km/h threshold recommended wherever drivers meet pedestrians.' : ' It remains above the 30 km/h threshold recommended wherever drivers meet pedestrians.'),
+    risk: c => `If a pedestrian suddenly steps out ${f0(c.P.dSurg)} m in front of a car, the risk of that pedestrian being killed goes from ${f1(c.r.surgRisk)}% to ${f1(c.e.surgRisk)}%.`,
+    ped: c => `A pedestrian waits on average ${f0(c.e.pedW)} s before crossing (today: ${f0(c.r.pedW)} s).`,
+    traffic: c => c.e.sat ? `Warning: at this traffic level, the option is saturated. ${f0(c.e.flow)} vehicles per hour get through instead of ${f0(c.P.q)}, and the queue keeps growing during the peak hour.` : `Traffic still gets through. The time to travel 500 m changes by ${sgn(c.e.tt - c.r.tt)} s per vehicle.`,
+    cost: c => `Rough cost: ${f0(c.cost.total)} dinars excluding tax (about ${f0(c.cost.eur)} €), accurate to within ±30%.`,
+    cond: c => c.nKo ? `${c.nKo} condition(s) of use are not met: see section ${c.condNo} before making any decision.` : `No blocking condition of use was detected; ${c.nCheck} item(s) remain to be checked on site.`,
+    day: c => c.daySat ? `Over the day, the option is saturated ${c.daySat}.` : 'Over the day, the option handles the traffic at every hour.',
+    school: c => `A school (“${c.school.name || 'unnamed'}”) is ${f0(c.school.dist)} m from the crossing: see the section “The site and its surroundings”.`,
+    rec: c => c.rec < 0 ? 'The tool found no solution that balances traffic and safety at this flow.' : c.rec === c.i ? 'This is also the solution the tool recommends to balance traffic and safety.' : `The tool recommended instead: ${c.recName}. The municipality selected a different option; the differences are detailed below.`
+  },
+  changeIntro: 'Comparison with the current situation, without any measure, under the same traffic. Each value is the average of five one-hour simulations.',
+  changeCols: ['Indicator', 'Today', 'With the option', 'What this means'],
+  ind: { v85: 'Car speed at the crossing (V85)', tt: 'Time to travel 500 m', flow: 'Vehicles getting through per hour per direction', q: 'Longest queue', ped: 'Average pedestrian waiting time',
+    yield: 'Drivers who yield to a waiting pedestrian', stop: 'Drivers who stop in time if a pedestrian suddenly steps out', risk: 'Risk that a pedestrian who is hit is killed' },
+  mean: {
+    v85: (r, e) => (e.v85 < r.v85 - 2 ? 'Cars pass pedestrians at a lower speed.' : 'The speed at the crossing changes little.') + (e.v85 <= 30 ? ' The 30 km/h threshold is met.' : ' The 30 km/h threshold is not reached.'),
+    tt: (r, e) => e.sat ? 'The time keeps increasing for as long as the peak lasts.' : (e.tt - r.tt > 2 ? `Each vehicle loses about ${f0(e.tt - r.tt)} s.` : e.tt - r.tt < -2 ? `Each vehicle gains about ${f0(r.tt - e.tt)} s: pedestrian crossings disrupt traffic less.` : 'Travel time changes little.'),
+    flow: (r, e) => e.sat ? 'Some vehicles do not get through: the queue grows for as long as the peak lasts.' : 'All peak-hour traffic gets through.',
+    q: (r, e) => e.qMax > r.qMax + 20 ? 'Queues are longer than today.' : e.qMax < r.qMax - 20 ? 'Queues are shorter than today.' : 'Queues remain about the same.',
+    ped: (r, e) => e.pedW < r.pedW - 1 ? 'Pedestrians wait less to cross.' : e.pedW > r.pedW + 1 ? 'Pedestrians wait longer to cross.' : 'Pedestrian waiting time changes little.',
+    yield: (r, e, sc) => sc.signal ? 'Not applicable: the signal controls the right of way.' : `Out of 100 drivers who see a pedestrian waiting, ${f0(e.yieldPct)} let the pedestrian cross.`,
+    stop: (r, e) => `Out of 100 drivers, ${f0(e.surgStop)} stop before reaching the pedestrian.`,
+    risk: (r, e) => e.surgRisk < r.surgRisk - 0.1 ? 'If a collision does occur, it is less severe.' : 'The severity of a collision remains about the same.'
+  },
+  u: { kmh: 'km/h', s: 's', m: 'm' },
+  condIntro: 'To be checked before any decision. “Not met”: the option should not be built as it stands. “To be checked”: the page does not have this information; it must be checked on site.',
+  condCols: ['Condition', 'Status'],
+  st: { ok: 'Met', warn: 'To be monitored', ko: 'Not met', check: 'To be checked' },
+  dimsIntro: 'Main dimensions; the scaled outline plan follows, in A4 landscape format. Dimensions in meters.',
+  dimCols: ['Element', 'Value (m)'],
+  dim: { lane: 'Lane width', road: 'Roadway width', walk: 'Sidewalk width', zebraL: 'Length of the crossing (in the direction of traffic)', zebraB: 'Stripe width and spacing',
+    humpL: 'Speed hump length', height: 'Height', humpDist: 'Distance from the crossing centerline to the device centerline', tableL: 'Raised table length', rampL: 'Ramp length', rampSlope: 'Ramp slope',
+    cushL: 'Cushion length', cushW: 'Cushion width', cushH: 'Cushion height', laneN: 'Lane width at the island', islW: 'Island width', islL: 'Island length', taper: 'Length of the tapered approaches', refugeL: 'Refuge length',
+    offset: 'Centerline offset', transL: 'Length of each transition', palier: 'Length of the offset section', laneC: 'Lane width in the chicane', radius: 'Radius of the fastest path',
+    paveL: 'Paved length', rugPos: 'Position of the strip groups before the crossing', rugGroup: 'Length of one group', rugBand: 'Width of one strip', rugGap: 'Strip spacing',
+    stopDist: 'Stop line: distance to the edge of the crossing', pedGreen: 'Pedestrian green time', clear: 'Clearance time', minGreen: 'Minimum vehicle green time between two calls' },
+  visib: c => `At ${f0(c.P.v85free)} km/h, the current driver speed (V85 in free-flowing traffic), a driver needs about ${f0(c.dVis)} m to stop: 2 s of reaction time, then braking at 5 m/s². The crossing and the waiting pedestrians must be visible from this distance, in both directions.`,
+  visibList: ['No parking and no obstacle more than 1 m high within 5 m before the crossing, on each side (French rule since the 2019 Mobility Orientation Act).', 'Low vegetation kept trimmed, street furniture set back from the curb edge.', 'No crossing on a curve or just beyond the crest of a hill.'],
+  signV: 'Signs', marks: 'Pavement markings',
+  signNote: 'French sign codes; use the equivalent signs from the Tunisian regulations.',
+  light: ['Two dedicated street lights, one for each direction, about 1 to 3 m before the crossing, on the sidewalk to the driver’s right (E1 and E2 on the plan). The pedestrian is thus lit from the front and stands out against the background.', 'Lighting level clearly higher than that of the street, to be designed according to standard EN 13201.', 'White light (LED), aimed so as not to dazzle drivers.'],
+  walks: ['Curb ramp across the full width of the crossing (4 m), with a lip of 2 cm at most and a slope of 5% at most.', 'Detectable warning strip (tactile paving) 0.50 m from the edge, on each side.', 'Sidewalk with a clear width of at least 1.40 m, free of any obstacle, on both sides of the crossing.'],
+  walksNote: 'These rules come from French regulations; adapt them to Tunisian accessibility standards.',
+  water: ['Keep stormwater flowing along the curbs; place a storm drain inlet upstream of any device that cuts across the gutter.', 'Repaint the markings as soon as they fade, and at least once a year at the crossing.', 'Inspect the lighting and signs every year.'],
+  costCols: ['Item', 'Quantity', 'Unit', 'Unit price (TND)', 'Amount (TND)'],
+  costSub: 'Subtotal', costFees: p => `Design studies, supervision, site setup (${f0(p)}%)`, costTotal: 'Total excluding tax', costRange: 'Range (±30%)', costEur: 'Equivalent in euros',
+  costNote: r => `Indicative unit prices, excluding tax, 2026 values, to be replaced by the municipality’s schedule of unit prices. Exchange rate used: 1 € = ${nf2.format(r)} TND.`,
+  planCols: ['Priority', 'Action', 'Who', 'When'],
+  actions: {
+    ko: ['Resolve the conditions of use that are not met, or choose another option.', 'Technical services', 'Before the decision'],
+    sat: ['Reduce through traffic or choose an option that handles the traffic: the selected option is saturated at this flow.', 'Municipality', 'Before the decision'],
+    count: ['Measure speeds with a radar gun and count pedestrians and vehicles at peak hour, then rerun the simulation with these values.', 'Technical services', 'Before the decision'],
+    exec: ['Have the construction plan prepared (surveyor, design consultant) from the outline plan, and check the turning paths of buses and heavy vehicles.', 'Design consultant', 'Before construction'],
+    market: ['Include the lighting and signs in the same contract as the construction work.', 'Municipality', 'When the contract is tendered'],
+    inform: ['Inform residents and shopkeepers.', 'Municipality', 'One month before construction'],
+    after: ['Measure speeds, queues and pedestrian waiting times again three to six months after opening, and compare them with this report.', 'Technical services', '3 to 6 months after'],
+    maint: ['Maintain the markings, lighting and signs.', 'Municipality', 'Every year']
+  },
+  annexBox: 'This appendix and the following ones are intended for technical staff. Reading them is not necessary to understand the report.',
+  annACols: ['Option', 'V85 at the crossing (km/h)', 'Time over 500 m (s)', 'Flow handled (veh/h/direction)', 'Pedestrian waiting time (s)', 'Risk of death (%)', 'Status'],
+  stateTxt: { sat: 'Saturated', ok: 'Flowing' },
+  recLine: n => `Solution recommended by the rule: ${n}.`, recNone: 'No solution meets the rule at this flow.',
+  method: ['Microsimulation: each vehicle follows the IDM car-following model (Treiber et al., 2000); each pedestrian crosses in a gap in traffic, when a driver yields, on the green signal, or by stepping out if the vehicle can stop at 3 m/s².',
+    'Same vehicle and pedestrian arrivals in all options, five one-hour simulations with random draws fixed in advance, after a 2 min warm-up period.',
+    'Speed over the humps given as input (V85 per class); speed in the chicane derived from its geometry; lane narrowing, paving change and rumble strips: speed reduction as a percentage.',
+    'Risk of death: Rosén and Sander curve (2009), P = 1 / (1 + e^(6.9 − 0.090 v)), applied to the remaining speed when a pedestrian suddenly steps out at the stated distance, after the reaction time and emergency braking.',
+    'Limitations: isolated 500 m section, no traffic diversion and no two-wheelers; noise, vibration and bus passenger comfort not assessed; calibration to be adjusted against local measurements.'],
+  calibCols: ['Calibration parameter', 'Value'],
+  plan: { title: 'Outline plan', legend: 'Legend', walk: 'Sidewalk', raised: 'Raised device', island: 'Island, curb extension', bev: 'Detectable warning strip', light: 'Street light (E1, E2)', sign: 'Sign (code)', signal: 'Signal (vehicles and pedestrians)', dir: 'Direction of traffic', cotes: 'Dimensions in meters',
+    scale: 'Scale', secA: 'Section A-A, heights ×10', secB: 'Section B-B at the crossing, heights ×10', formatL: 'Format', format: 'A4 landscape', indice: 'Revision', objet: 'Subject', commune: 'Municipality', lieu: 'Location', date: 'Date', auteur: 'Prepared by', calib: 'Calibration',
+    disclaimer: 'Outline plan, to be developed into a construction plan based on a topographic survey.' }
 }
+
 };
 
 /* ---------- plan de principe coté, A4 paysage (SVG en millimètres) ---------- */
@@ -2507,9 +2825,9 @@ tr { break-inside: avoid; }
 
 function buildNote(id) {
   const N = NOTE[lang], i = scenarios.findIndex(s => s.id === id), sc = scenarios[i], V = VDOC[id] ? VDOC[id][lang](P) : null;
-  const E = evalRes, e = E[i], r = E[0], R = recommend(E, scenarios), ui = lang === 'ar' ? 1 : 0;
+  const E = evalRes, e = E[i], r = E[0], R = recommend(E, scenarios), ui = uiIdx();
   const name = scName(sc), fp = fingerprint(P), fpTxt = calibModified ? t('calibMod', fp) : t('calibRef', fp);
-  const meta = { commune: META.commune || N.unknown, lieu: META.lieu || N.unknown, auteur: META.auteur || N.unknown, date: new Date().toLocaleDateString('fr-FR'), name, fp: fpTxt, objet: N.objet, outil: N.outil };
+  const meta = { commune: META.commune || N.unknown, lieu: META.lieu || N.unknown, auteur: META.auteur || N.unknown, date: new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR', lang === 'en' ? { day: 'numeric', month: 'long', year: 'numeric' } : undefined), name, fp: fpTxt, objet: N.objet, outil: N.outil };
   const c = { P, e, r, sc, i, n: scenarios.length - 1, name, mja: 2 * P.q * 10, lane: laneAt(sc), dVis: stopDist(P.v85free), rec: R.best, recName: R.best >= 0 ? scName(scenarios[R.best]) : '' };
   c.cost = costing(sc);
   const conds = (VCOND[id] || []).map(k => ({ st: COND[k].test(c), txt: COND[k][lang](c) }));
@@ -2679,7 +2997,7 @@ function computeCompactRowH() {
   document.documentElement.style.setProperty('--rowh', Math.max(40, compactRowH) + 'px');
 }
 function setHash() {
-  const tok = [isCompact() ? 'presentation' : '', lang === 'ar' ? 'ar' : ''].filter(Boolean).join('-');
+  const tok = [isCompact() ? 'presentation' : '', lang !== 'fr' ? lang : ''].filter(Boolean).join('-');
   try { history.replaceState(null, '', tok ? '#' + tok : location.href.split('#')[0]); } catch (e) { /* adresse non modifiable : sans effet */ }
 }
 function setCompact(on) {
@@ -2834,7 +3152,7 @@ function frame(now) {
 /* ---------- formulaire : site et conception modifiables, calibrage verrouillé ---------- */
 // données de la rue et conception en haut de page ; calibrage verrouillé en bas
 function buildForm() {
-  const G = t('groups'), ui = lang === 'ar' ? 1 : 0;
+  const G = t('groups'), ui = uiIdx();
   const fs = grp => {
     const locked = grp.lock && !calibUnlocked;
     const fields = grp.items.map(f => `<div class="field"><label for="p-${f.k}">${f[lang]}</label><input id="p-${f.k}" name="${f.k}" type="number" step="${f.step}"${f.min !== undefined ? ` min="${f.min}" max="${f.max}"` : ''} inputmode="decimal" value="${P[f.k]}"${locked ? ' readonly' : ''}><span class="unit">${f.u[ui]}</span></div>`).join('');
@@ -3050,6 +3368,62 @@ Object.assign(I18N.ar, {
   dayMeasure: 'قياس الطابور الفعلي في ساعات الذروة بعد دخول التهيئة حيّز الاستغلال.',
   dayFocus: n => `القراءة بالنسبة إلى التهيئة: ${n}`
 });
+Object.assign(I18N.en, {
+  siteTitle: 'Locate the site',
+  siteNote: 'Click on the map where the pedestrian crossing is, or search for an address, then click “Analyze the site”. The data come from OpenStreetMap and WorldPop; they supplement the design report.',
+  searchPh: 'Address, street, city…', searchBtn: 'Search', analyse: 'Analyze the site', mapPlan: 'Map', mapSat: 'Satellite',
+  mapClick: 'Click on the map to place the pedestrian crossing.',
+  mapPoint: (la, lo) => `Crossing placed at ${la.toFixed(5)}, ${lo.toFixed(5)}. Click “Analyze the site”.`,
+  notFound: 'Address not found.', searching: 'Searching…', analysing: 'Analyzing the site (OpenStreetMap)…', analysed: 'Site analyzed. The results are shown below and in the design report.',
+  mapOffline: 'The map requires an Internet connection.', osmFail: 'The OpenStreetMap servers are overloaded. Try again in a minute.',
+  osmRetry: s => `OpenStreetMap is busy: retrying in ${s} s…`,
+  popRun: 'WorldPop calculation in progress (10 to 40 s)…', popOffline: 'available on the online site only', popFail: 'WorldPop did not respond',
+  colon: ': ', hRoad: 'Street', roadNone: 'No street found within 35 m of the point: place it on the roadway.',
+  roadLine: (n, ty) => `${n || 'Unnamed street'} (${ty})`,
+  kLanes: 'Lanes', kOneway: 'One-way', kMaxspeed: 'Speed limit', kWidth: 'Width', notTagged: 'not specified in OSM', yes: 'yes', no: 'no',
+  roadTypes: { motorway: 'freeway', trunk: 'expressway', primary: 'primary road', secondary: 'secondary road', tertiary: 'connector street', unclassified: 'unclassified road', residential: 'residential street', living_street: 'shared street', service: 'service road' },
+  hPop: 'Population', popLine: (d, p, lv) => `${f0(d)} inhabitants per hectare within a 300 m radius (${f0(p)} inhabitants, WorldPop 2020): ${lv}.`,
+  popLevels: ['low density', 'medium density', 'high density', 'very high density'],
+  hPoi: 'Schools and health facilities within 400 m', poiNone: 'No facility of this type in OpenStreetMap within 400 m.',
+  poiCols: ['No.', 'Facility', 'Type', 'Distance to crossing'], unnamed: 'unnamed',
+  poiKind: { school: 'school', kindergarten: 'kindergarten', college: 'secondary school', university: 'university', hospital: 'hospital', clinic: 'clinic, health center' },
+  hAround: 'Around the crossing (150 m)',
+  aroundStops: (n, d) => n ? `Bus stops: ${n}, the nearest at ${f0(d)} m.` : 'No bus stop.',
+  aroundCross: (n, d) => n ? `Existing pedestrian crossings: ${n}, the nearest at ${f0(d)} m.` : 'No existing pedestrian crossing.',
+  aroundSig: (n, d) => n ? `Traffic signals: ${n}, the nearest at ${f0(d)} m.` : 'No traffic signal.',
+  hReco: 'Site-related recommendations',
+  recoSchoolMove: (n, d, m) => `The school “${n}” is ${f0(d)} m away. The crossing should be on the students’ route, as close as possible to the entrance. Proposal: move it about ${f0(m)} m toward the school (orange marker on the map), after locating the actual entrance on site.`,
+  recoSchoolHere: (n, d) => `The school “${n}” is ${f0(d)} m away: the crossing is already close to it.`,
+  recoSchoolOther: (n, d) => `The school “${n}” is ${f0(d)} m away but has no entrance on this street: check the students’ route on site.`,
+  schoolMeasuresTitle: 'Additional measures around the school:',
+  schoolMeasures: ['School zone limited to 30 km/h for at least 150 m on each side of the entrance.', 'A13a sign “area frequented by children” in each direction.', 'Guard railings on the sidewalk in front of the exit, to guide children to the crossing.', 'Raised table in front of the entrance if traffic allows (see the results).', 'No parking in front of the entrance or within 5 m before the crossing.', 'A crossing guard or escort present at arrival and dismissal times.'],
+  recoHealth: (n, d) => `The health facility “${n}” is ${f0(d)} m away. On ambulance routes, avoid speed humps and speed tables; prefer speed cushions, a narrowing with an island, or a pedestrian signal. Allow a longer crossing time for people with reduced mobility.`,
+  recoDense: 'Dense neighborhood: there will be many crossings; check the number of pedestrians entered with a count.',
+  warnLanes: n => `OpenStreetMap shows ${n} lanes: the model simulates one lane per direction. Its results are valid only for a two-lane street; beyond that, a traffic study is needed.`,
+  warnOneway: 'OpenStreetMap shows a one-way street: the model simulates two-way traffic. Interpret the results with caution.',
+  applySite: 'Copy to the input data', applied: l => `Copied to the form: ${l}. Click “Apply and rerun”.`, nothingToApply: 'OpenStreetMap gives neither the speed limit nor the width of this street.',
+  osmCredit: 'Data © OpenStreetMap contributors (ODbL); population WorldPop 2020.', proposalTip: 'Proposed location',
+  dayTitle: 'Traffic over the day',
+  dayNote: 'Choose the typical hourly profile, or enter your traffic counts: vehicles per hour in the busiest direction. The model simulates the day from 5 a.m. to 11 p.m. for each option and shows when queues form.',
+  dayProfile: 'Typical urban profile (assumption)', dayCounts: 'My traffic counts', dayHour: 'Hour', dayRowP: 'Typical profile (veh/h)', dayRowC: 'Count (veh/h)',
+  dayCalc: 'Simulate the day', dayResTitle: 'Traffic over the day',
+  dayRunning: p => `Simulating the day: ${p}%.`, dayWait: 'The day will be simulated after the evaluation.',
+  dayResNote: src => `A single continuous simulation from 5 a.m. to 11 p.m., with the same arrivals for all options. Traffic: ${src}. Pedestrians follow the same profile as vehicles (assumption). Green: free-flowing; orange: queues longer than 100 m; red: saturated, demand is not cleared. The number shows the longest queue in the hour, in meters.`,
+  srcProfile: P => `typical urban profile applied to the peak flow entered (${f0(P.q)} veh/h)`, srcCounts: 'traffic counts from the municipality (typical profile for hours without counts)',
+  dayDemand: 'Demand (veh/h)', daySatCol: 'Saturated hours', dayNoneSat: 'none',
+  hRange: (a, b) => `from ${a}:00 to ${b}:00`, rangeSep: ' and ',
+  dayOk: (n, q) => `${n} handles the traffic all day; the longest queue reaches ${f0(q)} m.`,
+  dayFiles: (n, r, q, h) => `${n} handles the traffic, but queues longer than 100 m form ${r} (up to ${f0(q)} m around ${h}:00). Check that they do not reach the upstream intersection.`,
+  daySat: (n, r, q, h) => `${n} is saturated ${r}: the queue reaches ${f0(q)} m around ${h}:00 and demand is not cleared.`,
+  dayAlt: l => `Options that handle the traffic all day: ${l}.`,
+  dayAltNone: 'No option handles the traffic all day at this traffic level: a traffic circulation plan (diversion routes, one-way streets) should be studied.',
+  dayKeep: 'If this option is kept: reduce through traffic at peak hours (diversion route, traffic circulation plan).',
+  daySig: 'Signal: program a longer green time for vehicles at peak hours.',
+  dayVert: 'Raised device: it slows down every vehicle; it is suitable only for streets where traffic stays moderate at peak hours.',
+  dayMeasure: 'Measure the actual queue at peak hours once the measure is in service.',
+  dayFocus: n => `Findings for the option: ${n}`
+});
+
 Object.assign(NOTE.fr, {
   siteCoords: (la, lo) => `Position du passage : ${la.toFixed(5)}, ${lo.toFixed(5)}.`, osmLink: 'Voir sur OpenStreetMap',
   siteFig: 'Plan de situation : passage (P), établissements numérotés, position proposée (triangle), cercles de 100, 200 et 300 m.'
@@ -3058,6 +3432,11 @@ Object.assign(NOTE.ar, {
   siteCoords: (la, lo) => `موقع الممرّ: ${la.toFixed(5)}، ${lo.toFixed(5)}.`, osmLink: 'عرض على OpenStreetMap',
   siteFig: 'مخطّط الموقع: الممرّ (P)، المؤسّسات المرقّمة، الموقع المقترح (مثلّث)، دوائر 100 و200 و300 م.'
 });
+Object.assign(NOTE.en, {
+  siteCoords: (la, lo) => `Crossing location: ${la.toFixed(5)}, ${lo.toFixed(5)}.`, osmLink: 'View on OpenStreetMap',
+  siteFig: 'Location map: crossing (P), numbered facilities, proposed location (triangle), circles of 100, 200 and 300 m.'
+});
+
 
 // --- géométrie locale (mètres autour du point) ---
 function segDist(p, a, b) {
@@ -3597,10 +3976,97 @@ Object.assign(I18N.ar, {
   pfUse: 'استعمال هذا المقطع في المحاكاة', pfUsed: lw => `نُقل عرض المسلك إلى المعطيات: ${fm(lw)} م. اضغط على «تطبيق وإعادة التشغيل».`, pfUseNone: 'لا يحتوي هذا المقطع على أيّ مسلك سير.',
   pfCrossing: 'العبور'
 });
+Object.assign(I18N.en, {
+  guideTitle: 'How to use this application',
+  guideBody: `<p><strong>Purpose.</strong> Help a municipality choose the design that best protects pedestrians at a crossing, without blocking traffic, and produce the design report that justifies this choice. Under exactly the same traffic, the tool compares nine speed-moderation measures and the current situation.</p>
+    <h3>The steps</h3>
+    <ol>
+      <li><strong>Locate the site</strong> on the map, then click “Analyze the site”: street, nearby schools and health facilities, bus stops, population density.</li>
+      <li><strong>Describe the street</strong> in the cross-section, from building line to building line (sidewalks, lanes, parking, bus lanes, bike facilities, median, island, street lights), in three stages: the existing street, the proposed typical section (the street after the works, away from the crossing) and the cross-section at the crossing. The last one is calculated for the chosen option; you can modify it.</li>
+      <li><strong>Enter the traffic</strong>: peak flow per direction, share of trucks and buses, measured speed, pedestrians, speed limit; and, if possible, your hour-by-hour traffic counts.</li>
+      <li><strong>Adjust the measures</strong>: dimensions of the narrowing and the chicane, signal timing. Then click “Apply and rerun”.</li>
+      <li><strong>Watch the simulations</strong>: one animated strip per measure, with its key figures and a 3D view (click the thumbnail). Presentation mode shows them all on one screen.</li>
+      <li><strong>Read the results</strong>: recommended solution and the reasons for it, summary table, traffic over the day.</li>
+      <li><strong>Choose the option and produce the design report</strong>, to print or save as a PDF.</li>
+    </ol>
+    <h3>Data needed</h3>
+    <div class="table-wrap"><table><thead><tr><th>Data</th><th>How to obtain it</th><th>Required?</th></tr></thead><tbody>
+      <tr><td>Peak flow per direction</td><td>One-hour count at the morning or evening peak</td><td>Yes</td></tr>
+      <tr><td>Share of trucks and buses</td><td>Same count</td><td>Yes</td></tr>
+      <tr><td>Street widths (cross-section)</td><td>Measuring tape, street plan or satellite image</td><td>Yes</td></tr>
+      <tr><td>Speed limit</td><td>Existing signs</td><td>Yes</td></tr>
+      <tr><td>Operating speed (V85, 85th percentile)</td><td>Radar on about a hundred free-flowing vehicles, off-peak</td><td>Recommended (56 km/h by default)</td></tr>
+      <tr><td>Pedestrians at the crossing</td><td>Count at the peak hour</td><td>Recommended</td></tr>
+      <tr><td>Hour-by-hour traffic counts</td><td>Count over a full day</td><td>Optional (typical profile otherwise)</td></tr>
+      <tr><td>Location of the crossing</td><td>Click on the map</td><td>Optional, recommended</td></tr>
+    </tbody></table></div>
+    <h3>Where to find the results</h3>
+    <ul>
+      <li><strong>In the cross-section</strong>: widths to correct, and the cross-section at the crossing with the crossing length.</li>
+      <li><strong>In each strip</strong>: speed at the crossing, travel time, queue, pedestrian waiting time, risk for a pedestrian who is hit.</li>
+      <li><strong>In “Results”</strong>: the most suitable solution and why, the comparison table, hour-by-hour traffic.</li>
+      <li><strong>In the design report</strong> (“Generate the design report” button): everything above explained in plain terms, the cross-section, the dimensioned plan, signage, lighting, sidewalks, cost and action plan.</li>
+    </ul>
+    <p class="note">The tool supports decision-making; it does not replace a study. Its reference values are orders of magnitude, to be confirmed by local measurements.</p>`,
+  pfTitle: 'Street cross-section',
+  pfNote: 'Describe the street from building line to building line, in three stages: as it is, as it will be after the works in the typical section, and at the crossing. In each tab, add elements, set their width, move them (drag and drop or arrows) or delete them.',
+  tabEx: 'Existing', tabPr: 'Proposed (typical section)',
+  hintEx: 'The street as it is today. This is the reference situation for the simulation.',
+  hintPr: 'The street after the works, away from the crossing: lanes reduced to 3.00 m, wider sidewalks, bike lane, planting… Until you modify it, it repeats the existing cross-section.',
+  hintCr: 'The cross-section at the crossing, for the chosen option. It is calculated from the proposed cross-section; as soon as you modify it, your version is the one used, on the page and in the report.',
+  stSame: 'Same as existing.', stProjMod: 'Modified from existing.', stAuto: 'Calculated automatically.', stCustom: 'Modified by hand.',
+  pfVar: 'Option', pfResetPr: 'Start over from existing', pfResetCr: 'Return to the calculated cross-section',
+  pfDesign: 'Copy to the design choices', pfDesignNone: 'Nothing to copy: only the narrowing and the chicane have adjustable widths in the design choices.',
+  pfDesignDone: s => `Copied to the design choices: ${s}. Click “Apply and rerun”.`,
+  dsLane: v => `lane width ${fm(v)} m`, dsIsl: v => `island width ${fm(v)} m`, dsClamp: ' (brought back within the allowed limits)',
+  pfCustomNote: 'Cross-section modified by hand by the municipality.',
+  pfProjected: 'Proposed cross-section (typical section)', pfProjSame: 'The proposed cross-section in the typical section is the same as the existing one.',
+  ckIslandWarn: w => `Island of ${fm(w)} m: at least 1.50 m is needed for it to serve as a refuge, 2.00 m with a stroller or a bicycle.`,
+  pfTotal: 'Available width (building line to building line)', pfPreset: 'Street template', pfLoad: 'Load the template', pfAdd: 'Add:',
+  presets: { defaut: 'Two-lane street (12 m)', quartier: 'Neighborhood street (10 m)', avenue: 'Avenue with parking (16 m)', bus: 'Avenue with bus lanes (19.5 m)',
+    boulevard: 'Boulevard, 2 × 2 lanes with median (22 m)', sensunique: 'One-way street with parking (9 m)', velo: 'Street with bike lanes (14 m)' },
+  segNames: { walk: ['Sidewalk', 'Sidewalk'], ext: ['Curb extension', 'Extension'], trees: ['Planting strip', 'Planting'], park: ['Parking', 'Parking'],
+    lane: ['Traffic lane', 'Lane'], bus: ['Bus lane', 'Bus lane'], bike: ['Bike lane', 'Bike lane'], track: ['Bike track', 'Bike track'], median: ['Median', 'Median'], island: ['Refuge island', 'Island'], lamp: ['Street light', 'Light'] },
+  dir1: 'direction 1', dir2: 'direction 2', pfLeft: 'Move left', pfRight: 'Move right', pfDel: 'Delete', pfWidth: 'Width',
+  pfExact: 'The available width is fully allocated.', pfRest: r => `${fm(r)} m left unallocated.`, pfOver: r => `Exceeds the available width by ${fm(r)} m.`, pfRestLabel: 'unallocated',
+  ckWalkBad: w => `Sidewalk of ${fm(w)} m: at least 1.40 m clear of obstacles is needed for a wheelchair or a stroller.`,
+  ckWalkWarn: w => `Sidewalk of ${fm(w)} m: 2.00 m is recommended in town, more in front of schools and shops.`,
+  ckLaneBad: w => `Lane of ${fm(w)} m: below 2.75 m, car traffic becomes difficult.`,
+  ckLaneNarrow: w => `Lane of ${fm(w)} m: narrow for buses and trucks (3.00 m recommended).`,
+  ckLaneWide: w => `Lane of ${fm(w)} m: a wide lane encourages speeding; 3.00 to 3.25 m is enough in town.`,
+  ckBusBad: w => `Bus lane of ${fm(w)} m: 3.00 m minimum, 3.50 m recommended.`,
+  ckParkBad: w => `Parking of ${fm(w)} m: 2.00 m is needed for a car.`,
+  ckBikeBad: w => `Bike lane of ${fm(w)} m: 1.20 m minimum, 1.50 m recommended.`,
+  ckTrackBad: w => `Bike track of ${fm(w)} m: 1.50 m minimum for one direction.`,
+  ckMedianWarn: w => `Median of ${fm(w)} m: at least 1.50 m is needed for it to serve as a pedestrian refuge.`,
+  ckMulti: n => `${n} lanes in the same direction: the simulation represents only one lane per direction; treat its results with caution.`,
+  ckOneWay: 'All lanes run in the same direction: the simulation represents two-way traffic.',
+  ckNoLane: 'Add at least one traffic lane.',
+  pfExisting: 'Existing cross-section', pfCrossTitle: n => `At the crossing — ${n}`,
+  pfExt: 'Parking is replaced by curb extensions over the 5 m before the crossing: waiting pedestrians are visible and the crossing is shorter.',
+  pfIslAdd: w => `Refuge island of ${fm(w)} m created in the middle of the roadway.`,
+  pfIslMed: 'The median serves as a refuge for pedestrians.',
+  pfIslShort: m => `The island does not fit within the available width, even with sidewalks reduced to 1.40 m: ${fm(m)} m is missing. Use a narrower island (at least 1.50 m to serve as a refuge) or narrower lanes, or drop the island and keep only curb extensions.`,
+  pfOneWayNoIsl: 'One-way street: no central island; the narrowing is made with curb extensions.',
+  pfWiden: m => `${fm(m)} m freed up at the crossing is given back to the sidewalks.`,
+  pfTakeWalk: (m, w) => `${fm(m)} m is taken from the sidewalks at the crossing: the narrower one is reduced to ${fm(w)} m${w < 2 ? ' (2.00 m recommended)' : ''}.`,
+  pfChi: 'The chicane shifts the street centerline: the width must be taken from parking or sidewalks, over the full length of the chicane.',
+  pfRaised: 'The crossing is raised: sidewalks and roadway are at the same level, or nearly so.',
+  pfSigNote: 'Signals and push buttons are placed on the sidewalks, on each side of the crossing.',
+  pfCrossLen: (a, b) => b !== undefined ? `Crossing in two stages: ${fm(a)} m, then ${fm(b)} m.` : `Crossing length: ${fm(a)} m.`,
+  pfLampNone: 'No street light at the crossing: a pedestrian crossing must be lit at night (see the “Lighting” section of the design report).',
+  pfLampOne: 'Only one street light at the crossing: a second one, on the other side, lights pedestrians for both traffic directions.',
+  pfLampOk: n => `${n} street lights at the crossing.`,
+  pfCrossLong: 'Crossing longer than 9 m in a single stretch: a central refuge is recommended.',
+  pfUse: 'Use this profile in the simulation', pfUsed: lw => `Lane width copied to the input data: ${fm(lw)} m. Click “Apply and rerun”.`, pfUseNone: 'This cross-section contains no traffic lane.',
+  pfCrossing: 'Crossing'
+});
 Object.assign(NOTE.fr, { profIntro: 'La rue décrite par la commune, de façade à façade, en trois temps : l’existant, le projeté en section courante (après travaux, hors du passage) et le profil au droit du passage pour la variante retenue. Largeurs en mètres.', profCols: ['Élément', 'Largeur (m)'] });
 Object.assign(NOTE.ar, { profIntro: 'النهج كما وصفته البلدية من واجهة إلى أخرى، على ثلاث مراحل: الوضع الحالي، والمقطع المبرمج في الجزء الجاري (بعد الأشغال، خارج الممرّ)، والمقطع عند الممرّ للتهيئة المعتمدة. العروض بالمتر.', profCols: ['العنصر', 'العرض (م)'] });
+Object.assign(NOTE.en, { profIntro: 'The street as described by the municipality, from building line to building line, in three stages: the existing street, the proposed typical section (after works, away from the crossing) and the cross-section at the crossing for the selected option. Widths in meters.', profCols: ['Element', 'Width (m)'] });
 NOTE.fr.s.profile = 'Profil en travers';
 NOTE.ar.s.profile = 'المقطع العرضي';
+NOTE.en.s.profile = 'Cross-section';
 
 // types d'éléments : surélevé (bordure de 15 cm) ou au niveau de la chaussée, sens de circulation, largeur par défaut
 const SEG = {
@@ -3991,7 +4457,7 @@ $('#guide-details').addEventListener('toggle', () => { try { localStorage.setIte
 
 /* ---------- choix de la variante et note de calcul ---------- */
 function buildNoteUI() {
-  const box = $('#note-gen'), ui = lang === 'ar' ? 1 : 0;
+  const box = $('#note-gen'), ui = uiIdx();
   const rec = evalRes ? recommend(evalRes, scenarios).best : -1;
   const chosen = pickedVariant || (rec > 0 ? scenarios[rec].id : 'ret');
   const opts = scenarios.slice(1).map((sc, j) => `<option value="${sc.id}"${sc.id === chosen ? ' selected' : ''}>${esc(scName(sc))}${j + 1 === rec ? esc(t('recSuffix')) : ''}</option>`).join('');
@@ -4033,12 +4499,14 @@ $('#note-gen').addEventListener('click', e => {
 
 /* ---------- langue ---------- */
 function setLang(l) {
-  lang = l === 'ar' ? 'ar' : 'fr';
+  lang = LANGS.includes(l) ? l : 'fr';
+  setNumLocale(lang);
   document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
-  const bl = $('#btn-lang'); bl.textContent = t('langBtn'); bl.lang = lang === 'ar' ? 'fr' : 'ar';
+  document.querySelectorAll('[data-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  document.title = t('docTitle');
   $('#btn-compact').textContent = isCompact() ? t('fullPage') : t('presentation');
   $('#btn-fs').textContent = t('fullscreen');
   $('#btn-hour').textContent = t('hour');
@@ -4072,7 +4540,7 @@ function setPlaying(on) {
   b.textContent = on ? t('pause') : t('play'); b.setAttribute('aria-pressed', String(on));
 }
 $('#btn-play').addEventListener('click', () => setPlaying(!playing));
-$('#btn-lang').addEventListener('click', () => setLang(lang === 'ar' ? 'fr' : 'ar'));
+$('#lang-switch').addEventListener('click', e => { const b = e.target.closest('[data-lang]'); if (b && b.dataset.lang !== lang) setLang(b.dataset.lang); });
 document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => {
   speed = +b.dataset.speed;
   document.querySelectorAll('[data-speed]').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
@@ -4106,10 +4574,21 @@ const relayoutTheme = () => { readColors(); layoutAll(); };
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', relayoutTheme);
 new MutationObserver(relayoutTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
+/* filet de sécurité de l'anglais : une clé ou une fiche non traduite reprend le français au lieu de provoquer une erreur */
+function fillMissing(dst, src) {
+  const obj = v => v && typeof v === 'object' && !Array.isArray(v);
+  for (const k of Object.keys(src)) { if (!(k in dst)) dst[k] = src[k]; else if (obj(src[k]) && obj(dst[k])) fillMissing(dst[k], src[k]); }
+}
+fillMissing(I18N.en, I18N.fr); fillMissing(NOTE.en, NOTE.fr);
+for (const p of PRICE_DEF) { if (!p.en) p.en = p.fr; if (p.u[2] === undefined) p.u[2] = p.u[0]; }
+for (const k of Object.keys(COND)) if (!COND[k].en) COND[k].en = COND[k].fr;
+for (const k of Object.keys(VDOC)) if (!VDOC[k].en) VDOC[k].en = VDOC[k].fr;
+
 /* ---------- démarrage ---------- */
 const hashTok = location.hash.slice(1).split('-');
-let startLang = hashTok.includes('ar') ? 'ar' : 'fr';
-if (!hashTok.includes('ar')) { try { if (localStorage.getItem('mv-lang') === 'ar') startLang = 'ar'; } catch (e) { /* stockage indisponible */ } }
+let startLang = LANGS.find(l => hashTok.includes(l)) || 'fr';
+if (!LANGS.some(l => hashTok.includes(l))) { try { const s = localStorage.getItem('mv-lang'); if (LANGS.includes(s)) startLang = s; } catch (e) { /* stockage indisponible */ } }
+setNumLocale(startLang);
 lang = startLang;
 document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
 readColors();

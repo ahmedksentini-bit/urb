@@ -174,7 +174,10 @@ main { padding-block: 6px 48px; }
 .prof-draw svg, .pseg, .prof-palette .btn { user-select: none; }
 .prof-draw svg { cursor: grab; }
 body.pf-dragging, body.pf-dragging * { cursor: grabbing !important; user-select: none; }
-.pf-ghost { position: fixed; z-index: 50; pointer-events: none; display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 5px; background: var(--surface); border: 1px solid var(--accent); box-shadow: 0 2px 8px rgba(0, 0, 0, .25); font: 600 12.5px/1.2 var(--font-display); color: var(--ink); }
+.pf-ghost { position: fixed; z-index: 50; pointer-events: none; display: grid; justify-items: center; gap: 4px; padding: 6px; border-radius: 6px; background: var(--surface); border: 2px solid var(--accent); box-shadow: 0 6px 18px rgba(0, 0, 0, .3); transform: translate(-50%, -70%) rotate(-2deg); opacity: .94; }
+.pf-ghost-pic { background: #eef3f6; border-radius: 3px; }
+.pf-ghost-pic svg { display: block; height: 120px; width: auto; min-width: 24px; }
+.pf-ghost-lbl { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font: 600 12px/1.2 var(--font-display); color: var(--ink); }
 .pseg .nm { font: 600 12.5px/1.2 var(--font-display); display: flex; align-items: center; gap: 6px; min-height: 30px; }
 .pseg .wrow { display: flex; align-items: center; gap: 3px; }
 .pseg input { width: 58px; font: 500 13px/1.2 var(--font-display); padding: 3px 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface); color: var(--ink); text-align: right; }
@@ -4542,14 +4545,16 @@ function pdMove(e) {
   if (!PD.on) {
     if (Math.hypot(e.clientX - PD.x0, e.clientY - PD.y0) < 5) return;
     PD.on = true; PD.src = PD.pend; document.body.classList.add('pf-dragging');
-    const N = t('segNames'), tp = PD.src.kind === 'new' ? PD.src.t : tabSegs(false)[PD.src.i].t;
+    const N = t('segNames'), sg = PD.src.kind === 'new' ? { t: PD.src.t, w: SEG[PD.src.t].def, d: 1 } : tabSegs(false)[PD.src.i], tp = sg.t;
     PD.ghost = document.createElement('div'); PD.ghost.className = 'pf-ghost';
-    PD.ghost.innerHTML = `<span class="sw" style="background:${SEG[tp].color}"></span>${esc(N[tp][0])}`;
+    // miniature : le dessin de l'élément seul (façades et cote retirées par le cadrage), son nom et sa largeur
+    const y0 = /^(bus|trees|lamp)$/.test(tp) ? 0 : 130, pic = profileSVG([sg], sg.w).replace(/viewBox="[^"]+"/, `viewBox="0 ${y0} ${Math.round(sg.w * 100)} ${455 - y0}"`);
+    PD.ghost.innerHTML = `<div class="pf-ghost-pic">${pic}</div><div class="pf-ghost-lbl"><span class="sw" style="background:${SEG[tp].color}"></span>${esc(N[tp][0])} · ${fm(sg.w)} ${t('m')}</div>`;
     document.body.appendChild(PD.ghost);
     if (PD.src.kind === 'seg') document.querySelectorAll(`#pf-segs .pseg[data-i="${PD.src.i}"]`).forEach(c => c.classList.add('dragging'));
   }
   e.preventDefault();
-  PD.ghost.style.left = e.clientX + 12 + 'px'; PD.ghost.style.top = e.clientY + 12 + 'px';
+  PD.ghost.style.left = e.clientX + 'px'; PD.ghost.style.top = e.clientY + 'px';
   // zone visée : le dessin ou la rangée des cartes (marge de 40 px autour)
   const inZone = el => { if (!el) return false; const r = el.getBoundingClientRect(); return e.clientX > r.left - 40 && e.clientX < r.right + 40 && e.clientY > r.top - 40 && e.clientY < r.bottom + 40; };
   let ins = -1;

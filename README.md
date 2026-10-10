@@ -16,6 +16,7 @@ Toute la page tient dans `index.html` : aucun serveur, aucune compilation. La bi
 
   Chaque élément se règle (largeur, sens), se déplace (glisser-déposer ou flèches) ou se supprime ; un poteau d'éclairage se place seul au bord du trottoir, côté chaussée. La page contrôle les largeurs (trottoir libre de 1,40 m au minimum, voies de 2,75 à 3,50 m, îlot de 1,50 m, etc.) et l'éclairage du passage. La largeur de voie de l'existant peut être reportée dans les données de la simulation, et les largeurs du profil au passage (voie, îlot) dans les choix de conception du rétrécissement et de la chicane. Les trois profils figurent dans la note de calcul.
 - **Microsimulation.** Modèle de poursuite IDM pour les véhicules, modèle de traversée pour les piétons (créneau accepté, conducteur qui cède, piéton engagé). Toutes les bandes reçoivent exactement les mêmes véhicules et les mêmes piétons, aux mêmes instants.
+- **Une ou deux voies par sens.** À deux voies par sens (jusqu'à 3 600 véh/h par sens, au lieu de 1 800 à une voie), chaque véhicule entre sur la voie la plus dégagée (les poids lourds préfèrent la voie de droite), change de voie pour dépasser puis se rabat (règle MOBIL simplifiée, Kesting et al., 2007) ; aucun changement de voie dans les 40 m avant le passage. Le piéton franchit les quatre voies, ou deux puis deux avec un îlot refuge. La chicane y est simulée mais écartée de la recommandation (les conducteurs la coupent en empiétant sur la voie voisine), et la page rappelle le risque de « double menace » (véhicule arrêté qui masque le piéton à la voie voisine, non modélisé). Le plan coté, les quantités et les vues 3D suivent le nombre de voies.
 - **Évaluation.** Moyenne de cinq simulations d'une heure, avec des tirages fixés à l'avance.
 - **Indicateurs.** V85 au passage, temps de parcours, débit écoulé, files d'attente, attente des piétons, part des conducteurs qui cèdent le passage, risque de décès pour un piéton qui surgit.
 - **Solution recommandée.** Elle est choisie par une règle publiée sur la page, sans pondération :
@@ -50,7 +51,7 @@ Le mode d’emploi affiché en tête de page vit dans `I18N.fr/ar/en.guideBody` 
 
 | Bloc | Contenu | Modifiable |
 |---|---|---|
-| Données du site | débit par sens, part de PL et bus, V85 mesurée en circulation libre, piétons à l'heure de pointe, largeur de voie | oui, dans des bornes |
+| Données du site | voies par sens (1 ou 2), débit par sens, part de PL et bus, V85 mesurée en circulation libre, piétons à l'heure de pointe, largeur de voie | oui, dans des bornes |
 | Profils en travers | existant, projeté et profil au droit du passage : éléments, largeurs, sens, largeur disponible de façade à façade | oui (enregistrés dans le navigateur) |
 | Choix de conception | largeurs du rétrécissement et de l'îlot, décalage, transition et largeur de voie de la chicane | oui, dans des bornes |
 | Calibrage du modèle | comportement des conducteurs et des piétons, vitesses de franchissement des ralentisseurs, effet du rétrécissement, du revêtement et des bandes rugueuses, courbe de risque, tirages | non : verrouillé |

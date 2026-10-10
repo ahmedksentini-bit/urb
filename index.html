@@ -574,7 +574,7 @@ const ISLAND_MIN = 1.5;        // îlot refuge utilisable (m)
 const REPS = 5, EVAL_T = WARMUP + 3600;   // évaluation : cinq simulations d'une heure
 // feu piéton à la demande : orange, rouge intégral, vert piéton, dégagement (à 1 m/s), rouge intégral
 const SIG = { amber: 3, red1: 2, walk: 7, red2: 1, vClear: 1.0 };
-const Y0 = -8, Y1 = 8;         // emprise latérale dessinée (m)
+let Y0 = -8, Y1 = 8;           // emprise latérale dessinée (m), élargie à 2 voies par sens (setYSpan)
 const CLS = {
   VL: { len: 4.5, w: 1.8, a: 1.5, b: 2.0, s0: 2.0, bAnt: 1.5, dT: 0 },
   PL: { len: 12, w: 2.5, a: 0.8, b: 1.5, s0: 3.0, bAnt: 1.0, dT: 0.4 }
@@ -583,7 +583,7 @@ const VIEWS = { full: { x0: 0, x1: L, sy: 4.5 }, zoom: { x0: XC - 80, x1: XC + 8
 
 const DEFAULTS = {
   // données du site
-  q: 1500, pPL: 6, v85free: 56, qPed: 60, laneW: 3.5, vLim: 50,
+  nl: 1, q: 1500, pPL: 6, v85free: 56, qPed: 60, laneW: 3.5, vLim: 50,
   // choix de conception
   retLane: 3.0, retIsl: 2.0, chOff: 3.0, chTrans: 15, chLane: 3.25, sigGreen: 40,
   // calibrage (verrouillé)
@@ -599,7 +599,8 @@ function derive(p) { p.vVL = p.v85free - 1.036 * p.sdVL; p.vPL = p.vVL - 5; retu
 // champs du formulaire : g = groupe, bornes min/max pour les données saisies par la commune
 const FIELDS = [
   { g: 'site', items: [
-    { k: 'q', fr: 'Débit par sens', ar: 'التدفّق في كل اتجاه', u: ['véh/h', 'عربة/س'], step: 50, min: 100, max: 1800 },
+    { k: 'nl', fr: 'Voies par sens', ar: 'عدد المسالك في كل اتجاه', u: ['voie(s)', 'مسلك'], step: 1, min: 1, max: 2 },
+    { k: 'q', fr: 'Débit par sens', ar: 'التدفّق في كل اتجاه', u: ['véh/h', 'عربة/س'], step: 50, min: 100, max: 3600 },
     { k: 'pPL', fr: 'Poids lourds et bus', ar: 'العربات الثقيلة والحافلات', u: ['%', '%'], step: 1, min: 0, max: 30 },
     { k: 'v85free', fr: 'V85 mesurée en circulation libre', ar: 'V85 المقاسة في سير حرّ', u: ['km/h', 'كم/س'], step: 1, min: 30, max: 80 },
     { k: 'qPed', fr: 'Piétons au passage (heure de pointe)', ar: 'المترجّلون عند الممرّ (ساعة الذروة)', u: ['piét./h', 'مترجّل/س'], step: 5, min: 0, max: 600 },
@@ -638,7 +639,7 @@ const FIELDS = [
 ];
 // anglais : libellé et unité de chaque champ
 const FIELDS_EN = {
-  q: ['Flow per direction', 'veh/h'], pPL: ['Heavy vehicles and buses', '%'], v85free: ['V85 measured in free-flowing traffic', 'km/h'],
+  nl: ['Lanes per direction', 'lane(s)'], q: ['Flow per direction', 'veh/h'], pPL: ['Heavy vehicles and buses', '%'], v85free: ['V85 measured in free-flowing traffic', 'km/h'],
   qPed: ['Pedestrians at the crossing (peak hour)', 'ped/h'], laneW: ['Existing lane width', 'm'], vLim: ['Current speed limit', 'km/h'],
   retLane: ['Narrowing: lane width', 'm'], retIsl: ['Narrowing: island width', 'm'], chOff: ['Chicane: axis offset', 'm'],
   chTrans: ['Chicane: transition length', 'm'], chLane: ['Chicane: lane width', 'm'], sigGreen: ['Pedestrian signal: minimum vehicle green', 's'],
@@ -680,7 +681,12 @@ const fm = v => nf2.format(v);
 const sgnTxt = v => !Number.isFinite(v) ? '–' : (v >= 0.5 ? '+' : (v <= -0.5 ? '−' : '')) + nf0.format(Math.abs(v));
 const sgn = v => `<span class="num">${sgnTxt(v)}</span>`;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-function laneY(g, k) { return k === 0 ? g.yc - g.wi / 2 - g.lw / 2 : g.yc + g.wi / 2 + g.lw / 2; }
+// centre de la voie j du sens k (j = 0 : voie de droite, côté trottoir ; j peut être fractionnaire pendant un changement de voie)
+function laneY(g, k, j = 0) { const o = g.wi / 2 + ((g.nl || 1) - j - 0.5) * g.lw; return k === 0 ? g.yc - o : g.yc + o; }
+// bords de chaussée s (sud) et n (nord) d'une géométrie, toutes voies comprises
+function roadEdges(g) { const h = (g.nl || 1) * g.lw; g.s = g.yc - g.wi / 2 - h; g.n = g.yc + g.wi / 2 + h; return g; }
+// emprise dessinée : inchangée à une voie par sens, élargie à deux
+function setYSpan(P) { Y1 = (P.nl || 1) > 1 ? Math.max(8, P.nl * Math.max(P.laneW, P.chLane) + Math.max(P.chOff, P.retIsl) / 2 + 3) : 8; Y0 = -Y1; }
 function hash32(n) { n = Math.imul(n ^ n >>> 16, 0x45d9f3b); n = Math.imul(n ^ n >>> 16, 0x45d9f3b); return (n ^ n >>> 16) >>> 0; }
 function fingerprint(p) {
   let h = 2166136261; const s = CALIB_KEYS.map(k => p[k]).join('|');
@@ -708,8 +714,8 @@ fr: {
   rateLabel: 'Taux de change : dinars pour 1 euro',
   btnNote: 'Générer la note de calcul', noteWait: 'La note sera disponible à la fin de l’évaluation.',
   notePrep: 'Préparation de la note (cartes)…', noteOpened: 'La note s’est ouverte dans un nouvel onglet.', noteBlocked: 'Le navigateur a bloqué le nouvel onglet :', noteLink: 'ouvrir la note',
-  lede: P => `Chaque bande reçoit les mêmes véhicules, aux mêmes instants : ${f0(P.q)} véh/h par sens, ${f0(P.pPL)} % de poids lourds et de bus, ${f0(P.qPed)} piétons/h au passage. Seul l’aménagement change. Vitesses, files, attentes et risques sont calculés par une microsimulation, pas dessinés à la main. Cliquez sur une vignette pour voir l’aménagement en 3D.`,
-  barSub: P => `${f0(P.q)} véh/h par sens · ${f0(P.pPL)} % de PL et bus · ${f0(P.qPed)} piétons/h`,
+  lede: P => `Chaque bande reçoit les mêmes véhicules, aux mêmes instants : ${f0(P.q)} véh/h par sens${P.nl > 1 ? " sur deux voies" : ""}, ${f0(P.pPL)} % de poids lourds et de bus, ${f0(P.qPed)} piétons/h au passage. Seul l’aménagement change. Vitesses, files, attentes et risques sont calculés par une microsimulation, pas dessinés à la main. Cliquez sur une vignette pour voir l’aménagement en 3D.`,
+  barSub: P => `${f0(P.q)} véh/h par sens${P.nl > 1 ? " (2 voies)" : ""} · ${f0(P.pPL)} % de PL et bus · ${f0(P.qPed)} piétons/h`,
   langBtn: 'العربية', presentation: 'Mode présentation', fullPage: 'Page complète', fullscreen: 'Plein écran',
   pause: 'Pause', play: 'Lecture', speedAria: 'Vitesse de l’animation',
   view: 'Vue', viewAria: 'Étendue de la vue en plan', viewFull: '500 m', viewZoom: 'Zoom 160 m',
@@ -735,7 +741,7 @@ fr: {
   short: { ref: 'Référence', dos: 'Dos d’âne', trap: 'Trapézoïdal', plat: 'Plateau surélevé', cous: 'Coussins berlinois',
     ret: 'Rétrécissement + îlot', chi: 'Chicane 2 voies', rev: 'Revêtement pavé', rug: 'Bandes rugueuses', sig: 'Feu piéton' },
   desc: {
-    ref: P => `Chaussée de 2 × ${fm(P.laneW)} m et passage piéton marqué. C’est la base de comparaison.`,
+    ref: P => `Chaussée de ${P.nl > 1 ? `2 × 2 voies de ${fm(P.laneW)} m` : `2 × ${fm(P.laneW)} m`} et passage piéton marqué. C’est la base de comparaison.`,
     dos: P => `Deux dos d’âne circulaires (4 m, 10 cm) à 10 m de part et d’autre du passage : la norme ne permet pas de marquer le passage sur un dos d’âne. V85 au franchissement : ${P.dosVL} km/h (VL), ${P.dosPL} km/h (PL).`,
     trap: P => `Plateau de 4 m et rampes de 1,20 m (10 cm). Le passage piéton est marqué sur le plateau. V85 au franchissement : ${P.trapVL} km/h (VL), ${P.trapPL} km/h (PL).`,
     plat: P => `Plateau de 8 m, rampes de 1,50 m (pente ≈ 7 %), passage piéton sur le plateau. V85 au franchissement : ${P.platVL} km/h (VL), ${P.platPL} km/h (PL).`,
@@ -763,7 +769,10 @@ fr: {
     calib: ['Calibrage du modèle (verrouillé)', 'Comportement des conducteurs et des piétons, effet propre de chaque dispositif, tirages aléatoires. Commun à toutes les communes. Sources : IDM (Treiber et al., 2000) ; risque de décès (Rosén et Sander, 2009) ; chicane V = 8,76 R^0,386 (NCHRP 672). Vitesses de franchissement et courbe de cession : ordres de grandeur à caler sur des mesures locales par l’administration qui diffuse l’outil.']
   },
   apply: 'Appliquer et relancer', defaults: 'Valeurs par défaut', unlock: 'Déverrouiller (mode expert)', lock: 'Verrouiller',
-  msgQHigh: v => `débit de ${v} véh/h par sens : au-delà d’environ 1 800 véh/h, une seule voie ne suffit plus et la rue a au moins deux voies par sens. Le simulateur ne représente qu’une voie par sens et ne s’applique pas à ce cas. Sur une 2 × 2 voies, la traversée doit être gérée par un feu piéton avec un îlot refuge (indispensable à partir de 4 voies sans feux, guide « Carrefours urbains », p. 84 et 114) ; le module « Carrefour » aide à choisir le type de carrefour`,
+  msgQHigh: v => `débit de ${v} véh/h par sens : au-delà d’environ 1 800 véh/h, une seule voie ne suffit plus et la rue a au moins deux voies par sens. Indiquez alors 2 dans « Voies par sens » : le simulateur accepte jusqu’à 3 600 véh/h par sens sur deux voies`,
+  reasonBan: 'chicane inadaptée à 2 voies par sens',
+  ban: ['Inadaptée à 2 × 2 voies', 'Inadaptée'], banTitle: 'À deux voies par sens, les conducteurs coupent la chicane en empiétant sur la voie voisine : la simulation voie par voie surestime son effet.',
+  v2x2: 'Rue à 2 × 2 voies : un véhicule arrêté sur la voie de droite peut masquer le piéton au conducteur de la voie de gauche (risque de « double menace »). Sans feu, un îlot refuge est indispensable dès 4 voies (guide « Carrefours urbains », p. 84 et 114) ; le module « Carrefour » aide à choisir le type de carrefour.',
   msgFix: l => `Valeurs à corriger : ${l}.`, msgRange: (l, a, b) => `${l} : entre ${a} et ${b}`, msgLane: 'la largeur de voie du rétrécissement doit être inférieure à la largeur existante',
   msgApplied: 'Animation et évaluation relancées avec ces valeurs.', msgDefaults: 'Valeurs par défaut rétablies. Cliquez sur « Appliquer et relancer ».',
   msgUnlocked: 'Calibrage déverrouillé : toute modification sera signalée sur les résultats.', msgLocked: 'Calibrage verrouillé.',
@@ -786,6 +795,7 @@ fr: {
       <ul>
         <li><strong>Trafic.</strong> Chaque véhicule suit le modèle de poursuite IDM : il accélère vers sa vitesse désirée et freine pour garder un temps intervéhiculaire avec celui qui le précède. Les freinages, les files et leur résorption en découlent.</li>
         <li><strong>Mêmes arrivées partout.</strong> Les véhicules (instant, type, tempérament du conducteur) et les piétons sont tirés une seule fois, puis injectés à l’identique dans toutes les bandes. Les écarts entre bandes viennent donc de l’aménagement seul.</li>
+        <li><strong>Deux voies par sens.</strong> Quand la rue en compte deux, chaque véhicule entre sur la voie la plus dégagée (les poids lourds préfèrent la voie de droite) et peut changer de voie pour dépasser, puis se rabattre (modèle MOBIL simplifié, Kesting et al., 2007). Aucun changement de voie dans les 40 m qui précèdent le passage : on ne dépasse pas un véhicule arrêté pour laisser passer un piéton. Le piéton doit trouver un créneau, ou un conducteur qui cède, sur chacune des voies qu’il franchit.</li>
         <li><strong>Piétons.</strong> Un piéton traverse quand le créneau suffit (temps de traversée + marge) ou quand un conducteur lui cède le passage. Chaque conducteur qui voit un piéton attendre décide une fois, tant qu’il peut encore s’arrêter à 3 m/s² ; sa probabilité de céder dépend de la vitesse qu’il aurait au passage. S’il voit le piéton trop tard, il ne cède pas. Un conducteur arrêté pour rien repart au bout de 8 s. Sans îlot, un piéton engagé sur la première voie impose l’arrêt sur la seconde si le véhicule peut s’arrêter à 3 m/s². Avec un îlot d’au moins 1,50 m, la traversée se fait en deux temps.</li>
         <li><strong>Gravité.</strong> Un piéton surgit à <em>D</em> mètres devant chaque véhicule : le conducteur réagit, puis freine à fond. La vitesse restante au moment du choc donne le risque de décès <span class="formula">P = 1 / (1 + e<sup>6,9 − 0,090 v</sup>)</span> (Rosén et Sander, 2009 ; v en km/h).</li>
         <li><strong>Évaluation.</strong> Les chiffres affichés sont la moyenne de cinq simulations d’une heure, avec des tirages différents mais fixés à l’avance. On ne peut donc pas choisir un tirage favorable.</li>
@@ -834,8 +844,8 @@ ar: {
   rateLabel: 'سعر الصرف: دينار مقابل 1 يورو',
   btnNote: 'إعداد مذكّرة الحساب', noteWait: 'تصبح المذكّرة متاحة عند انتهاء التقييم.',
   notePrep: 'جارٍ إعداد المذكّرة (الخرائط)…', noteOpened: 'فُتحت المذكّرة في علامة تبويب جديدة.', noteBlocked: 'منع المتصفّح فتح علامة التبويب الجديدة:', noteLink: 'افتح المذكّرة',
-  lede: P => `تستقبل كل شريحة نفس العربات في نفس اللحظات: ${f0(P.q)} عربة/س في كل اتجاه، و${f0(P.pPL)} % من العربات الثقيلة والحافلات، و${f0(P.qPed)} مترجّلًا/س عند الممرّ. التهيئة وحدها هي التي تتغيّر. السرعات والطوابير وأوقات الانتظار والمخاطر محسوبة بمحاكاة مجهرية، وليست مرسومة باليد. اضغط على صورة مصغّرة لرؤية التهيئة ثلاثية الأبعاد.`,
-  barSub: P => `${f0(P.q)} عربة/س في كل اتجاه · ${f0(P.pPL)} % ثقيلة وحافلات · ${f0(P.qPed)} مترجّل/س`,
+  lede: P => `تستقبل كل شريحة نفس العربات في نفس اللحظات: ${f0(P.q)} عربة/س في كل اتجاه${P.nl > 1 ? " على مسلكين" : ""}، و${f0(P.pPL)} % من العربات الثقيلة والحافلات، و${f0(P.qPed)} مترجّلًا/س عند الممرّ. التهيئة وحدها هي التي تتغيّر. السرعات والطوابير وأوقات الانتظار والمخاطر محسوبة بمحاكاة مجهرية، وليست مرسومة باليد. اضغط على صورة مصغّرة لرؤية التهيئة ثلاثية الأبعاد.`,
+  barSub: P => `${f0(P.q)} عربة/س في كل اتجاه${P.nl > 1 ? " (مسلكان)" : ""} · ${f0(P.pPL)} % ثقيلة وحافلات · ${f0(P.qPed)} مترجّل/س`,
   langBtn: 'Français', presentation: 'وضع العرض', fullPage: 'الصفحة الكاملة', fullscreen: 'ملء الشاشة',
   pause: 'إيقاف مؤقت', play: 'تشغيل', speedAria: 'سرعة الحركة',
   view: 'العرض', viewAria: 'امتداد المسقط الأفقي', viewFull: '500 م', viewZoom: 'تكبير 160 م',
@@ -861,12 +871,12 @@ ar: {
   short: { ref: 'المرجع', dos: 'مطبّ دائري', trap: 'مطبّ شبه منحرف', plat: 'منصّة مرتفعة', cous: 'وسائد برلينية',
     ret: 'تضييق + جزيرة', chi: 'تعرّج بمسلكين', rev: 'رصف بالحجارة', rug: 'أشرطة اهتزازية', sig: 'إشارة عند الطلب' },
   desc: {
-    ref: P => `طريق بمسلكين عرض كل منهما ${fm(P.laneW)} م وممرّ مترجّلين مُعلَّم. هذه هي قاعدة المقارنة.`,
+    ref: P => `${P.nl > 1 ? `طريق بأربعة مسالك (مسلكان في كل اتجاه) عرض كل منها ${fm(P.laneW)} م` : `طريق بمسلكين عرض كل منهما ${fm(P.laneW)} م`} وممرّ مترجّلين مُعلَّم. هذه هي قاعدة المقارنة.`,
     dos: P => `مطبّان دائريان (طول 4 م، ارتفاع 10 صم) على بعد 10 م من جانبي الممرّ: لا تسمح المواصفة بتعليم الممرّ فوق المطبّ الدائري. V85 عند العبور: ${P.dosVL} كم/س (خفيفة)، ${P.dosPL} كم/س (ثقيلة).`,
     trap: P => `منصّة بطول 4 م ومنحدرات بطول 1,20 م (ارتفاع 10 صم). ممرّ المترجّلين مُعلَّم فوق المنصّة. V85 عند العبور: ${P.trapVL} كم/س (خفيفة)، ${P.trapPL} كم/س (ثقيلة).`,
     plat: P => `منصّة بطول 8 م ومنحدرات بطول 1,50 م (انحدار ≈ 7 %)، والممرّ فوق المنصّة. V85 عند العبور: ${P.platVL} كم/س (خفيفة)، ${P.platPL} كم/س (ثقيلة).`,
     cous: P => `وسادة في كل مسلك على بعد 10 م من جانبي الممرّ. تصعد عليها السيارات، وتعبرها الشاحنات والحافلات بين عجلاتها. V85: ${P.cousVL} كم/س (خفيفة)، ${P.cousPL} كم/س (ثقيلة).`,
-    ret: (P, i) => `تقليص عرض المسلكين من ${fm(P.laneW)} إلى ${fm(P.retLane)} م حول جزيرة وسطية بعرض ${fm(P.retIsl)} م${i.island ? '، فيتمّ العبور على مرحلتين' : ' (ضيّقة جدًّا لتكون ملجأً)'}. الانخفاض المفترض في السرعة: ${P.retPct} %.`,
+    ret: (P, i) => `تقليص عرض ${P.nl > 1 ? 'المسالك' : 'المسلكين'} من ${fm(P.laneW)} إلى ${fm(P.retLane)} م حول جزيرة وسطية بعرض ${fm(P.retIsl)} م${i.island ? '، فيتمّ العبور على مرحلتين' : ' (ضيّقة جدًّا لتكون ملجأً)'}. الانخفاض المفترض في السرعة: ${P.retPct} %.`,
     chi: (P, i) => `إزاحة المحور بـ ${fm(P.chOff)} م على طول ${f0(P.chTrans)} م، مع جزء مستقيم بطول 10 م ومسالك بعرض ${fm(P.chLane)} م. المسار الأسرع: نصف قطر ≈ ${f0(i.R)} م، أي V85 ≈ ${f0(i.vVL)} كم/س (خفيفة) و${f0(i.vPL)} كم/س (ثقيلة).`,
     rev: P => `حجارة رصف على طول 40 م حول الممرّ دون أيّ تغيير آخر. الانخفاض المفترض في السرعة: ${P.revPct} %، ويجب تأكيده بقياسات.`,
     rug: P => `ثلاث مجموعات من الأشرطة الاهتزازية العرضية على بعد 60 و40 و20 م قبل الممرّ في كل اتجاه. تنبّه السائق بالضجيج والاهتزاز؛ الانخفاض المفترض في السرعة: ${P.rugPct} %. ضجيج مزعج للمتساكنين.`,
@@ -889,7 +899,10 @@ ar: {
     calib: ['معايرة النموذج (مقفلة)', 'سلوك السائقين والمترجّلين، والأثر الخاص لكل تهيئة، والسحوبات العشوائية. موحّدة بين كل البلديات. المصادر: نموذج IDM (Treiber وآخرون، 2000)؛ خطر الوفاة (Rosén وSander، 2009)؛ التعرّج V = 8,76 R^0,386 (NCHRP 672). سرعات العبور ومنحنى الإفساح: قيم تقريبية تعايرها بقياسات محلية الإدارةُ التي تنشر الأداة.']
   },
   apply: 'تطبيق وإعادة التشغيل', defaults: 'القيم الافتراضية', unlock: 'فتح القفل (وضع الخبير)', lock: 'إقفال',
-  msgQHigh: v => `تدفّق ${v} عربة/س في كل اتجاه: فوق حوالي 1800 عربة/س لا يكفي مسلك واحد، فالنهج يضمّ مسلكين على الأقلّ في كل اتجاه. لا تمثّل المحاكاة إلّا مسلكًا واحدًا في كل اتجاه ولا تنطبق على هذه الحالة. في طريق 2 × 2 مسالك، يجب تنظيم العبور بإشارة ضوئية للمترجّلين مع جزيرة ملجأ (ضرورية ابتداءً من 4 مسالك دون إشارات، دليل «Carrefours urbains»، ص 84 و114)؛ وتساعد وحدة «مفترق» على اختيار نوع المفترق`,
+  msgQHigh: v => `تدفّق ${v} عربة/س في كل اتجاه: فوق حوالي 1800 عربة/س لا يكفي مسلك واحد، فالنهج يضمّ مسلكين على الأقلّ في كل اتجاه. أدخل عندها 2 في «عدد المسالك في كل اتجاه»: تقبل المحاكاة حتى 3600 عربة/س في كل اتجاه على مسلكين`,
+  reasonBan: 'تعرّج غير ملائم لمسلكين في كل اتجاه',
+  ban: ['غير ملائم لطريق 2 × 2 مسالك', 'غير ملائم'], banTitle: 'في طريق بمسلكين في كل اتجاه، يختصر السائقون التعرّج بالتعدّي على المسلك المجاور: تبالغ المحاكاة مسلكًا بمسلك في تقدير أثره.',
+  v2x2: 'نهج بـ 2 × 2 مسالك: قد تحجب عربة متوقّفة في المسلك الأيمن المترجّلَ عن سائق المسلك الأيسر (خطر «التهديد المزدوج»). بدون إشارات ضوئية، تكون الجزيرة الملجأ ضرورية ابتداءً من 4 مسالك (دليل «Carrefours urbains»، ص 84 و114)؛ وتساعد وحدة «مفترق» على اختيار نوع المفترق.',
   msgFix: l => `قيم يجب تصحيحها: ${l}.`, msgRange: (l, a, b) => `${l}: بين ${a} و${b}`, msgLane: 'يجب أن يكون عرض المسلك في التضييق أقلّ من العرض الحالي',
   msgApplied: 'أُعيد تشغيل الحركة والتقييم بهذه القيم.', msgDefaults: 'أُعيدت القيم الافتراضية. اضغط على «تطبيق وإعادة التشغيل».',
   msgUnlocked: 'المعايرة مفتوحة: كل تعديل سيُشار إليه على النتائج.', msgLocked: 'المعايرة مقفلة.',
@@ -912,6 +925,7 @@ ar: {
       <ul>
         <li><strong>حركة المرور.</strong> تتبع كل عربة نموذج التتبّع IDM: تتسارع نحو سرعتها المرغوبة وتفرمل للمحافظة على فاصل زمني مع العربة التي أمامها. ومن ذلك تنتج الفرملة والطوابير وتلاشيها.</li>
         <li><strong>نفس الوصولات في كل الشرائح.</strong> تُسحب العربات (لحظة الوصول، النوع، طبع السائق) والمترجّلون مرّة واحدة، ثم تُحقن بشكل مطابق في كل الشرائح. وبالتالي فإنّ الفوارق بين الشرائح ناتجة عن التهيئة وحدها.</li>
+        <li><strong>مسلكان في كل اتجاه.</strong> عندما يضمّ النهج مسلكين، تدخل كل عربة المسلك الأكثر فراغًا (وتفضّل العربات الثقيلة المسلك الأيمن)، ويمكنها تغيير المسلك للتجاوز ثم العودة إلى اليمين (نموذج MOBIL مبسّط، Kesting وآخرون، 2007). لا تغيير للمسلك في الأمتار الأربعين التي تسبق الممرّ: لا تُتجاوز عربة متوقّفة لتفسح المجال لمترجّل. وعلى المترجّل أن يجد فجوة كافية أو سائقًا يفسح له في كل مسلك يعبره.</li>
         <li><strong>المترجّلون.</strong> يعبر المترجّل عندما تكون الفجوة كافية (زمن العبور مع هامش) أو عندما يُفسح له سائق المرور. كل سائق يرى مترجّلًا ينتظر يقرّر مرّة واحدة ما دام قادرًا على التوقّف بتباطؤ 3 م/ث²، واحتمال إفساحه مرتبط بالسرعة التي سيمرّ بها عند الممرّ. إذا رأى المترجّل متأخّرًا لا يُفسح. والسائق الذي توقّف دون جدوى ينطلق بعد 8 ث. دون جزيرة، يفرض المترجّل الذي شرع في عبور المسلك الأوّل التوقّف على المسلك الثاني إذا كانت العربة قادرة على التوقّف بتباطؤ 3 م/ث². ومع جزيرة لا يقلّ عرضها عن 1,50 م يتمّ العبور على مرحلتين.</li>
         <li><strong>الخطورة.</strong> يظهر مترجّل فجأة على بعد <em>D</em> متر أمام كل عربة: يتفاعل السائق ثم يفرمل بأقصى قوّة. وتعطي السرعة المتبقّية لحظة الصدم خطر الوفاة <span class="formula">P = 1 / (1 + e<sup>6,9 − 0,090 v</sup>)</span> (Rosén وSander، 2009؛ v بالكم/س).</li>
         <li><strong>التقييم.</strong> الأرقام المعروضة هي متوسّط خمس محاكاة مدّة كل منها ساعة، بسحوبات مختلفة لكنها محدّدة مسبقًا. ولذلك لا يمكن اختيار سحب ملائم.</li>
@@ -960,8 +974,8 @@ en: {
   rateLabel: 'Exchange rate: dinars per 1 euro',
   btnNote: 'Generate the design report', noteWait: 'The report will be available once the evaluation is complete.',
   notePrep: 'Preparing the report (maps)…', noteOpened: 'The report opened in a new tab.', noteBlocked: 'The browser blocked the new tab:', noteLink: 'open the report',
-  lede: P => `Each strip receives the same vehicles at the same moments: ${f0(P.q)} veh/h per direction, ${f0(P.pPL)}% heavy vehicles and buses, ${f0(P.qPed)} pedestrians/h at the crossing. Only the measure changes. Speeds, queues, waiting times and risks are calculated by a microsimulation, not drawn by hand. Click a thumbnail to see the measure in 3D.`,
-  barSub: P => `${f0(P.q)} veh/h per direction · ${f0(P.pPL)}% HV and buses · ${f0(P.qPed)} pedestrians/h`,
+  lede: P => `Each strip receives the same vehicles at the same moments: ${f0(P.q)} veh/h per direction${P.nl > 1 ? " on two lanes" : ""}, ${f0(P.pPL)}% heavy vehicles and buses, ${f0(P.qPed)} pedestrians/h at the crossing. Only the measure changes. Speeds, queues, waiting times and risks are calculated by a microsimulation, not drawn by hand. Click a thumbnail to see the measure in 3D.`,
+  barSub: P => `${f0(P.q)} veh/h per direction${P.nl > 1 ? " (2 lanes)" : ""} · ${f0(P.pPL)}% HV and buses · ${f0(P.qPed)} pedestrians/h`,
   langBtn: 'English', presentation: 'Presentation mode', fullPage: 'Full page', fullscreen: 'Full screen',
   pause: 'Pause', play: 'Play', speedAria: 'Animation speed',
   view: 'View', viewAria: 'Plan view extent', viewFull: '500 m', viewZoom: 'Zoom 160 m',
@@ -987,7 +1001,7 @@ en: {
   short: { ref: 'Reference', dos: 'Speed hump', trap: 'Trapezoidal', plat: 'Raised table', cous: 'Speed cushions',
     ret: 'Narrowing + island', chi: '2-lane chicane', rev: 'Paved surface', rug: 'Rumble strips', sig: 'Push-button signal' },
   desc: {
-    ref: P => `Roadway of 2 × ${fm(P.laneW)} m with a marked pedestrian crossing. This is the baseline for comparison.`,
+    ref: P => `Roadway of ${P.nl > 1 ? `2 × 2 lanes of ${fm(P.laneW)} m` : `2 × ${fm(P.laneW)} m`} with a marked pedestrian crossing. This is the baseline for comparison.`,
     dos: P => `Two circular speed humps (4 m long, 10 cm high) placed 10 m on either side of the crossing: the standard does not allow a crossing to be marked on a speed hump. V85 over the hump: ${P.dosVL} km/h (cars), ${P.dosPL} km/h (HV).`,
     trap: P => `4 m plateau with 1.20 m ramps (10 cm high). The pedestrian crossing is marked on the plateau. V85 over the hump: ${P.trapVL} km/h (cars), ${P.trapPL} km/h (HV).`,
     plat: P => `8 m table with 1.50 m ramps (slope ≈ 7%), pedestrian crossing on the table. V85 over the table: ${P.platVL} km/h (cars), ${P.platPL} km/h (HV).`,
@@ -1015,7 +1029,10 @@ en: {
     calib: ['Model calibration (locked)', 'Driver and pedestrian behavior, the specific effect of each device, random draws. The same for all municipalities. Sources: IDM (Treiber et al., 2000); fatality risk (Rosén and Sander, 2009); chicane V = 8.76 R^0.386 (NCHRP 672). Speeds over the devices and the yielding curve: orders of magnitude, to be calibrated against local measurements by the administration that distributes the tool.']
   },
   apply: 'Apply and rerun', defaults: 'Default values', unlock: 'Unlock (expert mode)', lock: 'Lock',
-  msgQHigh: v => `flow of ${v} veh/h per direction: above about 1,800 veh/h one lane is no longer enough, so the street has at least two lanes per direction. The simulator models only one lane per direction and does not apply to this case. On a four-lane road, the crossing must be controlled by a pedestrian signal with a refuge island (essential from 4 lanes without signals, “Carrefours urbains” guide, p. 84 and 114); the “Intersection” module helps choose the intersection type`,
+  msgQHigh: v => `flow of ${v} veh/h per direction: above about 1,800 veh/h one lane is no longer enough, so the street has at least two lanes per direction. Enter 2 in “Lanes per direction”: the simulator accepts up to 3,600 veh/h per direction on two lanes`,
+  reasonBan: 'chicane unsuited to 2 lanes per direction',
+  ban: ['Unsuited to a four-lane road', 'Unsuited'], banTitle: 'With two lanes per direction, drivers cut through the chicane by straddling the adjacent lane: the lane-by-lane simulation overestimates its effect.',
+  v2x2: 'Four-lane street: a vehicle stopped in the right lane can hide the pedestrian from the driver in the left lane (the “multiple threat” risk). Without a signal, a refuge island is essential from 4 lanes (“Carrefours urbains” guide, p. 84 and 114); the “Intersection” module helps choose the intersection type.',
   msgFix: l => `Values to correct: ${l}.`, msgRange: (l, a, b) => `${l}: between ${a} and ${b}`, msgLane: 'the lane width in the narrowing must be less than the existing width',
   msgApplied: 'Animation and evaluation rerun with these values.', msgDefaults: 'Default values restored. Click “Apply and rerun.”',
   msgUnlocked: 'Calibration unlocked: any change will be flagged on the results.', msgLocked: 'Calibration locked.',
@@ -1038,6 +1055,7 @@ en: {
       <ul>
         <li><strong>Traffic.</strong> Each vehicle follows the IDM car-following model: it accelerates toward its desired speed and brakes to keep a safe time gap behind the vehicle ahead. Braking, queues and their dissipation follow from this.</li>
         <li><strong>Same arrivals everywhere.</strong> Vehicles (arrival time, type, driver temperament) and pedestrians are drawn only once, then fed identically into every strip. Differences between strips therefore come from the measure alone.</li>
+        <li><strong>Two lanes per direction.</strong> When the street has two, each vehicle enters the least congested lane (trucks prefer the right lane) and may change lanes to overtake, then move back to the right (simplified MOBIL model, Kesting et al., 2007). No lane changes in the 40 m before the crossing: nobody overtakes a vehicle stopped for a pedestrian. The pedestrian needs a gap or a yielding driver in every lane crossed.</li>
         <li><strong>Pedestrians.</strong> A pedestrian crosses when the gap in traffic is long enough (crossing time + margin) or when a driver yields. Each driver who sees a pedestrian waiting decides once, as long as they can still stop at 3 m/s²; their probability of yielding depends on the speed they would have at the crossing. If the driver sees the pedestrian too late, they do not yield. A driver who stopped for nothing moves off again after 8 s. Without an island, a pedestrian already on the first lane forces vehicles in the second lane to stop if they can stop at 3 m/s². With an island at least 1.50 m wide, pedestrians cross in two stages.</li>
         <li><strong>Severity.</strong> A pedestrian darts out <em>D</em> meters in front of each vehicle: the driver reacts, then brakes as hard as possible. The speed remaining at impact gives the fatality risk <span class="formula">P = 1 / (1 + e<sup>6.9 − 0.090 v</sup>)</span> (Rosén and Sander, 2009; v in km/h).</li>
         <li><strong>Evaluation.</strong> The figures shown are the average of five one-hour simulations, with different random draws that are fixed in advance. It is therefore not possible to pick a favorable draw.</li>
@@ -1073,6 +1091,7 @@ en: {
 };
 const SOURCES = `
   <li>Treiber M., Hennecke A., Helbing D. (2000). Congested traffic states in empirical observations and microscopic simulations. <em>Physical Review E</em> 62(2), 1805–1824.</li>
+  <li>Kesting A., Treiber M., Helbing D. (2007). General lane-changing model MOBIL for car-following models. <em>Transportation Research Record</em> 1999, 86–94.</li>
   <li>Rosén E., Sander U. (2009). Pedestrian fatality risk as a function of car impact speed. <em>Accident Analysis &amp; Prevention</em> 41(3), 536–542.</li>
   <li>Transportation Research Board (2010). <em>NCHRP Report 672: Roundabouts, an Informational Guide</em>, 2nd ed.</li>
   <li>Décret n° 94-447 du 27 mai 1994 ; norme NF P 98-300 (ralentisseurs de type dos d’âne et trapézoïdal).</li>
@@ -1091,8 +1110,9 @@ class Demand {
     this.ped = { r: mulberry32(P.seed * 1009 + 5003), list: [], tNext: 0 };
     this.ped.tNext = this.pedGap(0);
   }
-  // débit éventuellement variable dans le temps (journée simulée : P.qAt, P.pedAt)
-  headway(r, t) { const q = this.P.qAt ? this.P.qAt(t) : this.P.q, m = 3600 / Math.max(1, q), hmin = Math.min(1, m); return hmin + (m - hmin) * -Math.log(1 - r()); }
+  // débit éventuellement variable dans le temps (journée simulée : P.qAt, P.pedAt) ;
+  // intervalle minimal de 1 s par voie, donc de 0,5 s par sens à deux voies
+  headway(r, t) { const q = this.P.qAt ? this.P.qAt(t) : this.P.q, m = 3600 / Math.max(1, q), hmin = Math.min(1 / (this.P.nl || 1), m); return hmin + (m - hmin) * -Math.log(1 - r()); }
   pedGap(t) {
     const q = this.P.pedAt ? this.P.pedAt(t) : this.P.qPed;
     return q > 0 ? -Math.log(1 - this.ped.r()) * 3600 / q : (this.P.pedAt ? 600 : Infinity);
@@ -1127,9 +1147,11 @@ function chicaneSpeed(P, wVeh) {
 function buildScenarios(P) {
   const capZ = (xa, xb, vl, pl) => ({ xa, xb, kind: 'cap', VL: vl / KMH, PL: pl / KMH });
   const facZ = (xa, xb, p, lane) => ({ xa, xb, kind: 'fac', f: 1 - p / 100, lane });
-  const W = P.laneW, flat = () => ({ yc: 0, lw: W, wi: 0 });
+  const W = P.laneW, nl = P.nl || 1, flat = () => ({ yc: 0, lw: W, wi: 0, nl });
   const cVL = chicaneSpeed(P, CLS.VL.w), cPL = chicaneSpeed(P, CLS.PL.w), Lt = P.chTrans;
   const reg = 2 * P.q * 10 > 3000;   // heure de pointe ≈ 10 % du trafic journalier
+  // à deux voies par sens, la chicane est simulée voie par voie, mais les conducteurs coupent la trajectoire
+  // en empiétant sur la voie voisine : elle est écartée de la recommandation (ban)
   return [
     { id: 'ref', zones: [], geom: flat, feats: [], info: {} },
     { id: 'dos', reg, zones: [capZ(XC - 12, XC - 8, P.dosVL, P.dosPL), capZ(XC + 8, XC + 12, P.dosVL, P.dosPL)], geom: flat,
@@ -1141,17 +1163,17 @@ function buildScenarios(P) {
     { id: 'cous', zones: [capZ(XC - 11.5, XC - 8.5, P.cousVL, P.cousPL), capZ(XC + 8.5, XC + 11.5, P.cousVL, P.cousPL)], geom: flat,
       feats: [{ t: 'cushion', xa: XC - 11.5, xb: XC - 8.5 }, { t: 'cushion', xa: XC + 8.5, xb: XC + 11.5 }], info: {} },
     { id: 'ret', zones: [facZ(XC - 15, XC + 15, P.retPct)],
-      geom: x => { const r = bell(x, XC - 15, XC - 7, XC + 7, XC + 15); return { yc: 0, lw: W + (P.retLane - W) * r, wi: P.retIsl * r }; },
+      geom: x => { const r = bell(x, XC - 15, XC - 7, XC + 7, XC + 15); return { yc: 0, lw: W + (P.retLane - W) * r, wi: P.retIsl * r, nl }; },
       feats: [{ t: 'island' }], info: { island: P.retIsl >= ISLAND_MIN } },
-    { id: 'chi', zones: [capZ(XC - 5 - Lt, XC + 5 + Lt, cVL.v, cPL.v)],
-      geom: x => { const r = bell(x, XC - 5 - Lt, XC - 5, XC + 5, XC + 5 + Lt); return { yc: -P.chOff / 2 + P.chOff * r, lw: W + (P.chLane - W) * r, wi: 0 }; },
+    { id: 'chi', ban: nl > 1, zones: [capZ(XC - 5 - Lt, XC + 5 + Lt, cVL.v, cPL.v)],
+      geom: x => { const r = bell(x, XC - 5 - Lt, XC - 5, XC + 5, XC + 5 + Lt); return { yc: -P.chOff / 2 + P.chOff * r, lw: W + (P.chLane - W) * r, wi: 0, nl }; },
       feats: [], info: { R: cVL.R, vVL: cVL.v, vPL: cPL.v } },
     { id: 'rev', zones: [facZ(XC - 20, XC + 20, P.revPct)], geom: flat, feats: [{ t: 'pave', xa: XC - 20, xb: XC + 20 }], info: {} },
     // bandes rugueuses : seulement sur la voie qui s'approche du passage
     { id: 'rug', zones: [facZ(XC - 62, XC - 2, P.rugPct, 0), facZ(XC + 2, XC + 62, P.rugPct, 1)], geom: flat,
       feats: [XC - 62, XC - 42, XC - 22].map(x0 => ({ t: 'rumble', lane: 0, x0 })).concat([XC + 18, XC + 38, XC + 58].map(x0 => ({ t: 'rumble', lane: 1, x0 }))), info: {} },
     // feu piéton : aucun effet sur la vitesse désirée ; le rouge arrête les véhicules
-    { id: 'sig', signal: true, zones: [], geom: flat, feats: [{ t: 'signal' }], info: { clear: Math.ceil(2 * W / SIG.vClear) } }
+    { id: 'sig', signal: true, zones: [], geom: flat, feats: [{ t: 'signal' }], info: { clear: Math.ceil(2 * nl * W / SIG.vClear) } }
   ];
 }
 const scName = sc => t('names')[sc.id];
@@ -1183,19 +1205,30 @@ class Sim {
   constructor(sc, D, P) {
     this.sc = sc; this.D = D; this.P = P; this.n = 0; this.t = 0;
     this.rng = mulberry32(P.seed * 7919 + 17);
-    const g = sc.geom(XC);
-    this.cx = { lw: g.lw, wi: g.wi, W: 2 * g.lw + g.wi, island: g.wi >= ISLAND_MIN, mid: g.lw + g.wi / 2,
-      lanes: [{ y0: 0, y1: g.lw }, { y0: g.lw + g.wi, y1: 2 * g.lw + g.wi }] };
-    this.lanes = [0, 1].map(k => {
+    const g = sc.geom(XC), nl = this.nl = P.nl || 1, W = 2 * nl * g.lw + g.wi;
+    // voies au droit du passage, repérées par y depuis le trottoir sud : rang = k × nl + j (j = 0 : voie de droite du sens k)
+    const cl = [];
+    for (let j = 0; j < nl; j++) { cl[j] = { y0: j * g.lw, y1: (j + 1) * g.lw }; cl[nl + j] = { y0: W - (j + 1) * g.lw, y1: W - j * g.lw }; }
+    this.cx = { lw: g.lw, wi: g.wi, W, island: g.wi >= ISLAND_MIN, mid: nl * g.lw + g.wi / 2, lanes: cl };
+    // ordre de franchissement des voies par un piéton : vers le nord (up) ou vers le sud (dn), moitié sud (0) ou nord (1)
+    const seq = (a, b) => { const r = []; for (let i = a; a <= b ? i <= b : i >= b; i += a <= b ? 1 : -1) r.push(i); return r; };
+    this.ord = { up0: seq(0, nl - 1), up1: seq(2 * nl - 1, nl), dn1: seq(nl, 2 * nl - 1), dn0: seq(nl - 1, 0) };
+    // sens de circulation (file d'entrée commune) et voies (véhicules ordonnés de l'aval vers l'amont)
+    this.lanes = []; this.dirs = [];
+    for (const k of [0, 1]) {
       const zones = sc.zones.map((z, i) => ({ z, i })).filter(o => o.z.lane === undefined || o.z.lane === k)
         .map(({ z, i }) => k === 0 ? { i, sa: z.xa, sb: z.xb, kind: z.kind } : { i, sa: L - z.xb, sb: L - z.xa, kind: z.kind })
         .sort((a, b) => a.sa - b.sa);
-      const sZs = XC - ZEBRA_HALF, caps = zones.filter(z => z.kind === 'cap');
-      return { k, zones, veh: [], ptr: 0, pending: [], sZs, sZe: XC + ZEBRA_HALF, sStop: sZs - 0.5,
-        sRef: Math.min(sZs, caps.length ? caps[0].sa : sZs), qNow: 0 };
-    });
+      const sZs = XC - ZEBRA_HALF, caps = zones.filter(z => z.kind === 'cap'), sRef = Math.min(sZs, caps.length ? caps[0].sa : sZs);
+      const dl = [];
+      for (let j = 0; j < nl; j++) {
+        const ln = { idx: k * nl + j, k, j, zones, veh: [], sZs, sZe: XC + ZEBRA_HALF, sStop: sZs - 0.5, sRef, qNow: 0 };
+        this.lanes[ln.idx] = ln; dl.push(ln);
+      }
+      this.dirs.push({ k, lanes: dl, ptr: 0, pending: [], sRef, qNow: 0 });
+    }
     this.peds = []; this.pedPtr = 0;
-    this.need = [false, false]; this.occT = [Infinity, Infinity]; this.phys = [false, false];
+    this.need = Array(2 * nl).fill(false); this.occT = Array(2 * nl).fill(Infinity); this.phys = Array(2 * nl).fill(false);
     this.sig = sc.signal ? { st: 'G', t0: 0, demand: false, clear: Math.ceil(this.cx.W / SIG.vClear) } : null;
     this.measFrom = WARMUP;    // journée simulée : 0, et relevés heure par heure dans this.hourly
     this.hourly = null;
@@ -1211,7 +1244,7 @@ class Sim {
       ? Math.min(vd, z[cls] * (1 + CVAR * rec.z) / (1 + 1.036 * CVAR))
       : vd * z.f));
     return { id: rec.id, cls, look: vehicleLook(rec), len: c.len, w: c.w, a: c.a, b: c.b, s0: c.s0, T: P.T + c.dT, bAnt: c.bAnt, vd, caps,
-      s: 0, v: 0, acc: 0, tArr: rec.t, tL: NaN, yd: 0, yT: 0, stopT: -1, stopped: false, hb: false, pb: false };
+      s: 0, v: 0, acc: 0, tArr: rec.t, tL: NaN, yd: 0, yT: 0, stopT: -1, stopped: false, hb: false, pb: false, j: 0, lat: 0, lcT: -1e9 };
   }
 
   // vitesse désirée locale : vitesse du conducteur, bornée par les dispositifs anticipés à décélération constante
@@ -1227,34 +1260,79 @@ class Sim {
   }
   v0(v, ln) { return this.vLim(v, ln, v.s); }
 
-  tryInsert(ln) {
-    const rec = ln.pending[0], back = ln.veh[ln.veh.length - 1];
-    const v = this.makeVeh(rec);
-    let sp = Math.min(v.vd, this.v0(v, ln)), s = 0;
-    if (back) {
-      const rear = back.s - back.len;
-      if (rear < v.s0 + sp * v.T) {
-        // trop près du dernier : il arrive en peloton derrière lui, à sa vitesse, juste en amont de l'entrée
-        sp = Math.min(sp, back.v);
-        s = Math.min(0, rear - v.s0 - sp * v.T);
-        if (s < -20) return;               // la file remonte jusqu'à l'entrée : il attend hors tronçon
+  // entrée d'un véhicule dans le sens dir : à deux voies, il prend la voie la plus dégagée,
+  // avec une préférence pour la voie de droite (forte pour les poids lourds)
+  tryInsert(dir) {
+    const rec = dir.pending[0], v = this.makeVeh(rec);
+    let best = null;
+    for (const ln of dir.lanes) {
+      const back = ln.veh[ln.veh.length - 1];
+      let sp = Math.min(v.vd, this.v0(v, ln)), s = 0;
+      if (back) {
+        const rear = back.s - back.len;
+        if (rear < v.s0 + sp * v.T) {
+          // trop près du dernier : il arrive en peloton derrière lui, à sa vitesse, juste en amont de l'entrée
+          sp = Math.min(sp, back.v);
+          s = Math.min(0, rear - v.s0 - sp * v.T);
+          if (s < -20) continue;           // la file remonte jusqu'à l'entrée : il attend hors tronçon
+        }
       }
+      const room = (back ? back.s - back.len : L) - (ln.j ? (v.cls === 'PL' ? 60 : 15) : 0);
+      if (!best || room > best.room) best = { ln, sp, s, room };
     }
-    v.s = s; v.v = sp; ln.veh.push(v); ln.pending.shift();
+    if (!best) return;
+    v.s = best.s; v.v = best.sp; v.j = best.ln.j; best.ln.veh.push(v); dir.pending.shift();
   }
 
-  nextStage(p) {
-    const cx = this.cx;
-    if (p.st === 0) {
-      if (p.side === 0) return cx.island ? { lanes: [0], yTo: cx.mid, toIsland: true, y: 0, dir: 1 } : { lanes: [0, 1], yTo: cx.W, toIsland: false, y: 0, dir: 1 };
-      return cx.island ? { lanes: [1], yTo: cx.mid, toIsland: true, y: cx.W, dir: -1 } : { lanes: [1, 0], yTo: 0, toIsland: false, y: cx.W, dir: -1 };
+  // accélération IDM d'un véhicule derrière un meneur donné (null : route libre)
+  idmA(v, v0, lead) {
+    let a;
+    if (v.v <= v0) { const r = v.v / v0, r2 = r * r; a = v.a * (1 - r2 * r2); }
+    else a = -Math.min(4, 3 * (v.v - v0));
+    return lead ? Math.min(a, aInt(v, lead.s - lead.len - v.s, lead.v)) : a;
+  }
+
+  // changements de voie (deux voies par sens) : règle MOBIL simplifiée. Le conducteur change si le gain d'accélération
+  // dépasse un seuil, abaissé vers la droite et relevé vers la gauche (garder la droite, dépasser par la gauche) ;
+  // le suivant de la voie visée ne doit pas freiner à plus de 2 m/s². Aucun changement dans les 40 m avant le passage
+  // ni sur lui, ni pour un conducteur qui cède : on ne dépasse pas un véhicule arrêté devant un passage piéton.
+  laneChanges() {
+    const t = this.t;
+    for (const dir of this.dirs) for (const ln of dir.lanes) {
+      for (const v of ln.veh.slice()) {
+        if ((this.n + v.id) % 5 || t - v.lcT < 4 || v.yd === 1 || v.v < 2) continue;
+        if (v.s > ln.sZs - 40 && v.s - v.len < ln.sZe + 3) continue;
+        const i = ln.veh.indexOf(v), v0 = this.v0(v, ln), aCur = this.idmA(v, v0, i > 0 ? ln.veh[i - 1] : null);
+        const bias = v.cls === 'PL' ? 1.0 : 0.3;
+        for (const tj of [ln.j - 1, ln.j + 1]) {
+          if (tj < 0 || tj >= this.nl) continue;
+          const tl = dir.lanes[tj], tv = tl.veh;
+          let p = 0; while (p < tv.length && tv[p].s >= v.s) p++;
+          const lead = p > 0 ? tv[p - 1] : null, fol = p < tv.length ? tv[p] : null;
+          if (lead && lead.s - lead.len - v.s < v.s0) continue;
+          if (fol) { const gap = v.s - v.len - fol.s; if (gap < fol.s0 || aInt(fol, gap, v.v) < -2) continue; }
+          if (this.idmA(v, v0, lead) - aCur <= (tj < ln.j ? 0.2 - bias : 0.2 + bias)) continue;
+          ln.veh.splice(i, 1); tv.splice(p, 0, v);
+          v.lat += v.j - tj; v.j = tj; v.lcT = t;
+          break;
+        }
+      }
     }
-    return p.dir > 0 ? { lanes: [1], yTo: cx.W, toIsland: false, y: cx.mid, dir: 1 } : { lanes: [0], yTo: 0, toIsland: false, y: cx.mid, dir: -1 };
+  }
+
+  // prochaine étape d'un piéton : voies à franchir dans l'ordre, du trottoir au refuge ou d'un trottoir à l'autre
+  nextStage(p) {
+    const cx = this.cx, o = this.ord;
+    if (p.st === 0) {
+      if (p.side === 0) return cx.island ? { lanes: o.up0, yTo: cx.mid, toIsland: true, y: 0, dir: 1 } : { lanes: o.up0.concat(o.up1), yTo: cx.W, toIsland: false, y: 0, dir: 1 };
+      return cx.island ? { lanes: o.dn1, yTo: cx.mid, toIsland: true, y: cx.W, dir: -1 } : { lanes: o.dn1.concat(o.dn0), yTo: 0, toIsland: false, y: cx.W, dir: -1 };
+    }
+    return p.dir > 0 ? { lanes: o.up1, yTo: cx.W, toIsland: false, y: cx.mid, dir: 1 } : { lanes: o.dn0, yTo: 0, toIsland: false, y: cx.mid, dir: -1 };
   }
 
   flags() {
     const need = this.need, occT = this.occT, phys = this.phys, vp = this.P.vPed;
-    need[0] = need[1] = phys[0] = phys[1] = false; occT[0] = occT[1] = Infinity;
+    need.fill(false); phys.fill(false); occT.fill(Infinity);
     for (const p of this.peds) {
       if (p.st === 0 || p.st === 2) { for (const k of this.nextStage(p).lanes) need[k] = true; }
       else if (p.st === 1) {
@@ -1272,7 +1350,7 @@ class Sim {
   }
 
   accel(ln) {
-    const P = this.P, t = this.t, vs = ln.veh, need = this.need[ln.k], occT = this.occT[ln.k], occ = occT < Infinity;
+    const P = this.P, t = this.t, vs = ln.veh, need = this.need[ln.idx], occT = this.occT[ln.idx], occ = occT < Infinity;
     for (let i = 0; i < vs.length; i++) {
       const v = vs[i];
       const v0 = this.v0(v, ln);
@@ -1340,8 +1418,9 @@ class Sim {
   }
 
   move(ln, meas) {
-    const st = this.st, phys = this.phys[ln.k], sD = ln.sZs - this.P.dSurg, tNext = this.t + DT;
+    const st = this.st, phys = this.phys[ln.idx], sD = ln.sZs - this.P.dSurg, tNext = this.t + DT;
     for (const v of ln.veh) {
+      if (v.lat) { const dl = DT / 2.5; v.lat = Math.abs(v.lat) <= dl ? 0 : v.lat - Math.sign(v.lat) * dl; }   // déport latéral en 2,5 s
       const s0 = v.s, a = v.acc;
       let vn = v.v + a * DT, sn;
       if (vn < 0) { sn = s0 - v.v * v.v / (2 * a); vn = 0; } else sn = s0 + v.v * DT + 0.5 * a * DT * DT;
@@ -1371,24 +1450,29 @@ class Sim {
 
   queue(meas) {
     let qs = 0;
-    for (const ln of this.lanes) {
-      // file continue depuis le dispositif : chaîne de véhicules lents (< 20 km/h) serrés (< 25 m),
-      // dont on retient le dernier véhicule presque à l'arrêt (< 8 km/h)
-      let q = 0, prevRear = ln.sRef, chain = false;
-      for (const v of ln.veh) {
-        if (v.s >= ln.sRef) continue;
-        if (prevRear - v.s > (chain ? 25 : 30) || v.v >= 20 / KMH) break;
-        chain = true; prevRear = v.s - v.len;
-        if (v.v < 8 / KMH) q = ln.sRef - prevRear;
+    for (const dir of this.dirs) {
+      let qd = 0;
+      for (const ln of dir.lanes) {
+        // file continue depuis le dispositif : chaîne de véhicules lents (< 20 km/h) serrés (< 25 m),
+        // dont on retient le dernier véhicule presque à l'arrêt (< 8 km/h)
+        let q = 0, prevRear = ln.sRef, chain = false;
+        for (const v of ln.veh) {
+          if (v.s >= ln.sRef) continue;
+          if (prevRear - v.s > (chain ? 25 : 30) || v.v >= 20 / KMH) break;
+          chain = true; prevRear = v.s - v.len;
+          if (v.v < 8 / KMH) q = ln.sRef - prevRear;
+        }
+        ln.qNow = q; if (q > qd) qd = q;
       }
-      if (ln.pending.length) q = Math.max(q, ln.sRef) + ln.pending.length * 7;
-      ln.qNow = q; qs += q;
-      if (meas && q > this.st.qMax) this.st.qMax = q;
+      // file du sens : la plus longue de ses voies, prolongée par les véhicules qui attendent d'entrer
+      if (dir.pending.length) qd = Math.max(qd, dir.sRef) + dir.pending.length * 7 / this.nl;
+      dir.qNow = qd; qs += qd;
+      if (meas && qd > this.st.qMax) this.st.qMax = qd;
     }
     if (meas) this.st.qInt += qs / 2 * DT;
     if (this.hourly) {
       const hb = this.hourly[Math.floor(this.t / 3600)];
-      if (hb) { const qm = Math.max(this.lanes[0].qNow, this.lanes[1].qNow); if (qm > hb.qMax) hb.qMax = qm; hb.pend = this.lanes[0].pending.length + this.lanes[1].pending.length; }
+      if (hb) { const qm = Math.max(this.dirs[0].qNow, this.dirs[1].qNow); if (qm > hb.qMax) hb.qMax = qm; hb.pend = this.dirs[0].pending.length + this.dirs[1].pending.length; }
     }
   }
 
@@ -1451,10 +1535,10 @@ class Sim {
 
   step() {
     const t = this.t, meas = t >= this.measFrom;
-    for (const ln of this.lanes) {
-      const list = this.D.veh(ln.k, t);
-      while (ln.ptr < list.length && list[ln.ptr].t <= t) ln.pending.push(list[ln.ptr++]);
-      if (ln.pending.length) this.tryInsert(ln);
+    for (const dir of this.dirs) {
+      const list = this.D.veh(dir.k, t);
+      while (dir.ptr < list.length && list[dir.ptr].t <= t) dir.pending.push(list[dir.ptr++]);
+      if (dir.pending.length) this.tryInsert(dir);
     }
     const pl = this.D.peds(t);
     while (this.pedPtr < pl.length && pl[this.pedPtr].t <= t) {
@@ -1462,6 +1546,7 @@ class Sim {
       this.peds.push({ side: r.side, t: r.t, xo: r.xo, st: 0, y: r.side ? this.cx.W : 0, dir: r.side ? -1 : 1, wait: 0, tW: r.t, stage: null });
     }
     if (this.sig) this.stepSignal();
+    if (this.nl > 1) this.laneChanges();
     this.flags();
     for (const ln of this.lanes) this.accel(ln);
     for (const ln of this.lanes) this.move(ln, meas);
@@ -1473,7 +1558,7 @@ class Sim {
 
 function stats(sim) {
   const st = sim.st, tm = Math.max(DT, sim.t - WARMUP);
-  const flow = st.nOut / tm * 3600 / 2, pending = sim.lanes[0].pending.length + sim.lanes[1].pending.length;
+  const flow = st.nOut / tm * 3600 / 2, pending = sim.dirs[0].pending.length + sim.dirs[1].pending.length;
   return {
     v85: pct(st.vXp, 0.85),
     tt: st.nExit ? st.sumTT / st.nExit : NaN,
@@ -1506,6 +1591,7 @@ function recommend(E, scs) {
     const why = [];
     if (e.sat) why.push('sat');
     if (scs[i].reg) why.push('reg');
+    if (scs[i].ban) why.push('ban');
     if (why.length) excluded.push({ i, why }); else cands.push({ i, e });
   });
   if (!cands.length) return { best: -1, excluded };
@@ -1593,6 +1679,26 @@ function drawTruck(c, veh, boxPaint, cabPaint, shadeCab, detail, braking, m) {
   rearLights(c, L2, W2, braking, m);
 }
 
+/* ---------- marquage longitudinal, commun à la vue animée, à la vue 3D et au plan de la note ---------- */
+// axe discontinu (3 m tous les 6,5 m) à une voie par sens, continu à deux ; lignes de séparation des voies d'un même sens
+// (3 m tous les 13 m). Le tout est interrompu au droit du passage et des dispositifs, l'axe aussi le long de l'îlot.
+// draw(xs, yf) reçoit les abscisses d'un trait (pas de step mètres) et la position y du trait en fonction de x.
+function markLines(sc, xStart, x1, draw, step = 1.5) {
+  const busy = sc.feats.filter(f => f.xa !== undefined), nl = sc.geom(XC).nl || 1;
+  const free = (x, xe) => !(xe > XC - ZEBRA_HALF - 2 && x < XC + ZEBRA_HALF + 2) && !busy.some(f => xe > f.xa - 0.5 && x < f.xb + 0.5);
+  const samples = (x, xe) => { const r = []; for (let u = x; u < xe - 1e-9; u += step) r.push(u); r.push(xe); return r; };
+  for (let x = xStart; x < x1; x += 6.5) {
+    const xe = x + (nl > 1 ? 6.5 : 3);
+    if (!free(x, xe) || sc.geom(x).wi > 0.05 || sc.geom(xe).wi > 0.05) continue;
+    draw(samples(x, xe), xx => sc.geom(xx).yc);
+  }
+  for (let m = 1; m < nl; m++) for (let x = xStart; x < x1; x += 13) {
+    const xe = x + 3;
+    if (!free(x, xe)) continue;
+    for (const sg of [-1, 1]) draw(samples(x, xe), xx => { const g = sc.geom(xx); return g.yc + sg * (g.wi / 2 + m * g.lw); });
+  }
+}
+
 /* ---------- rendu de la vue en plan ---------- */
 let viewMode = 'full';
 class View {
@@ -1626,7 +1732,7 @@ class View {
     c.fillStyle = C.verge; c.fillRect(0, 0, this.cw, this.roadH);
     const step = Math.max(0.25, 1.5 / this.sx), xs = [];
     for (let x = v.x0 - 2; x <= v.x1 + 2 + 1e-9; x += step) xs.push(x);
-    const G = xs.map(x => { const g = sc.geom(x); g.s = g.yc - g.wi / 2 - g.lw; g.n = g.yc + g.wi / 2 + g.lw; return g; });
+    const G = xs.map(x => roadEdges(sc.geom(x)));
     const band = (fa, fb, fill) => {
       c.beginPath();
       for (let i = 0; i < xs.length; i++) { const px = X(xs[i]), py = Y(fa(G[i])); if (i) c.lineTo(px, py); else c.moveTo(px, py); }
@@ -1639,26 +1745,21 @@ class View {
     band(g => g.n, g => g.s, C.asphalt);
     for (const f of sc.feats) this.feature(c, f, sc);
     edge(g => g.s); edge(g => g.n);
-    // axe discontinu (3 m / 3,5 m), interrompu au droit du passage et des dispositifs
+    // axe discontinu (3 m / 3,5 m), continu à 2 × 2 voies, interrompu au droit du passage et des dispositifs
     c.strokeStyle = C.mark; c.lineWidth = Math.max(1, 0.15 * this.sy);
-    const busy = sc.feats.filter(f => f.xa !== undefined);
-    for (let x = Math.floor(v.x0 / 6.5) * 6.5; x < v.x1; x += 6.5) {
-      const xe = x + 3;
-      if (xe > XC - ZEBRA_HALF - 2 && x < XC + ZEBRA_HALF + 2) continue;
-      if (busy.some(f => xe > f.xa - 0.5 && x < f.xb + 0.5)) continue;
-      const ga = sc.geom(x), gm = sc.geom(x + 1.5), gb = sc.geom(xe);
-      if (ga.wi > 0.05 || gb.wi > 0.05) continue;
-      c.beginPath(); c.moveTo(X(x), Y(ga.yc)); c.lineTo(X(x + 1.5), Y(gm.yc)); c.lineTo(X(xe), Y(gb.yc)); c.stroke();
-    }
+    const nl = sc.geom(XC).nl || 1;
+    markLines(sc, Math.floor(v.x0 / 6.5) * 6.5, v.x1, (xm, yf) => {
+      c.beginPath(); xm.forEach((x, i) => { if (i) c.lineTo(X(x), Y(yf(x))); else c.moveTo(X(x), Y(yf(x))); }); c.stroke();
+    });
     this.zebra(c, sc);
     c.strokeStyle = C.mark; c.globalAlpha = 0.55; c.lineWidth = 1.2;
-    const arrow = (x, k, dir) => {
-      const g = sc.geom(x), px = X(x), py = Y(laneY(g, k)), h = 12;
+    const arrow = (x, k, dir, j) => {
+      const g = sc.geom(x), px = X(x), py = Y(laneY(g, k, j)), h = 12;
       c.beginPath(); c.moveTo(px - dir * h / 2, py); c.lineTo(px + dir * h / 2, py);
       c.moveTo(px + dir * h / 2, py); c.lineTo(px + dir * (h / 2 - 4), py - 3);
       c.moveTo(px + dir * h / 2, py); c.lineTo(px + dir * (h / 2 - 4), py + 3); c.stroke();
     };
-    arrow(v.x0 + 26 / this.sx, 0, 1); arrow(v.x1 - 26 / this.sx, 1, -1);
+    for (let j = 0; j < nl; j++) { arrow(v.x0 + 26 / this.sx, 0, 1, j); arrow(v.x1 - 26 / this.sx, 1, -1, j); }
     c.globalAlpha = 1;
     this.profileFrame(c, sc);
   }
@@ -1674,20 +1775,20 @@ class View {
     const X = x => this.X(x), Y = y => this.Y(y);
     if (f.t === 'island') { this.island(c, sc); return; }
     if (f.t === 'signal') {   // lignes d'arrêt des feux, 1 m avant le passage
-      const g = sc.geom(XC), s = g.yc - g.wi / 2 - g.lw, n = g.yc + g.wi / 2 + g.lw, w = Math.max(1.2, 0.3 * this.sx);
+      const g = roadEdges(sc.geom(XC)), s = g.s, n = g.n, w = Math.max(1.2, 0.3 * this.sx);
       c.fillStyle = C.mark;
       c.fillRect(X(XC - 3) - w / 2, Y(g.yc), w, (g.yc - s) * this.sy);
       c.fillRect(X(XC + 3) - w / 2, Y(n), w, (n - g.yc) * this.sy);
       return;
     }
-    if (f.t === 'rumble') {
-      const g = sc.geom(f.x0), ya = f.lane === 0 ? g.yc - g.wi / 2 - g.lw : g.yc + g.wi / 2;
+    if (f.t === 'rumble') {   // sur toute la largeur des voies du sens concerné
+      const g = roadEdges(sc.geom(f.x0)), H = g.n - g.yc - g.wi / 2, ya = f.lane === 0 ? g.s : g.yc + g.wi / 2;
       c.fillStyle = C.mark; c.globalAlpha = 0.85;
-      for (let j = 0; j < 6; j++) c.fillRect(X(f.x0 + j * 0.8), Y(ya + g.lw - 0.15), Math.max(1, 0.25 * this.sx), (g.lw - 0.3) * this.sy);
+      for (let j = 0; j < 6; j++) c.fillRect(X(f.x0 + j * 0.8), Y(ya + H - 0.15), Math.max(1, 0.25 * this.sx), (H - 0.3) * this.sy);
       c.globalAlpha = 1;
       return;
     }
-    const g = sc.geom((f.xa + f.xb) / 2), s = g.yc - g.lw, n = g.yc + g.lw;
+    const g = roadEdges(sc.geom((f.xa + f.xb) / 2)), s = g.s, n = g.n;
     const rect = (xa, xb, ya, yb, fill) => { c.fillStyle = fill; c.fillRect(X(xa), Y(yb), X(xb) - X(xa), Y(ya) - Y(yb)); };
     if (f.t === 'hump') { rect(f.xa, f.xb, s, n, C.bump); this.teeth(c, f.xa, f.xb, s, n, g.yc); }
     else if (f.t === 'table') {
@@ -1695,8 +1796,8 @@ class View {
       rect(f.xa + f.ramp, f.xb - f.ramp, s, n, f.raised ? C.raised : C.bump);
       this.teeth(c, f.xa, f.xb, s, n, g.yc);
     } else if (f.t === 'cushion') {
-      for (const k of [0, 1]) {
-        const yc = laneY(g, k);
+      for (const k of [0, 1]) for (let j = 0; j < (g.nl || 1); j++) {
+        const yc = laneY(g, k, j);
         rect(f.xa, f.xb, yc - 0.9, yc + 0.9, C.raised);
         if (k === 0) this.teeth(c, f.xa, f.xb, yc - 0.9, yc + 0.9, yc + 0.9);
         else this.teeth(c, f.xa, f.xb, yc - 0.9, yc + 0.9, yc - 0.9);
@@ -1727,7 +1828,7 @@ class View {
   }
 
   zebra(c, sc) {
-    const g = sc.geom(XC), s = g.yc - g.wi / 2 - g.lw, n = g.yc + g.wi / 2 + g.lw, ia = g.yc - g.wi / 2, ib = g.yc + g.wi / 2;
+    const g = roadEdges(sc.geom(XC)), s = g.s, n = g.n, ia = g.yc - g.wi / 2, ib = g.yc + g.wi / 2;
     const x0 = this.X(XC - ZEBRA_HALF), w = this.X(XC + ZEBRA_HALF) - x0, h = Math.max(1, 0.5 * this.sy);
     c.fillStyle = C.mark;
     for (let y = s + 0.3; y + 0.5 <= n - 0.2; y += 1.0) {
@@ -1780,7 +1881,7 @@ class View {
 
   // feux : têtes véhicules sur le trottoir de droite de chaque approche, têtes piétons de part et d'autre
   signalHeads(c) {
-    const g = this.sim.sc.geom(XC), s = g.yc - g.wi / 2 - g.lw, n = g.yc + g.wi / 2 + g.lw, st = this.sim.sig.st;
+    const g = roadEdges(this.sim.sc.geom(XC)), s = g.s, n = g.n, st = this.sim.sig.st;
     const vc = st === 'G' ? C.sigG : st === 'A' ? C.sigA : C.sigR, pc = st === 'P' ? C.sigG : C.sigR;
     const r = Math.max(2.2, 0.3 * this.sy);
     const head = (x, y, col) => {
@@ -1793,7 +1894,7 @@ class View {
   }
 
   queueText(k) {
-    const ln = this.sim.lanes[k], v = this.view, q = ln.qNow, pend = ln.pending.length;
+    const ln = this.sim.dirs[k], v = this.view, q = ln.qNow, pend = ln.pending.length;
     if (q < 5 || !v) return '';
     const backS = ln.sRef - q, xBack = k === 0 ? backS : L - backS;
     const outside = k === 0 ? xBack < v.x0 + 4 : xBack > v.x1 - 4;
@@ -1804,7 +1905,7 @@ class View {
   vehicle(c, k, veh, sc) {
     const sCen = veh.s - veh.len / 2, x = k === 0 ? sCen : L - sCen, v = this.view;
     if (x < v.x0 - 15 || x > v.x1 + 15) return;
-    const y = laneY(sc.geom(x), k), y1 = laneY(sc.geom(x - 1), k), y2 = laneY(sc.geom(x + 1), k);
+    const j = veh.j + veh.lat, y = laneY(sc.geom(x), k, j), y1 = laneY(sc.geom(x - 1), k, j), y2 = laneY(sc.geom(x + 1), k, j);
     let ang = Math.atan2(this.Y(y2) - this.Y(y1), this.X(x + 1) - this.X(x - 1));
     if (k === 1) ang += Math.PI;
     // largeur des véhicules : exagération latérale limitée pour garder des proportions crédibles
@@ -1819,7 +1920,7 @@ class View {
   }
 
   pedestrians(c) {
-    const sim = this.sim, cx = sim.cx, g = sim.sc.geom(XC), ys = g.yc - g.wi / 2 - g.lw;
+    const sim = this.sim, cx = sim.cx, ys = roadEdges(sim.sc.geom(XC)).s;
     const r = this.sy >= 6 ? 3.3 : 2.7, rank = [0, 0];
     for (const p of sim.peds) {
       let y;
@@ -1968,7 +2069,7 @@ const V3D = (() => {
     scene.fog = new THREE.Fog(0xdbe6ee, 85, 230);
     const hR = roadHeight(sc), X0 = XC - 75, X1 = XC + 75;
     const xs = []; for (let x = X0; x <= X1 + 1e-9; x += 0.25) xs.push(x);
-    const G = x => { const g = sc.geom(x); g.s = g.yc - g.wi / 2 - g.lw; g.n = g.yc + g.wi / 2 + g.lw; return g; };
+    const G = x => roadEdges(sc.geom(x)), nl = sc.geom(XC).nl || 1;
     const KERB = 0.15;
     // sol, trottoirs, chaussée
     scene.add(ribbon(xs, () => -70, x => G(x).s - 2.5, () => KERB, mat(COL.ground)));
@@ -1990,16 +2091,8 @@ const V3D = (() => {
       if (gz.wi > 0.05 && y + 0.5 > gz.yc - gz.wi / 2 && y < gz.yc + gz.wi / 2) continue;
       scene.add(flatQuad(2 * ZEBRA_HALF, 0.5, markMat, 0, hz, -(y + 0.25)));
     }
-    // axe discontinu
-    const busy = sc.feats.filter(f => f.xa !== undefined);
-    for (let x = X0; x < X1; x += 6.5) {
-      const xe = x + 3;
-      if (xe > XC - ZEBRA_HALF - 2 && x < XC + ZEBRA_HALF + 2) continue;
-      if (busy.some(f => xe > f.xa - 0.5 && x < f.xb + 0.5)) continue;
-      if (G(x).wi > 0.05 || G(xe).wi > 0.05) continue;
-      const sub = [x, x + 1, x + 2, xe];
-      scene.add(ribbon(sub, xx => G(xx).yc - 0.075, xx => G(xx).yc + 0.075, xx => hR(xx) + 0.005, markMat));
-    }
+    // axe et lignes de séparation des voies
+    markLines(sc, X0, X1, (sub, yf) => scene.add(ribbon(sub, xx => yf(xx) - 0.075, xx => yf(xx) + 0.075, xx => hR(xx) + 0.005, markMat)), 1);
     // dispositifs
     for (const f of sc.feats) {
       if (f.t === 'hump' || (f.t === 'table' && !f.raised)) {
@@ -2013,8 +2106,8 @@ const V3D = (() => {
         for (let y = g.yc + 0.6; y < g.n - 0.3; y += 1.0) addTri(scene, markMat, f.xb - 0.05, f.xb - 0.85, y, hTri);
       } else if (f.t === 'cushion') {
         const g = G((f.xa + f.xb) / 2);
-        for (const k of [0, 1]) {
-          const yc = laneY(g, k), sh = new THREE.Shape();
+        for (const k of [0, 1]) for (let j = 0; j < nl; j++) {
+          const yc = laneY(g, k, j), sh = new THREE.Shape();
           sh.moveTo(0, 0); sh.lineTo(0.8, 0.07); sh.lineTo(2.2, 0.07); sh.lineTo(3.0, 0); sh.lineTo(0, 0);
           const geo = new THREE.ExtrudeGeometry(sh, { depth: 1.8, bevelEnabled: false });
           const m = new THREE.Mesh(geo, mat(COL.resin, { roughness: 0.8 })); m.position.set(f.xa - XC, 0, -yc - 0.9); m.castShadow = true; m.receiveShadow = true; scene.add(m);
@@ -2024,9 +2117,9 @@ const V3D = (() => {
         const pm = new THREE.MeshStandardMaterial({ map: T.pave, roughness: 0.9 });
         scene.add(ribbon(xpv, x => G(x).s, x => G(x).n, () => 0.004, pm, 1));
       } else if (f.t === 'signal') {
-        const g = G(XC);
-        scene.add(box(0.3, 0.012, g.lw - 0.2, markMat, -3, 0.006, -(g.s + g.lw / 2)));
-        scene.add(box(0.3, 0.012, g.lw - 0.2, markMat, 3, 0.006, -(g.n - g.lw / 2)));
+        const g = G(XC), H = nl * g.lw;
+        scene.add(box(0.3, 0.012, H - 0.2, markMat, -3, 0.006, -(g.s + H / 2)));
+        scene.add(box(0.3, 0.012, H - 0.2, markMat, 3, 0.006, -(g.n - H / 2)));
         const lamp = hex => new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: 1.3 });
         for (const [x, y, face] of [[-3.4, g.s - 0.9, -1], [3.4, g.n + 0.9, 1]]) {
           const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 3.3, 10), mat(0x3a3f45)); pole.position.set(x, KERB + 1.65, -y); pole.castShadow = true; scene.add(pole);
@@ -2036,8 +2129,8 @@ const V3D = (() => {
           const grn = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), lamp(0x22dd66)); grn.position.set(x, KERB + 2.1, -y + (y < 0 ? -0.12 : 0.12)); scene.add(grn);
         }
       } else if (f.t === 'rumble') {
-        const g = G(f.x0), ya = f.lane === 0 ? g.s : g.yc;
-        for (let j = 0; j < 6; j++) scene.add(box(0.25, 0.012, g.lw - 0.3, markMat, f.x0 + j * 0.8 + 0.125 - XC, 0.006, -(ya + g.lw / 2)));
+        const g = G(f.x0), H = nl * g.lw, ya = f.lane === 0 ? g.s : g.yc;
+        for (let j = 0; j < 6; j++) scene.add(box(0.25, 0.012, H - 0.3, markMat, f.x0 + j * 0.8 + 0.125 - XC, 0.006, -(ya + H / 2)));
       } else if (f.t === 'island') {
         const islandTop = mat(COL.island), xa = XC - 15, xb = XC + 15;
         for (const [a, b] of [[xa + 0.5, XC - ZEBRA_HALF], [XC + ZEBRA_HALF, xb - 0.5]]) {
@@ -2055,14 +2148,14 @@ const V3D = (() => {
       }
     }
     // façades : mêmes bâtiments pour tous les aménagements
-    const rnd = mulberry32(42), facadeTex = T.facade;
+    const rnd = mulberry32(42), facadeTex = T.facade, yF = Math.max(11, Math.max(...xs.map(x => Math.max(G(x).n, -G(x).s))) + 3.5);
     for (const side of [-1, 1]) {
       let x = X0 - 5;
       while (x < X1 + 5) {
         const w = 9 + rnd() * 7, h = 6 + Math.floor(rnd() * 4) * 3, d = 12, col = FACADES[Math.floor(rnd() * FACADES.length)];
         const tex = facadeTex.clone(); tex.needsUpdate = true; tex.repeat.set(w / 6, h / 6);
         const m = new THREE.Mesh(new THREE.BoxGeometry(w - 0.4, h, d), new THREE.MeshStandardMaterial({ color: new THREE.Color(col).convertSRGBToLinear(), map: tex, roughness: 0.95 }));
-        m.position.set(x + w / 2 - XC, KERB + h / 2, -side * (11 + d / 2)); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+        m.position.set(x + w / 2 - XC, KERB + h / 2, -side * (yF + d / 2)); m.castShadow = true; m.receiveShadow = true; scene.add(m);
         x += w;
       }
     }
@@ -2074,10 +2167,11 @@ const V3D = (() => {
     }
     // véhicules et piétons (mêmes positions partout)
     // cap : avant du modèle vers +x ; sens ← = demi-tour, même pente latérale
-    const onLane = (x, k) => { const g = G(x), y = laneY(g, k), y2 = laneY(G(x + 1), k); return { z: -y, head: Math.atan2(y2 - y, 1) + (k === 0 ? 0 : Math.PI), h: hR(x) }; };
-    const place = (x, k, paint, kind) => { const p = onLane(x, k); const v = car(paint, x - XC, p.z, p.head, kind); v.position.y = p.h; scene.add(v); };
+    const onLane = (x, k, j) => { const g = G(x), y = laneY(g, k, j), y2 = laneY(G(x + 1), k, j); return { z: -y, head: Math.atan2(y2 - y, 1) + (k === 0 ? 0 : Math.PI), h: hR(x) }; };
+    const place = (x, k, paint, kind, j = 0) => { const p = onLane(x, k, j); const v = car(paint, x - XC, p.z, p.head, kind); v.position.y = p.h; scene.add(v); };
     place(XC - 16, 0, PAINT3[3]); place(XC - 31, 0, PAINT3[0]); place(XC - 47, 0, PAINT3[4]);
     place(XC + 14, 1, PAINT3[1]); place(XC + 33, 1, 0xf2f2f2, 'bus'); place(XC + 52, 1, PAINT3[2]);
+    if (nl > 1) { place(XC - 24, 0, PAINT3[5], undefined, 1); place(XC + 24, 1, PAINT3[0], undefined, 1); place(XC + 44, 1, PAINT3[3], undefined, 1); }
     const gp = G(XC);
     scene.add(person(-0.6, -(gp.s + gp.lw * 0.45), hR(XC), 0xf2b51d));
     scene.add(person(0.9, -(gp.n + 0.8), KERB, 0x2e6fb0));
@@ -2153,21 +2247,21 @@ const stopDist = vk => { const v = vk / KMH; return v * 2 + v * v / 10; };   // 
 
 // quantités sommaires, déduites de la géométrie simulée
 function quantities(sc) {
-  const lw = P.laneW, W = 2 * lw, gz = sc.geom(XC);
-  const q = { zebra: 2 * gz.lw * 4 * 0.5, sign: 2, light: 2, kerbRamp: 2 };
+  const lw = P.laneW, nl = P.nl || 1, W = 2 * nl * lw, gz = sc.geom(XC);
+  const q = { zebra: 2 * nl * gz.lw * 4 * 0.5, sign: 2, light: 2, kerbRamp: 2 };
   const add = (k, v) => { q[k] = (q[k] || 0) + v; };
   switch (sc.id) {
     case 'dos': add('asphalt', 2 * W * 4 * (2 / 3) * 0.10 * 2.35); add('sign', 4); add('zebra', 0.5 * W); break;
     case 'trap': add('table', W * 6.4); add('sign', 4); add('zebra', 0.25 * W); break;
     case 'plat': add('table', W * 11); add('sign', 2); add('zebra', 0.25 * W); break;
-    case 'cous': add('cushion', 4); add('sign', 2); add('zebra', 4 * 0.45); break;
-    case 'ret': add('kerb', 4 * 13 + 2 * 30); add('island', P.retIsl * 18); add('pavement', 2 * Math.max(0, P.retIsl / 2 + P.retLane - lw) * 30);
+    case 'cous': add('cushion', 4 * nl); add('sign', 2); add('zebra', 4 * nl * 0.45); break;
+    case 'ret': add('kerb', 4 * 13 + 2 * 30); add('island', P.retIsl * 18); add('pavement', 2 * Math.max(0, P.retIsl / 2 + nl * (P.retLane - lw)) * 30);
       add('bollard', 2); add('sign', 2); add('kerbRamp', 2); break;
     case 'chi': add('kerb', 2 * (2 * P.chTrans + 10)); add('pavement', P.chOff * (P.chTrans + 10)); add('island', P.chOff * (P.chTrans + 10));
       add('bollard', 4); add('line', 2 * P.chTrans + 10); break;
     case 'rev': add('pavers', W * 40); break;
-    case 'rug': add('rumble', 6 * 0.25 * (lw - 0.3) * 3 * 2); add('sign', 2); break;
-    case 'sig': add('signals', 1); add('line', 2 * lw); add('sign', 2); break;
+    case 'rug': add('rumble', 6 * 0.25 * (nl * lw - 0.3) * 3 * 2); add('sign', 2); break;
+    case 'sig': add('signals', 1); add('line', 2 * nl * lw); add('sign', 2); break;
   }
   return q;
 }
@@ -2184,7 +2278,8 @@ function costing(sc) {
 
 // dimensions principales [clé, valeur affichée]
 function dims(sc) {
-  const lw = P.laneW, f = v => fm(v), out = [['lane', f(lw)], ['road', f(2 * lw)], ['walk', f(2.5)], ['zebraL', f(4)], ['zebraB', f(0.5)]];
+  const lw = P.laneW, nl = P.nl || 1, f = v => fm(v), out = [['lane', f(lw)], ['road', f(2 * nl * lw)], ['walk', f(2.5)], ['zebraL', f(4)], ['zebraB', f(0.5)]];
+  if (nl > 1) out.splice(1, 0, ['nlanes', String(nl)]);
   const add = (...r) => out.push(...r);
   switch (sc.id) {
     case 'dos': add(['humpL', f(4)], ['height', f(0.10)], ['humpDist', f(10)]); break;
@@ -2426,7 +2521,7 @@ fr: {
   st: { ok: 'Respectée', warn: 'À surveiller', ko: 'Non respectée', check: 'À vérifier' },
   dimsIntro: 'Dimensions principales ; le plan de principe à l’échelle suit, au format A4 paysage. Cotes en mètres.',
   dimCols: ['Élément', 'Valeur (m)'],
-  dim: { lane: 'Largeur d’une voie', road: 'Largeur de chaussée', walk: 'Largeur des trottoirs', zebraL: 'Longueur du passage (dans le sens de circulation)', zebraB: 'Largeur et espacement des bandes',
+  dim: { lane: 'Largeur d’une voie', nlanes: 'Nombre de voies par sens (sans unité)', road: 'Largeur de chaussée', walk: 'Largeur des trottoirs', zebraL: 'Longueur du passage (dans le sens de circulation)', zebraB: 'Largeur et espacement des bandes',
     humpL: 'Longueur d’un dos d’âne', height: 'Hauteur', humpDist: 'Distance de l’axe du passage à l’axe du dispositif', tableL: 'Longueur du plateau', rampL: 'Longueur des rampes', rampSlope: 'Pente des rampes',
     cushL: 'Longueur du coussin', cushW: 'Largeur du coussin', cushH: 'Hauteur du coussin', laneN: 'Largeur de voie au droit de l’îlot', islW: 'Largeur de l’îlot', islL: 'Longueur de l’îlot', taper: 'Longueur des entrées en biseau', refugeL: 'Longueur du refuge',
     offset: 'Décalage de l’axe', transL: 'Longueur de chaque transition', palier: 'Longueur du palier décalé', laneC: 'Largeur de voie dans la chicane', radius: 'Rayon de la trajectoire la plus rapide',
@@ -2463,6 +2558,7 @@ fr: {
     'Vitesse au franchissement des ralentisseurs donnée en entrée (V85 par classe) ; vitesse dans la chicane déduite de sa géométrie ; rétrécissement, revêtement et bandes rugueuses : baisse de vitesse en pourcentage.',
     'Risque de décès : courbe de Rosén et Sander (2009), P = 1 / (1 + e^(6,9 − 0,090 v)), appliquée à la vitesse restante quand un piéton surgit à la distance indiquée, après le temps de réaction et un freinage d’urgence.',
     'Limites : tronçon isolé de 500 m, pas de report de trafic ni de deux-roues ; bruit, vibrations et confort des bus non évalués ; calibrage à caler sur des mesures locales.'],
+  method2: 'Deux voies par sens : chaque véhicule entre sur la voie la plus dégagée, change de voie pour dépasser puis se rabat (modèle MOBIL simplifié, Kesting et al., 2007), sans aucun changement de voie dans les 40 m avant le passage. Un véhicule arrêté sur une voie peut masquer le piéton aux conducteurs de l’autre voie : cet effet n’est pas modélisé, d’où le conseil d’un îlot refuge ou d’un feu.',
   calibCols: ['Paramètre de calibrage', 'Valeur'],
   plan: { title: 'Plan de principe', legend: 'Légende', walk: 'Trottoir', raised: 'Dispositif surélevé', island: 'Îlot, avancée', bev: 'Bande d’éveil de vigilance', light: 'Candélabre (E1, E2)', sign: 'Panneau (code)', signal: 'Feu (véhicules et piétons)', dir: 'Sens de circulation', cotes: 'Cotes en mètres',
     scale: 'Échelle', secA: 'Coupe A-A, hauteurs ×10', secB: 'Coupe B-B au droit du passage, hauteurs ×10', formatL: 'Format', format: 'A4 paysage', indice: 'Indice', objet: 'Objet', commune: 'Commune', lieu: 'Lieu', date: 'Date', auteur: 'Établi par', calib: 'Calibrage',
@@ -2516,7 +2612,7 @@ ar: {
   st: { ok: 'محترم', warn: 'تحت المراقبة', ko: 'غير محترم', check: 'للتثبّت' },
   dimsIntro: 'الأبعاد الرئيسية؛ ويلي ذلك المخطّط المبدئي بالسلّم بقياس A4 أفقي. الأبعاد بالمتر.',
   dimCols: ['العنصر', 'القيمة (م)'],
-  dim: { lane: 'عرض المسلك', road: 'عرض المعبّد', walk: 'عرض الأرصفة', zebraL: 'طول الممرّ (في اتجاه السير)', zebraB: 'عرض الأشرطة والمسافة بينها',
+  dim: { lane: 'عرض المسلك', nlanes: 'عدد المسالك في كل اتجاه (دون وحدة)', road: 'عرض المعبّد', walk: 'عرض الأرصفة', zebraL: 'طول الممرّ (في اتجاه السير)', zebraB: 'عرض الأشرطة والمسافة بينها',
     humpL: 'طول المطبّ', height: 'الارتفاع', humpDist: 'المسافة بين محور الممرّ ومحور التهيئة', tableL: 'طول المنصّة', rampL: 'طول المنحدرات', rampSlope: 'انحدار المنحدرات',
     cushL: 'طول الوسادة', cushW: 'عرض الوسادة', cushH: 'ارتفاع الوسادة', laneN: 'عرض المسلك بمحاذاة الجزيرة', islW: 'عرض الجزيرة', islL: 'طول الجزيرة', taper: 'طول المداخل المائلة', refugeL: 'طول الملجأ',
     offset: 'إزاحة المحور', transL: 'طول كل انتقال', palier: 'طول الجزء المُزاح', laneC: 'عرض المسلك في التعرّج', radius: 'نصف قطر المسار الأسرع',
@@ -2553,6 +2649,7 @@ ar: {
     'سرعة عبور المطبّات معطاة كمُدخل (V85 حسب الصنف)؛ وسرعة التعرّج مستنتجة من هندسته؛ أمّا التضييق وطبقة السير والأشرطة الاهتزازية فتُخفّض السرعة بنسبة مئوية.',
     'خطر الوفاة: منحنى Rosén وSander (2009)، P = 1 / (1 + e^(6,9 − 0,090 v))، يُطبَّق على السرعة المتبقّية عند ظهور مترجّل فجأة على المسافة المذكورة، بعد زمن ردّ الفعل وفرملة الطوارئ.',
     'الحدود: مقطع معزول بطول 500 م، دون تحويل للحركة ودون درّاجات؛ لا يُقيَّم الضجيج والاهتزازات وراحة ركّاب الحافلات؛ ويجب معايرة النموذج بقياسات محلية.'],
+  method2: 'مسلكان في كل اتجاه: تدخل كل عربة المسلك الأكثر فراغًا، وتغيّر المسلك للتجاوز ثم تعود إلى اليمين (نموذج MOBIL مبسّط، Kesting وآخرون، 2007)، دون أيّ تغيير للمسلك في الأمتار الأربعين التي تسبق الممرّ. قد تحجب عربة متوقّفة في مسلك المترجّلَ عن سائقي المسلك الآخر: هذا الأثر غير ممثَّل، ومن هنا النصح بجزيرة ملجأ أو بإشارة ضوئية.',
   calibCols: ['معيار المعايرة', 'القيمة'],
   plan: { title: 'مخطّط مبدئي', legend: 'المفتاح', walk: 'رصيف', raised: 'تهيئة مرتفعة', island: 'جزيرة، امتداد رصيف', bev: 'شريط تنبيه لمسي', light: 'عمود إنارة (E1، E2)', sign: 'لافتة (الرمز)', signal: 'إشارة ضوئية (عربات ومترجّلون)', dir: 'اتجاه السير', cotes: 'الأبعاد بالمتر',
     scale: 'السلّم', secA: 'مقطع A-A، الارتفاعات مضاعفة 10 مرات', secB: 'مقطع B-B عند الممرّ، الارتفاعات مضاعفة 10 مرات', formatL: 'القياس', format: 'A4 أفقي', indice: 'المؤشّر', objet: 'الموضوع', commune: 'البلدية', lieu: 'الموقع', date: 'التاريخ', auteur: 'أعدّه', calib: 'المعايرة',
@@ -2606,7 +2703,7 @@ en: {
   st: { ok: 'Met', warn: 'To be monitored', ko: 'Not met', check: 'To be checked' },
   dimsIntro: 'Main dimensions; the scaled outline plan follows, in A4 landscape format. Dimensions in meters.',
   dimCols: ['Element', 'Value (m)'],
-  dim: { lane: 'Lane width', road: 'Roadway width', walk: 'Sidewalk width', zebraL: 'Length of the crossing (in the direction of traffic)', zebraB: 'Stripe width and spacing',
+  dim: { lane: 'Lane width', nlanes: 'Number of lanes per direction (no unit)', road: 'Roadway width', walk: 'Sidewalk width', zebraL: 'Length of the crossing (in the direction of traffic)', zebraB: 'Stripe width and spacing',
     humpL: 'Speed hump length', height: 'Height', humpDist: 'Distance from the crossing centerline to the device centerline', tableL: 'Raised table length', rampL: 'Ramp length', rampSlope: 'Ramp slope',
     cushL: 'Cushion length', cushW: 'Cushion width', cushH: 'Cushion height', laneN: 'Lane width at the island', islW: 'Island width', islL: 'Island length', taper: 'Length of the tapered approaches', refugeL: 'Refuge length',
     offset: 'Centerline offset', transL: 'Length of each transition', palier: 'Length of the offset section', laneC: 'Lane width in the chicane', radius: 'Radius of the fastest path',
@@ -2643,6 +2740,7 @@ en: {
     'Speed over the humps given as input (V85 per class); speed in the chicane derived from its geometry; lane narrowing, paving change and rumble strips: speed reduction as a percentage.',
     'Risk of death: Rosén and Sander curve (2009), P = 1 / (1 + e^(6.9 − 0.090 v)), applied to the remaining speed when a pedestrian suddenly steps out at the stated distance, after the reaction time and emergency braking.',
     'Limitations: isolated 500 m section, no traffic diversion and no two-wheelers; noise, vibration and bus passenger comfort not assessed; calibration to be adjusted against local measurements.'],
+  method2: 'Two lanes per direction: each vehicle enters the least congested lane, changes lanes to overtake and then moves back to the right (simplified MOBIL model, Kesting et al., 2007), with no lane changes in the 40 m before the crossing. A vehicle stopped in one lane can hide the pedestrian from drivers in the other lane: this effect is not modeled, hence the advice of a refuge island or a signal.',
   calibCols: ['Calibration parameter', 'Value'],
   plan: { title: 'Outline plan', legend: 'Legend', walk: 'Sidewalk', raised: 'Raised device', island: 'Island, curb extension', bev: 'Detectable warning strip', light: 'Street light (E1, E2)', sign: 'Sign (code)', signal: 'Signal (vehicles and pedestrians)', dir: 'Direction of traffic', cotes: 'Dimensions in meters',
     scale: 'Scale', secA: 'Section A-A, heights ×10', secB: 'Section B-B at the crossing, heights ×10', formatL: 'Format', format: 'A4 landscape', indice: 'Revision', objet: 'Subject', commune: 'Municipality', lieu: 'Location', date: 'Date', auteur: 'Prepared by', calib: 'Calibration',
@@ -2656,7 +2754,9 @@ function planSVG(sc, meta, N) {
   const ar = lang === 'ar', D = N.plan, f2 = v => nf2.format(v);
   const halfX = ({ ref: 16, dos: 18, trap: 14, plat: 15, cous: 18, ret: 22, chi: P.chTrans + 13, rev: 26, rug: 66, sig: 16 })[sc.id] || 18;
   let S = 1000;
-  for (const s of [100, 125, 200, 250, 500, 1000]) { const kk = 1000 / s; if (2 * halfX * kk <= 262 && 17 * kk <= 86) { S = s; break; } }
+  // emprise transversale à loger dans le cadre : forfait de 17 m à une voie par sens, demi-emprise réelle (trottoirs compris) à deux
+  const nl = P.nl || 1, hw = Math.max(...Array.from({ length: 2 * halfX + 1 }, (_, i) => { const g = roadEdges(sc.geom(XC - halfX + i)); return Math.max(g.n, -g.s); })) + 2.5;
+  for (const s of [100, 125, 200, 250, 500, 1000]) { const kk = 1000 / s; if (2 * halfX * kk <= 262 && (nl > 1 ? 2 * hw * kk <= 100 : 17 * kk <= 86)) { S = s; break; } }
   const k = 1000 / S, cx = 148.5, cy = 76;
   const PX = x => cx + (x - XC) * k, PY = y => cy - y * k;
   const o = [];
@@ -2667,7 +2767,7 @@ function planSVG(sc, meta, N) {
   const pl = (pts, w, extra = '') => o.push(`<polyline points="${pts.map(p => fx(p[0]) + ',' + fx(p[1])).join(' ')}" fill="none" stroke="#000" stroke-width="${w}"${extra}/>`);
   const rectW = (xa, xb, ya, yb, fill, stroke = '#000', w = 0.2) => poly([[PX(xa), PY(ya)], [PX(xb), PY(ya)], [PX(xb), PY(yb)], [PX(xa), PY(yb)]], fill, stroke, w);
   const xs = []; for (let x = XC - halfX; x <= XC + halfX + 1e-9; x += halfX > 40 ? 1 : 0.5) xs.push(x);
-  const G = x => { const g = sc.geom(x); g.s = g.yc - g.wi / 2 - g.lw; g.n = g.yc + g.wi / 2 + g.lw; return g; };
+  const G = x => roadEdges(sc.geom(x));
   const band = (fa, fb, fill) => poly(xs.map(x => [PX(x), PY(fa(G(x)))]).concat(xs.slice().reverse().map(x => [PX(x), PY(fb(G(x)))])), fill);
   const edge = (f, w) => pl(xs.map(x => [PX(x), PY(f(G(x)))]), w);
   const gs = 0.2 * k;   // maille des pavés
@@ -2697,12 +2797,12 @@ function planSVG(sc, meta, N) {
       rectW(f.xa + f.ramp, f.xb - f.ramp, g.s, g.n, f.raised ? 'url(#hatch)' : '#fff', '#000', 0.25);
     } else if (f.t === 'cushion') {
       const g = G(f.xa);
-      for (const kk of [0, 1]) { const yc = laneY(g, kk); rectW(f.xa, f.xb, yc - 0.9, yc + 0.9, 'url(#hatch)', '#000', 0.25); }
+      for (const kk of [0, 1]) for (let jj = 0; jj < nl; jj++) { const yc = laneY(g, kk, jj); rectW(f.xa, f.xb, yc - 0.9, yc + 0.9, 'url(#hatch)', '#000', 0.25); }
     } else if (f.t === 'pave') {
       const g = G(f.xa); rectW(f.xa, f.xb, g.s, g.n, 'url(#grid)', '#000', 0.25);
     } else if (f.t === 'rumble') {
       const g = G(f.x0), ya = f.lane === 0 ? g.s : g.yc;
-      for (let j = 0; j < 6; j++) rectW(f.x0 + j * 0.8, f.x0 + j * 0.8 + 0.25, ya + 0.15, ya + g.lw - 0.15, '#000', 'none');
+      for (let j = 0; j < 6; j++) rectW(f.x0 + j * 0.8, f.x0 + j * 0.8 + 0.25, ya + 0.15, ya + nl * g.lw - 0.15, '#000', 'none');
     } else if (f.t === 'island') {
       for (const [a, b] of [[XC - 15, XC - ZEBRA_HALF], [XC + ZEBRA_HALF, XC + 15]]) {
         const xi = xs.filter(x => x >= a - 1e-9 && x <= b + 1e-9);
@@ -2721,15 +2821,8 @@ function planSVG(sc, meta, N) {
     if (gm.wi > 0.05 && y + 0.5 > gm.yc - gm.wi / 2 && y < gm.yc + gm.wi / 2) continue;
     rectW(XC - ZEBRA_HALF, XC + ZEBRA_HALF, y, y + 0.5, '#cfcfcf', '#000', 0.12);
   }
-  // axe discontinu (3 m / 3,5 m)
-  const busy = sc.feats.filter(f => f.xa !== undefined);
-  for (let x = XC - halfX; x < XC + halfX; x += 6.5) {
-    const xe = x + 3;
-    if (xe > XC - ZEBRA_HALF - 2 && x < XC + ZEBRA_HALF + 2) continue;
-    if (busy.some(f => xe > f.xa - 0.5 && x < f.xb + 0.5)) continue;
-    if (G(x).wi > 0.05 || G(xe).wi > 0.05) continue;
-    pl([[PX(x), PY(G(x).yc)], [PX(x + 1.5), PY(G(x + 1.5).yc)], [PX(xe), PY(G(xe).yc)]], 0.25);
-  }
+  // axe (discontinu 3 m / 3,5 m, continu à 2 × 2 voies) et lignes de séparation des voies
+  markLines(sc, XC - halfX, XC + halfX, (xm, yf) => pl(xm.map(x => [PX(x), PY(yf(x))]), 0.25));
   // abaissés de trottoir et bandes d'éveil de vigilance
   rectW(XC - ZEBRA_HALF, XC + ZEBRA_HALF, gm.s - 0.92, gm.s - 0.5, 'url(#dots)', '#000', 0.1);
   rectW(XC - ZEBRA_HALF, XC + ZEBRA_HALF, gm.n + 0.5, gm.n + 0.92, 'url(#dots)', '#000', 0.1);
@@ -2766,8 +2859,10 @@ function planSVG(sc, meta, N) {
   }
   // sens de circulation
   const xA = XC - halfX + 1.5, xB = XC + halfX - 1.5;
-  line(PX(xA), PY(laneY(G(xA), 0)), PX(xA) + 9, PY(laneY(G(xA), 0)), 0.3, ' marker-end="url(#arr)"');
-  line(PX(xB), PY(laneY(G(xB), 1)), PX(xB) - 9, PY(laneY(G(xB), 1)), 0.3, ' marker-end="url(#arr)"');
+  for (let jj = 0; jj < nl; jj++) {
+    line(PX(xA), PY(laneY(G(xA), 0, jj)), PX(xA) + 9, PY(laneY(G(xA), 0, jj)), 0.3, ' marker-end="url(#arr)"');
+    line(PX(xB), PY(laneY(G(xB), 1, jj)), PX(xB) - 9, PY(laneY(G(xB), 1, jj)), 0.3, ' marker-end="url(#arr)"');
+  }
   // trait de coupe A-A sur la voie sens →
   const vert = sc.feats.find(f => f.t === 'hump' || f.t === 'table' || f.t === 'cushion');
   if (vert) {
@@ -2804,10 +2899,12 @@ function planSVG(sc, meta, N) {
   }
   // chaîne transversale en section courante (à gauche) et au droit du dispositif quand la largeur change
   const vChain = (x, xP) => {
-    const g = G(x);
-    dimV(g.s - 2.5, g.s, xP, f2(2.5)); dimV(g.s, g.yc - g.wi / 2, xP, f2(g.lw));
-    if (g.wi > 0.05) dimV(g.yc - g.wi / 2, g.yc + g.wi / 2, xP, f2(g.wi));
-    dimV(g.yc + g.wi / 2, g.n, xP, f2(g.lw)); dimV(g.n, g.n + 2.5, xP, f2(2.5));
+    const g = G(x), ia = g.yc - g.wi / 2, ib = g.yc + g.wi / 2;
+    dimV(g.s - 2.5, g.s, xP, f2(2.5));
+    for (let jj = 0; jj < nl; jj++) dimV(jj ? g.s + jj * g.lw : g.s, jj < nl - 1 ? g.s + (jj + 1) * g.lw : ia, xP, f2(g.lw));
+    if (g.wi > 0.05) dimV(ia, ib, xP, f2(g.wi));
+    for (let jj = 0; jj < nl; jj++) dimV(jj ? ib + jj * g.lw : ib, jj < nl - 1 ? ib + (jj + 1) * g.lw : g.n, xP, f2(g.lw));
+    dimV(g.n, g.n + 2.5, xP, f2(2.5));
   };
   vChain(XC - halfX + 4, PX(XC - halfX + 4));
   if (sc.id === 'ret') vChain(XC + 5, PX(XC + 5));   // partie de largeur constante de l'îlot
@@ -2839,9 +2936,11 @@ function planSVG(sc, meta, N) {
     if (prof.slope) txt(x1 + (2 + (prof.segs[0][1]) / 2) * ks, y0 - prof.h * kv - 2.5, prof.slope, 1.9);
   } else {
     txt(bx + bw / 2, by + 4, D.secB, 2.3);
-    const g = G(XC), parts = [[2.5, 0.15, 'walk'], [g.lw, 0, 'lane']];
+    const g = G(XC), parts = [[2.5, 0.15, 'walk']];
+    for (let jj = 0; jj < nl; jj++) parts.push([g.lw, 0, 'lane']);
     if (g.wi > 0.05) parts.push([g.wi, 0.15, 'isl']);
-    parts.push([g.lw, 0, 'lane'], [2.5, 0.15, 'walk']);
+    for (let jj = 0; jj < nl; jj++) parts.push([g.lw, 0, 'lane']);
+    parts.push([2.5, 0.15, 'walk']);
     const tot = parts.reduce((a, p) => a + p[0], 0), ks = 70 / tot, kv = ks * 10, x1 = bx + 5, y0 = by + bh - 16;
     let xc = x1; const pts = [];
     for (const [w, h] of parts) { pts.push([xc, y0 - h * kv], [xc + w * ks, y0 - h * kv]); xc += w * ks; }
@@ -3030,7 +3129,7 @@ function buildNote(id) {
   h2 += tbl(N.annACols, E.map((x, j) => `<tr${j === i ? ' style="font-weight:600"' : ''}><td>${esc(scName(scenarios[j]))}</td><td class="n">${f0(x.v85)}</td><td class="n">${f0(x.tt)}</td><td class="n">${f0(x.flow)}</td><td class="n">${f0(x.pedW)}</td><td class="n">${f1(x.surgRisk)}</td><td>${esc(st(x))}</td></tr>`));
   h2 += `<p>${esc(t('vCriteria'))}</p><p>${esc(R.best >= 0 ? N.recLine(scName(scenarios[R.best])) : N.recNone)}</p></section>`;
   const calibRows = FIELDS.find(g => g.lock).items.map(f => `<tr><td>${esc(f[lang])}</td><td class="n">${esc(nfa.format(P[f.k]))} ${esc(f.u[ui])}</td></tr>`);
-  h2 += `<section><h2>${esc(N.s.annB)}</h2>${li(N.method)}${tbl(N.calibCols, calibRows)}<p class="small">${esc(fpTxt)}</p></section>`;
+  h2 += `<section><h2>${esc(N.s.annB)}</h2>${li(P.nl > 1 ? N.method.concat([N.method2]) : N.method)}${tbl(N.calibCols, calibRows)}<p class="small">${esc(fpTxt)}</p></section>`;
   h2 += `<section><h2>${esc(N.s.annC)}</h2><ol dir="ltr">${SOURCES}</ol></section>`;
   h2 += `<p class="small gen gen-end">${genLine} · ${esc(meta.date)}</p>`;
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -3066,7 +3165,7 @@ function buildStrips() {
       <div class="strip-head">
         <button class="thumb" type="button" data-k="thumb" aria-label="${esc(t('thumbAria', scName(sc)))}"><img alt=""></button>
         <div class="strip-title">
-          <h3>${lg(scName(sc), scShort(sc))}<span class="pill rec" data-k="rec" hidden>${lg(...t('rec'))}</span><span class="pill ok" data-k="state">${lg(...t('stFluid'))}</span>${sc.reg ? `<span class="pill warn" title="${esc(t('regTitle'))}">${lg(...t('reg'))}</span>` : ''}</h3>
+          <h3>${lg(scName(sc), scShort(sc))}<span class="pill rec" data-k="rec" hidden>${lg(...t('rec'))}</span><span class="pill ok" data-k="state">${lg(...t('stFluid'))}</span>${sc.reg ? `<span class="pill warn" title="${esc(t('regTitle'))}">${lg(...t('reg'))}</span>` : ''}${sc.ban ? `<span class="pill warn" title="${esc(t('banTitle'))}">${lg(...t('ban'))}</span>` : ''}</h3>
           <p class="desc">${scDesc(sc)}</p>
         </div>
         <dl class="kpis">
@@ -3120,6 +3219,7 @@ function setCompact(on) {
 }
 
 function build() {
+  setYSpan(P);
   scenarios = buildScenarios(P);
   const D = new Demand(P);
   sims = scenarios.map(sc => new Sim(sc, D, P));
@@ -3213,9 +3313,10 @@ function renderVerdict() {
       if (ref.surgRisk - e.surgRisk < 0.1) h += `<p class="warn-t">${t('vSmallGain')}</p>`;
     }
     if (r.excluded.length) {
-      const why = x => x.why.map(w => w === 'sat' ? t('reasonSat', evalRes[x.i], evalP) : t('reasonReg')).join(t('sep'));
+      const why = x => x.why.map(w => w === 'sat' ? t('reasonSat', evalRes[x.i], evalP) : w === 'ban' ? t('reasonBan') : t('reasonReg')).join(t('sep'));
       h += `<p class="v-excl"><strong>${t('vExcluded')}</strong> ${r.excluded.map(x => `${scName(scenarios[x.i])} (${why(x)})`).join(' · ')}</p>`;
     }
+    if (evalP.nl > 1) h += `<p class="warn-t">${t('v2x2')}</p>`;
     h += `<p class="v-rule">${t('vCriteria')}</p>`;
   }
   if (h !== verdictHTML) { verdictHTML = h; $('#verdict').innerHTML = h; }
@@ -3292,12 +3393,14 @@ $('#params').addEventListener('submit', e => { formMsg = '#form-msg'; applyParam
 $('#params-calib').addEventListener('submit', e => { formMsg = '#form-msg-c'; applyParams(e); });
 function applyParams(e) {
   e.preventDefault();
-  const next = { ...P }, bad = [];
+  const next = { ...P }, bad = [], nlForm = Math.round(parseFloat($('#p-nl').value)) === 2 ? 2 : 1;
   for (const grp of FIELDS) for (const f of grp.items) {
     if (grp.lock && !calibUnlocked) continue;
-    const val = parseFloat(String($('#p-' + f.k).value).replace(',', '.'));
+    let val = parseFloat(String($('#p-' + f.k).value).replace(',', '.'));
     if (!Number.isFinite(val) || val < 0) { bad.push(f[lang]); continue; }
-    if (f.k === 'q' && val > f.max) { bad.push(t('msgQHigh', nfa.format(val))); continue; }
+    if (f.k === 'nl') val = Math.round(val);
+    // une voie écoule environ 1 800 véh/h : au-delà, la rue a deux voies par sens
+    if (f.k === 'q' && nlForm === 1 && val > 1800 && val <= f.max) { bad.push(t('msgQHigh', nfa.format(val))); continue; }
     if (f.min !== undefined && (val < f.min || val > f.max)) { bad.push(t('msgRange', f[lang], nfa.format(f.min), nfa.format(f.max))); continue; }
     next[f.k] = val;
   }
@@ -3317,7 +3420,7 @@ function restart(paramsChanged) {
 }
 
 /* ---------- vignettes 3D et agrandissement ---------- */
-function geomKey() { return ['laneW', 'retLane', 'retIsl', 'chOff', 'chTrans', 'chLane'].map(k => P[k]).join('|'); }
+function geomKey() { return ['nl', 'laneW', 'retLane', 'retIsl', 'chOff', 'chTrans', 'chLane'].map(k => P[k]).join('|'); }
 function renderThumbs() {
   if (!V3D.ok()) { document.body.classList.add('no3d'); return; }
   document.body.classList.remove('no3d');
@@ -3399,7 +3502,8 @@ Object.assign(I18N.fr, {
   schoolMeasures: ['Abords d’école limités à 30 km/h sur au moins 150 m de part et d’autre de l’entrée.', 'Panneau A13a « endroit fréquenté par les enfants » dans chaque sens.', 'Barrières de canalisation sur le trottoir devant la sortie, pour guider les enfants vers le passage.', 'Plateau surélevé devant l’entrée si le trafic le permet (voir les résultats).', 'Interdiction de stationner devant l’entrée et sur 5 m avant le passage.', 'Présence d’un agent ou d’un accompagnateur aux heures d’entrée et de sortie.'],
   recoHealth: (n, d) => `L’établissement de santé « ${n} » est à ${f0(d)} m. Sur l’itinéraire des ambulances, éviter dos d’âne et ralentisseurs trapézoïdaux ; préférer coussins berlinois, rétrécissement avec îlot ou feu piéton. Prévoir un temps de traversée plus long pour les personnes à mobilité réduite.`,
   recoDense: 'Quartier dense : les traversées seront nombreuses ; vérifier par un comptage le nombre de piétons saisi.',
-  warnLanes: n => `OpenStreetMap indique ${n} voies : le modèle simule une voie par sens. Ses résultats ne valent que pour une rue à deux voies ; au-delà, prévoir une étude de trafic.`,
+  warnLanes: n => `OpenStreetMap indique ${n} voies : le modèle simule une ou deux voies par sens, dans les deux sens. Ses résultats ne valent que pour une rue à 2 ou 4 voies à double sens ; au-delà, prévoir une étude de trafic.`,
+  infoLanes: n => `OpenStreetMap indique ${n} voies : indiquez 2 dans « Voies par sens » (le bouton « Reporter dans les données » le fait).`, kNl: 'Voies par sens',
   warnOneway: 'OpenStreetMap indique une rue à sens unique : le modèle simule deux sens de circulation. Interprétez les résultats avec prudence.',
   applySite: 'Reporter dans les données', applied: l => `Reporté dans le formulaire : ${l}. Cliquez sur « Appliquer et relancer ».`, nothingToApply: 'OpenStreetMap ne renseigne ni la vitesse limite ni la largeur de cette rue.',
   osmCredit: 'Données © contributeurs OpenStreetMap (ODbL) ; population WorldPop 2020.', proposalTip: 'Position proposée',
@@ -3454,7 +3558,8 @@ Object.assign(I18N.ar, {
   schoolMeasures: ['تحديد السرعة بـ 30 كم/س في محيط المدرسة على 150 م على الأقلّ من جانبي المدخل.', 'لافتة A13a «مكان يرتاده الأطفال» في كل اتجاه.', 'حواجز توجيه على الرصيف أمام المخرج لتوجيه الأطفال نحو الممرّ.', 'منصّة مرتفعة أمام المدخل إذا سمحت حركة المرور بذلك (انظر النتائج).', 'منع الوقوف أمام المدخل وعلى 5 م قبل الممرّ.', 'حضور عون أو مرافق عند أوقات الدخول والخروج.'],
   recoHealth: (n, d) => `تقع المؤسّسة الصحّية «${n}» على بعد ${f0(d)} م. على مسلك سيارات الإسعاف، يجب تجنّب المطبّات الدائرية وشبه المنحرفة، وتفضيل الوسائد البرلينية أو التضييق مع جزيرة أو الإشارة الضوئية، مع توقّع زمن عبور أطول للأشخاص ذوي الحركة المحدودة.`,
   recoDense: 'حيّ كثيف: سيكون العبور كثيرًا؛ يجب التثبّت بعملية عدّ من عدد المترجّلين المُدخل.',
-  warnLanes: n => `يشير OpenStreetMap إلى ${n} مسالك: يحاكي النموذج مسلكًا واحدًا في كل اتجاه. نتائجه صالحة فقط لنهج بمسلكين، وما زاد عن ذلك يتطلّب دراسة لحركة المرور.`,
+  warnLanes: n => `يشير OpenStreetMap إلى ${n} مسالك: يحاكي النموذج مسلكًا أو مسلكين في كل اتجاه، في الاتجاهين. نتائجه صالحة فقط لنهج ذي اتجاهين بمسلكين أو بأربعة مسالك، وما زاد عن ذلك يتطلّب دراسة لحركة المرور.`,
+  infoLanes: n => `يشير OpenStreetMap إلى ${n} مسالك: أدخل 2 في «عدد المسالك في كل اتجاه» (يقوم بذلك زرّ «نقل إلى المعطيات»).`, kNl: 'عدد المسالك في كل اتجاه',
   warnOneway: 'يشير OpenStreetMap إلى نهج ذي اتجاه واحد: يحاكي النموذج اتجاهين للسير. يجب تأويل النتائج بحذر.',
   applySite: 'نقل إلى المعطيات', applied: l => `نُقلت إلى الاستمارة: ${l}. اضغط على «تطبيق وإعادة التشغيل».`, nothingToApply: 'لا يُدرج OpenStreetMap السرعة القصوى ولا عرض هذا النهج.',
   osmCredit: 'المعطيات © مساهمو OpenStreetMap (ODbL)؛ السكّان WorldPop 2020.', proposalTip: 'الموقع المقترح',
@@ -3509,7 +3614,8 @@ Object.assign(I18N.en, {
   schoolMeasures: ['School zone limited to 30 km/h for at least 150 m on each side of the entrance.', 'A13a sign “area frequented by children” in each direction.', 'Guard railings on the sidewalk in front of the exit, to guide children to the crossing.', 'Raised table in front of the entrance if traffic allows (see the results).', 'No parking in front of the entrance or within 5 m before the crossing.', 'A crossing guard or escort present at arrival and dismissal times.'],
   recoHealth: (n, d) => `The health facility “${n}” is ${f0(d)} m away. On ambulance routes, avoid speed humps and speed tables; prefer speed cushions, a narrowing with an island, or a pedestrian signal. Allow a longer crossing time for people with reduced mobility.`,
   recoDense: 'Dense neighborhood: there will be many crossings; check the number of pedestrians entered with a count.',
-  warnLanes: n => `OpenStreetMap shows ${n} lanes: the model simulates one lane per direction. Its results are valid only for a two-lane street; beyond that, a traffic study is needed.`,
+  warnLanes: n => `OpenStreetMap shows ${n} lanes: the model simulates one or two lanes per direction, with two-way traffic. Its results are valid only for a two-way street with 2 or 4 lanes; beyond that, a traffic study is needed.`,
+  infoLanes: n => `OpenStreetMap shows ${n} lanes: enter 2 in “Lanes per direction” (the “Copy to the input data” button does it).`, kNl: 'Lanes per direction',
   warnOneway: 'OpenStreetMap shows a one-way street: the model simulates two-way traffic. Interpret the results with caution.',
   applySite: 'Copy to the input data', applied: l => `Copied to the form: ${l}. Click “Apply and rerun”.`, nothingToApply: 'OpenStreetMap gives neither the speed limit nor the width of this street.',
   osmCredit: 'Data © OpenStreetMap contributors (ODbL); population WorldPop 2020.', proposalTip: 'Proposed location',
@@ -3719,7 +3825,8 @@ function siteFacts(d) {
     out.road.push(t('kLanes') + C + (tg.lanes || NT), t('kOneway') + C + (isYes(tg.oneway) ? t('yes') : t('no')),
       t('kMaxspeed') + C + (tg.maxspeed ? tg.maxspeed + ' km/h' : NT), t('kWidth') + C + (tg.width ? tg.width + ' m' : NT));
     const lanes = parseInt(tg.lanes, 10);
-    if (lanes > 2 || (isYes(tg.oneway) && lanes >= 2)) out.warn.push(t('warnLanes', lanes));
+    if (lanes > 4 || (isYes(tg.oneway) && lanes >= 2)) out.warn.push(t('warnLanes', lanes));
+    else if (lanes >= 3 && P.nl !== 2) out.warn.push(t('infoLanes', lanes));
     if (isYes(tg.oneway)) out.warn.push(t('warnOneway'));
   } else out.warn.push(t('roadNone'));
   out.pop = SITE.popState === 'ok' ? t('popLine', SITE.pop.density, SITE.pop.pop, popLevel(SITE.pop.density))
@@ -3756,6 +3863,8 @@ function applySite() {
   const done = [], ms = parseInt(tg.maxspeed, 10);
   if (ms >= 30 && ms <= 70) { $('#p-vLim').value = Math.round(ms / 10) * 10; done.push(`${t('kMaxspeed')} ${ms} km/h`); }
   const w = parseFloat(String(tg.width || '').replace(',', '.')), ln = parseInt(tg.lanes, 10) || 2;
+  const lnTag = parseInt(tg.lanes, 10);
+  if (!isYes(tg.oneway) && lnTag >= 2 && lnTag <= 4) { const nl = lnTag >= 3 ? 2 : 1; $('#p-nl').value = nl; done.push(`${t('kNl')} ${nl}`); }
   if (w > 0) { const lw = Math.min(3.75, Math.max(2.75, w / ln)); $('#p-laneW').value = lw.toFixed(2); done.push(`${t('kWidth')} ${fm(lw)} m`); }
   $('#site-apply-msg').textContent = done.length ? t('applied', done.join(', ')) : t('nothingToApply');
 }
@@ -3872,7 +3981,7 @@ const DAY = { mode: 'profile', counts: Array(24).fill(''), res: null, prog: 0, j
 try { const s = JSON.parse(localStorage.getItem('mv-day') || 'null'); if (s) { DAY.mode = s.mode === 'counts' ? 'counts' : 'profile'; if (Array.isArray(s.counts)) DAY.counts = s.counts.slice(0, 24).concat(Array(24).fill('')).slice(0, 24); } } catch (e) { /* stockage indisponible */ }
 const saveDay = () => { try { localStorage.setItem('mv-day', JSON.stringify({ mode: DAY.mode, counts: DAY.counts })); } catch (e) { /* stockage indisponible */ } };
 function dayDemand() {
-  return PROFILE.map((f, h) => { const c = parseFloat(DAY.counts[h]); return Math.min(2000, DAY.mode === 'counts' && Number.isFinite(c) && c >= 0 ? c : f * P.q); });
+  return PROFILE.map((f, h) => { const c = parseFloat(DAY.counts[h]); return Math.min(P.nl > 1 ? 4000 : 2000, DAY.mode === 'counts' && Number.isFinite(c) && c >= 0 ? c : f * P.q); });
 }
 function buildDayInput() {
   const hours = []; for (let h = DAY_H0; h < DAY_H1; h++) hours.push(h);
@@ -3884,7 +3993,7 @@ function buildDayInput() {
     </div>
     <div class="table-wrap"><table class="dayin"><thead><tr><th>${t('dayHour')}</th>${hours.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>
       <tr><td>${t('dayRowP')}</td>${hours.map(h => `<td>${f0(PROFILE[h] * P.q)}</td>`).join('')}</tr>
-      <tr><td>${t('dayRowC')}</td>${hours.map(h => `<td><input data-h="${h}" type="number" min="0" max="2000" step="10" inputmode="numeric" value="${esc(DAY.counts[h])}"${counts ? '' : ' disabled'} aria-label="${esc(t('dayRowC'))} ${h}"></td>`).join('')}</tr>
+      <tr><td>${t('dayRowC')}</td>${hours.map(h => `<td><input data-h="${h}" type="number" min="0" max="${P.nl > 1 ? 4000 : 2000}" step="10" inputmode="numeric" value="${esc(DAY.counts[h])}"${counts ? '' : ' disabled'} aria-label="${esc(t('dayRowC'))} ${h}"></td>`).join('')}</tr>
     </tbody></table></div>
     <div class="form-actions"><button class="btn primary" type="button" id="btn-day">${t('dayCalc')}</button></div>`;
 }
@@ -3981,7 +4090,7 @@ Object.assign(I18N.fr, {
     <ol>
       <li><strong>Situer le lieu</strong> sur la carte, puis « Analyser le lieu » : rue, écoles et établissements de santé proches, arrêts de bus, densité de population.</li>
       <li><strong>Décrire la rue</strong> dans le profil en travers, d’une façade à l’autre (trottoirs, voies, stationnement, voies bus, aménagements cyclables, terre-plein, îlot, poteaux d’éclairage) et en trois temps : l’existant, le projeté en section courante (la rue après travaux, hors du passage) et le profil au droit du passage. Ce dernier est calculé pour la variante choisie ; vous pouvez le modifier.</li>
-      <li><strong>Saisir le trafic</strong> : débit de pointe par sens, part de poids lourds et de bus, vitesse mesurée, piétons, limitation de vitesse ; et, si possible, vos comptages heure par heure.</li>
+      <li><strong>Saisir le trafic</strong> : nombre de voies par sens (une ou deux), débit de pointe par sens, part de poids lourds et de bus, vitesse mesurée, piétons, limitation de vitesse ; et, si possible, vos comptages heure par heure. Au-delà d’environ 1 800 véh/h par sens, une voie ne suffit plus : indiquez deux voies par sens (jusqu’à 3 600 véh/h par sens).</li>
       <li><strong>Régler les aménagements</strong> : dimensions du rétrécissement et de la chicane, durée du feu. Puis « Appliquer et relancer ».</li>
       <li><strong>Regarder les simulations</strong> : une bande animée par aménagement, avec ses chiffres clés et une vue 3D (clic sur la vignette). Le mode présentation les affiche toutes sur un écran.</li>
       <li><strong>Lire les résultats</strong> : solution recommandée et ses raisons, tableau de synthèse, trafic sur la journée.</li>
@@ -3995,6 +4104,7 @@ Object.assign(I18N.fr, {
     <p>« Enregistrer le projet », en haut de la page, télécharge un fichier qui contient tout : lieu, données, profils, journée, carrefour. « Ouvrir un projet » le recharge. Une copie de chaque enregistrement et l’adresse IP de l’ordinateur sont transmises à l’administrateur de l’application.</p>
     <h3>Les données nécessaires</h3>
     <div class="table-wrap"><table><thead><tr><th>Donnée</th><th>Comment l’obtenir</th><th>Indispensable ?</th></tr></thead><tbody>
+      <tr><td>Nombre de voies par sens (1 ou 2)</td><td>Sur place ou sur image satellite</td><td>Oui</td></tr>
       <tr><td>Débit de pointe par sens</td><td>Comptage d’une heure à la pointe du matin ou du soir</td><td>Oui</td></tr>
       <tr><td>Part de poids lourds et de bus</td><td>Même comptage</td><td>Oui</td></tr>
       <tr><td>Largeurs de la rue (profil en travers)</td><td>Décamètre, plan de voirie ou image satellite</td><td>Oui</td></tr>
@@ -4043,7 +4153,7 @@ Object.assign(I18N.fr, {
   ckBikeBad: w => `Bande cyclable de ${fm(w)} m : 1,20 m au minimum, 1,50 m conseillés.`,
   ckTrackBad: w => `Piste cyclable de ${fm(w)} m : 1,50 m au minimum dans un sens.`,
   ckMedianWarn: w => `Terre-plein de ${fm(w)} m : il faut au moins 1,50 m pour qu’il serve de refuge aux piétons.`,
-  ckMulti: n => `${n} voies dans un même sens : la simulation ne représente qu’une voie par sens ; ses résultats sont à prendre avec prudence.`,
+  ckMulti: n => `${n} voies dans un même sens : la simulation représente au plus deux voies par sens ; ses résultats sont à prendre avec prudence.`, ckTwo: "Deux voies par sens : la simulation les représente quand « Voies par sens » vaut 2 (bouton « Utiliser ce profil dans la simulation »).",
   ckOneWay: 'Toutes les voies vont dans le même sens : la simulation représente deux sens de circulation.',
   ckNoLane: 'Ajoutez au moins une voie de circulation.',
   pfExisting: 'Profil existant', pfCrossTitle: n => `Au droit du passage — ${n}`,
@@ -4062,7 +4172,7 @@ Object.assign(I18N.fr, {
   pfLampOne: 'Un seul poteau d’éclairage au droit du passage : un deuxième, de l’autre côté, éclaire les piétons dans les deux sens de circulation.',
   pfLampOk: n => `${n} poteaux d’éclairage au droit du passage.`,
   pfCrossLong: 'Traversée de plus de 9 m d’un seul tenant : un refuge central est conseillé.',
-  pfUse: 'Utiliser ce profil dans la simulation', pfUsed: lw => `Largeur de voie reportée dans les données : ${fm(lw)} m. Cliquez sur « Appliquer et relancer ».`, pfUseNone: 'Ce profil ne contient aucune voie de circulation.',
+  pfUse: 'Utiliser ce profil dans la simulation', pfUsed: (lw, nl) => `Reporté dans les données : largeur de voie ${fm(lw)} m, ${nl} voie(s) par sens. Cliquez sur « Appliquer et relancer ».`, pfUseNone: 'Ce profil ne contient aucune voie de circulation.',
   pfCrossing: 'Traversée'
 });
 Object.assign(I18N.ar, {
@@ -4072,7 +4182,7 @@ Object.assign(I18N.ar, {
     <ol>
       <li><strong>تحديد الموقع</strong> على الخريطة، ثم «تحليل الموقع»: النهج، والمدارس والمؤسّسات الصحّية القريبة، ومحطّات الحافلات، وكثافة السكّان.</li>
       <li><strong>وصف النهج</strong> في المقطع العرضي، من واجهة إلى أخرى (الأرصفة، والمسالك، وأماكن الوقوف، ومسالك الحافلات والدرّاجات، والفاصل الوسطي، والجزيرة، وأعمدة الإنارة)، وعلى ثلاث مراحل: الوضع الحالي، والمقطع المبرمج في الجزء الجاري (النهج بعد الأشغال، خارج الممرّ)، والمقطع عند الممرّ. ويُحسب هذا الأخير للتهيئة المختارة، ويمكنك تعديله.</li>
-      <li><strong>إدخال حركة المرور</strong>: تدفّق الذروة في كل اتجاه، ونسبة العربات الثقيلة والحافلات، والسرعة المقاسة، والمترجّلون، والسرعة القصوى؛ وإن أمكن، عمليات العدّ ساعة بساعة.</li>
+      <li><strong>إدخال حركة المرور</strong>: عدد المسالك في كل اتجاه (مسلك أو مسلكان)، وتدفّق الذروة في كل اتجاه، ونسبة العربات الثقيلة والحافلات، والسرعة المقاسة، والمترجّلون، والسرعة القصوى؛ وإن أمكن، عمليات العدّ ساعة بساعة. فوق حوالي 1800 عربة/س في كل اتجاه لا يكفي مسلك واحد: أدخل مسلكين في كل اتجاه (حتى 3600 عربة/س في كل اتجاه).</li>
       <li><strong>ضبط التهيئات</strong>: أبعاد التضييق والتعرّج، ومدّة الإشارة الضوئية، ثم «تطبيق وإعادة التشغيل».</li>
       <li><strong>مشاهدة المحاكاة</strong>: شريحة متحرّكة لكل تهيئة، مع أرقامها الرئيسية وصورة ثلاثية الأبعاد (اضغط على الصورة المصغّرة). ويعرضها وضع العرض كلّها في شاشة واحدة.</li>
       <li><strong>قراءة النتائج</strong>: الحلّ الموصى به وأسبابه، وجدول الخلاصة، وحركة المرور على مدار اليوم.</li>
@@ -4086,6 +4196,7 @@ Object.assign(I18N.ar, {
     <p>يُنزّل زرّ «حفظ المشروع»، أعلى الصفحة، ملفًّا يحتوي على كل شيء: الموقع، والمعطيات، والمقاطع، واليوم، والمفترق. ويعيد زرّ «فتح مشروع» تحميله. وتُرسَل نسخة من كل حفظ وعنوان IP للحاسوب إلى مشرف التطبيق.</p>
     <h3>المعطيات اللازمة</h3>
     <div class="table-wrap"><table><thead><tr><th>المعطى</th><th>كيفية الحصول عليه</th><th>ضروري؟</th></tr></thead><tbody>
+      <tr><td>عدد المسالك في كل اتجاه (1 أو 2)</td><td>في عين المكان أو على صورة جوية</td><td>نعم</td></tr>
       <tr><td>تدفّق الذروة في كل اتجاه</td><td>عدّ لمدّة ساعة في ذروة الصباح أو المساء</td><td>نعم</td></tr>
       <tr><td>نسبة العربات الثقيلة والحافلات</td><td>نفس العدّ</td><td>نعم</td></tr>
       <tr><td>عروض النهج (المقطع العرضي)</td><td>ديكامتر، أو مخطّط الطرقات، أو صورة جوية</td><td>نعم</td></tr>
@@ -4134,7 +4245,7 @@ Object.assign(I18N.ar, {
   ckBikeBad: w => `شريط للدرّاجات بعرض ${fm(w)} م: 1,20 م على الأقلّ، ويُنصح بـ 1,50 م.`,
   ckTrackBad: w => `مسلك للدرّاجات بعرض ${fm(w)} م: 1,50 م على الأقلّ في اتجاه واحد.`,
   ckMedianWarn: w => `فاصل وسطي بعرض ${fm(w)} م: يلزم 1,50 م على الأقلّ ليكون ملجأً للمترجّلين.`,
-  ckMulti: n => `${n} مسالك في نفس الاتجاه: لا تمثّل المحاكاة إلّا مسلكًا واحدًا في كل اتجاه، ويجب أخذ نتائجها بحذر.`,
+  ckMulti: n => `${n} مسالك في نفس الاتجاه: لا تمثّل المحاكاة أكثر من مسلكين في كل اتجاه، ويجب أخذ نتائجها بحذر.`, ckTwo: "مسلكان في كل اتجاه: تمثّلهما المحاكاة عندما يساوي «عدد المسالك في كل اتجاه» 2 (زرّ «استعمال هذا المقطع في المحاكاة»).",
   ckOneWay: 'كل المسالك في نفس الاتجاه: تمثّل المحاكاة اتجاهين للسير.',
   ckNoLane: 'أضف مسلك سير واحدًا على الأقلّ.',
   pfExisting: 'المقطع الحالي', pfCrossTitle: n => `عند الممرّ — ${n}`,
@@ -4153,7 +4264,7 @@ Object.assign(I18N.ar, {
   pfLampOne: 'عمود إنارة واحد فقط عند الممرّ: عمود ثانٍ في الجهة المقابلة يُضيء المترجّلين في اتجاهي السير.',
   pfLampOk: n => n === 2 ? 'عمودا إنارة عند الممرّ.' : `${n} أعمدة إنارة عند الممرّ.`,
   pfCrossLong: 'عبور يتجاوز 9 م دون توقّف: يُنصح بملجأ وسطي.',
-  pfUse: 'استعمال هذا المقطع في المحاكاة', pfUsed: lw => `نُقل عرض المسلك إلى المعطيات: ${fm(lw)} م. اضغط على «تطبيق وإعادة التشغيل».`, pfUseNone: 'لا يحتوي هذا المقطع على أيّ مسلك سير.',
+  pfUse: 'استعمال هذا المقطع في المحاكاة', pfUsed: (lw, nl) => `نُقل إلى المعطيات: عرض المسلك ${fm(lw)} م، و${nl} مسلك في كل اتجاه. اضغط على «تطبيق وإعادة التشغيل».`, pfUseNone: 'لا يحتوي هذا المقطع على أيّ مسلك سير.',
   pfCrossing: 'العبور'
 });
 Object.assign(I18N.en, {
@@ -4163,7 +4274,7 @@ Object.assign(I18N.en, {
     <ol>
       <li><strong>Locate the site</strong> on the map, then click “Analyze the site”: street, nearby schools and health facilities, bus stops, population density.</li>
       <li><strong>Describe the street</strong> in the cross-section, from building line to building line (sidewalks, lanes, parking, bus lanes, bike facilities, median, island, street lights), in three stages: the existing street, the proposed typical section (the street after the works, away from the crossing) and the cross-section at the crossing. The last one is calculated for the chosen option; you can modify it.</li>
-      <li><strong>Enter the traffic</strong>: peak flow per direction, share of trucks and buses, measured speed, pedestrians, speed limit; and, if possible, your hour-by-hour traffic counts.</li>
+      <li><strong>Enter the traffic</strong>: number of lanes per direction (one or two), peak flow per direction, share of trucks and buses, measured speed, pedestrians, speed limit; and, if possible, your hour-by-hour traffic counts. Above about 1,800 veh/h per direction one lane is no longer enough: enter two lanes per direction (up to 3,600 veh/h per direction).</li>
       <li><strong>Adjust the measures</strong>: dimensions of the narrowing and the chicane, signal timing. Then click “Apply and rerun”.</li>
       <li><strong>Watch the simulations</strong>: one animated strip per measure, with its key figures and a 3D view (click the thumbnail). Presentation mode shows them all on one screen.</li>
       <li><strong>Read the results</strong>: recommended solution and the reasons for it, summary table, traffic over the day.</li>
@@ -4177,6 +4288,7 @@ Object.assign(I18N.en, {
     <p>“Save the project”, at the top of the page, downloads a file containing everything: site, data, cross-sections, daily traffic, intersection. “Open a project” reloads it. A copy of each save and the computer’s IP address are sent to the application administrator.</p>
     <h3>Data needed</h3>
     <div class="table-wrap"><table><thead><tr><th>Data</th><th>How to obtain it</th><th>Required?</th></tr></thead><tbody>
+      <tr><td>Number of lanes per direction (1 or 2)</td><td>On site or on a satellite image</td><td>Yes</td></tr>
       <tr><td>Peak flow per direction</td><td>One-hour count at the morning or evening peak</td><td>Yes</td></tr>
       <tr><td>Share of trucks and buses</td><td>Same count</td><td>Yes</td></tr>
       <tr><td>Street widths (cross-section)</td><td>Measuring tape, street plan or satellite image</td><td>Yes</td></tr>
@@ -4225,7 +4337,7 @@ Object.assign(I18N.en, {
   ckBikeBad: w => `Bike lane of ${fm(w)} m: 1.20 m minimum, 1.50 m recommended.`,
   ckTrackBad: w => `Bike track of ${fm(w)} m: 1.50 m minimum for one direction.`,
   ckMedianWarn: w => `Median of ${fm(w)} m: at least 1.50 m is needed for it to serve as a pedestrian refuge.`,
-  ckMulti: n => `${n} lanes in the same direction: the simulation represents only one lane per direction; treat its results with caution.`,
+  ckMulti: n => `${n} lanes in the same direction: the simulation represents at most two lanes per direction; treat its results with caution.`, ckTwo: "Two lanes per direction: the simulation represents them when “Lanes per direction” is 2 (“Use this profile in the simulation” button).",
   ckOneWay: 'All lanes run in the same direction: the simulation represents two-way traffic.',
   ckNoLane: 'Add at least one traffic lane.',
   pfExisting: 'Existing cross-section', pfCrossTitle: n => `At the crossing — ${n}`,
@@ -4244,7 +4356,7 @@ Object.assign(I18N.en, {
   pfLampOne: 'Only one street light at the crossing: a second one, on the other side, lights pedestrians for both traffic directions.',
   pfLampOk: n => `${n} street lights at the crossing.`,
   pfCrossLong: 'Crossing longer than 9 m in a single stretch: a central refuge is recommended.',
-  pfUse: 'Use this profile in the simulation', pfUsed: lw => `Lane width copied to the input data: ${fm(lw)} m. Click “Apply and rerun”.`, pfUseNone: 'This cross-section contains no traffic lane.',
+  pfUse: 'Use this profile in the simulation', pfUsed: (lw, nl) => `Copied to the input data: lane width ${fm(lw)} m, ${nl} lane(s) per direction. Click “Apply and rerun”.`, pfUseNone: 'This cross-section contains no traffic lane.',
   pfCrossing: 'Crossing'
 });
 Object.assign(NOTE.fr, { profIntro: 'La rue décrite par la commune, de façade à façade, en trois temps : l’existant, le projeté en section courante (après travaux, hors du passage) et le profil au droit du passage pour la variante retenue. Largeurs en mètres.', profCols: ['Élément', 'Largeur (m)'] });
@@ -4318,7 +4430,9 @@ function profChecks(pf, atCrossing = false) {
   const lanes = pf.segs.filter(s => s.t === 'lane'), n1 = lanes.filter(s => s.d > 0).length, n2 = lanes.length - n1;
   if (!lanes.length) out.push(['bad', t('ckNoLane')]);
   else if (!atCrossing) {
-    if (Math.max(n1, n2) >= 2) out.push(['warn', t('ckMulti', Math.max(n1, n2))]);
+    const nMax = Math.max(n1, n2);
+    if (nMax >= 3) out.push(['warn', t('ckMulti', nMax)]);
+    else if (nMax === 2) out.push(['ok', t('ckTwo')]);
     if (!n1 || !n2) out.push(['warn', t('ckOneWay')]);
   }
   return out;
@@ -4612,7 +4726,8 @@ $('#profil').addEventListener('click', e => {
     const lanes = PROF.segs.filter(s => s.t === 'lane');
     if (!lanes.length) { $('#pf-msg').textContent = t('pfUseNone'); return; }
     const lw = Math.min(3.75, Math.max(2.75, Math.round(lanes.reduce((a, s) => a + s.w, 0) / lanes.length * 20) / 20));
-    $('#p-laneW').value = lw; $('#pf-msg').textContent = t('pfUsed', lw); return;
+    const n1 = lanes.filter(s => s.d > 0).length, nl = Math.min(2, Math.max(1, n1, lanes.length - n1));
+    $('#p-laneW').value = lw; $('#p-nl').value = nl; $('#pf-msg').textContent = t('pfUsed', lw, nl); return;
   }
   if (!b.dataset.act || !tabSegs(false)[+b.dataset.i]) return;
   const segs = tabSegs(true), i = +b.dataset.i, s = segs[i];
@@ -6617,6 +6732,7 @@ function projApply(s) {
   // paramètres : seules les clés connues, ramenées dans leurs bornes
   const next = { ...DEFAULTS };
   for (const g of FIELDS) for (const f of g.items) { const v = +s.params[f.k]; if (Number.isFinite(v)) next[f.k] = f.min !== undefined ? Math.min(f.max, Math.max(f.min, v)) : v; }
+  next.nl = Math.round(next.nl) === 2 ? 2 : 1; if (next.nl === 1) next.q = Math.min(next.q, 1800);   // projets antérieurs : une voie par sens
   P = derive(next); calibModified = fingerprint(P) !== FP_REF;
   if (s.profile && okSegs(s.profile.segs)) {
     PROF = { total: +s.profile.total || 12, segs: readSegs(s.profile.segs) };

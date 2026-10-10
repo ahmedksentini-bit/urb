@@ -168,7 +168,13 @@ main { padding-block: 6px 48px; }
 .prof-draw svg { display: block; width: 100%; min-width: 620px; height: auto; max-height: 360px; }
 .prof-segs { direction: ltr; display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 4px; }
 .pseg { flex: 0 0 auto; width: 138px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); padding: 6px; display: grid; gap: 5px; font-size: 12.5px; cursor: grab; }
-.pseg.drag-over { outline: 2px dashed var(--accent); outline-offset: 1px; }
+.pseg.dragging { opacity: .35; }
+.prof-segs { position: relative; }
+#pf-insbar { position: absolute; top: 4px; bottom: 0; width: 4px; border-radius: 2px; background: var(--accent); pointer-events: none; }
+.prof-draw svg, .pseg, .prof-palette .btn { user-select: none; }
+.prof-draw svg { cursor: grab; }
+body.pf-dragging, body.pf-dragging * { cursor: grabbing !important; user-select: none; }
+.pf-ghost { position: fixed; z-index: 50; pointer-events: none; display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 5px; background: var(--surface); border: 1px solid var(--accent); box-shadow: 0 2px 8px rgba(0, 0, 0, .25); font: 600 12.5px/1.2 var(--font-display); color: var(--ink); }
 .pseg .nm { font: 600 12.5px/1.2 var(--font-display); display: flex; align-items: center; gap: 6px; min-height: 30px; }
 .pseg .wrow { display: flex; align-items: center; gap: 3px; }
 .pseg input { width: 58px; font: 500 13px/1.2 var(--font-display); padding: 3px 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface); color: var(--ink); text-align: right; }
@@ -3884,7 +3890,7 @@ Object.assign(I18N.fr, {
     </ul>
     <p class="note">L’outil aide à décider ; il ne remplace pas une étude. Ses valeurs de référence sont des ordres de grandeur, à confirmer par des mesures locales.</p>`,
   pfTitle: 'Profil en travers de la rue',
-  pfNote: 'Décrivez la rue d’une façade à l’autre, en trois temps : telle qu’elle est, telle qu’elle sera après travaux en section courante, et au droit du passage. Dans chaque onglet, ajoutez des éléments, réglez leur largeur, déplacez-les (glisser-déposer ou flèches) ou supprimez-les.',
+  pfNote: 'Décrivez la rue d’une façade à l’autre, en trois temps : telle qu’elle est, telle qu’elle sera après travaux en section courante, et au droit du passage. Dans chaque onglet, ajoutez des éléments (clic ou glisser depuis la palette), réglez leur largeur, déplacez-les en les faisant glisser à la souris sur le dessin ou sur leur carte (la limite où ils seront posés est marquée en bleu), ou supprimez-les.',
   tabEx: 'Existant', tabPr: 'Projeté (section courante)',
   hintEx: 'La rue telle qu’elle est aujourd’hui. C’est la situation de référence de la simulation.',
   hintPr: 'La rue après travaux, hors du passage : voies ramenées à 3,00 m, trottoirs élargis, bande cyclable, plantations… Tant que vous ne le modifiez pas, il reprend l’existant.',
@@ -3969,7 +3975,7 @@ Object.assign(I18N.ar, {
     </ul>
     <p class="note">الأداة تساعد على القرار ولا تعوّض الدراسة. قيمها المرجعية تقريبية ويجب تأكيدها بقياسات محلية.</p>`,
   pfTitle: 'المقطع العرضي للنهج',
-  pfNote: 'صف النهج من واجهة إلى أخرى على ثلاث مراحل: كما هو، وكما سيكون بعد الأشغال في الجزء الجاري، وعند الممرّ. في كل تبويب، أضف عناصر، واضبط عرضها، وحرّكها (بالسحب والإفلات أو بالأسهم) أو احذفها.',
+  pfNote: 'صف النهج من واجهة إلى أخرى على ثلاث مراحل: كما هو، وكما سيكون بعد الأشغال في الجزء الجاري، وعند الممرّ. في كل تبويب، أضف عناصر (بالضغط أو بالسحب من القائمة)، واضبط عرضها، وحرّكها بسحبها بالفأرة على الرسم أو على بطاقتها (يُعلَّم الحدّ الذي ستوضع فيه بالأزرق)، أو احذفها.',
   tabEx: 'الوضع الحالي', tabPr: 'المبرمج (الجزء الجاري)',
   hintEx: 'النهج كما هو اليوم. وهو الوضع المرجعي للمحاكاة.',
   hintPr: 'النهج بعد الأشغال خارج الممرّ: مسالك بعرض 3,00 م، وأرصفة أعرض، وشريط للدرّاجات، وغراسة… وما لم تعدّله، فهو يطابق الوضع الحالي.',
@@ -4054,7 +4060,7 @@ Object.assign(I18N.en, {
     </ul>
     <p class="note">The tool supports decision-making; it does not replace a study. Its reference values are orders of magnitude, to be confirmed by local measurements.</p>`,
   pfTitle: 'Street cross-section',
-  pfNote: 'Describe the street from building line to building line, in three stages: as it is, as it will be after the works in the typical section, and at the crossing. In each tab, add elements, set their width, move them (drag and drop or arrows) or delete them.',
+  pfNote: 'Describe the street from building line to building line, in three stages: as it is, as it will be after the works in the typical section, and at the crossing. In each tab, add elements (click or drag from the palette), set their width, move them by dragging with the mouse on the drawing or on their card (the boundary where they will be placed is marked in blue), or delete them.',
   tabEx: 'Existing', tabPr: 'Proposed (typical section)',
   hintEx: 'The street as it is today. This is the reference situation for the simulation.',
   hintPr: 'The street after the works, away from the crossing: lanes reduced to 3.00 m, wider sidewalks, bike lane, planting… Until you modify it, it repeats the existing cross-section.',
@@ -4413,7 +4419,7 @@ function renderProfile(cards) {
   $('#pf-acts').innerHTML = acts;
   const segs = tabSegs(false), C = pfTab === 'cr' ? crossOf(id) : null, checks = C ? C.notes : profChecks({ total: PROF.total, segs }), flags = profFlags(checks);
   $('#pf-draw').innerHTML = profileSVG(segs, PROF.total, { stages: C ? C.stages : null, flags });
-  if (cards) $('#pf-segs').innerHTML = segs.map((s, i) => `<div class="pseg" draggable="true" data-i="${i}">
+  if (cards) $('#pf-segs').innerHTML = segs.map((s, i) => `<div class="pseg" data-i="${i}">
       <div class="nm"><span class="sw" style="background:${SEG[s.t].color}"></span>${esc(N[s.t][0])}</div>
       <div class="wrow"><button class="btn mini" type="button" data-act="minus" data-i="${i}" aria-label="−0,25 m">−</button><input type="number" min="0.25" max="30" step="0.05" value="${Math.round(s.w * 100) / 100}" data-act="w" data-i="${i}" aria-label="${esc(t('pfWidth'))}"><button class="btn mini" type="button" data-act="plus" data-i="${i}" aria-label="+0,25 m">+</button><span>${t('m')}</span></div>
       ${SEG[s.t].dir ? `<button class="btn mini dir" type="button" data-act="dir" data-i="${i}">${s.d > 0 ? '↑ ' + esc(t('dir1')) : '↓ ' + esc(t('dir2'))}</button>` : ''}
@@ -4458,8 +4464,8 @@ function placeLamp(segs) {
   if (c.s.w > L0 + 0.25) c.s.w = Math.round((c.s.w - L0) * 100) / 100;
   segs.splice(c.at, 0, { t: 'lamp', w: L0, d: 1 });
 }
-let dragI = null;
 $('#profil').addEventListener('click', e => {
+  if (PD.noClick) return;   // fin d'un glisser-déposer : pas de clic
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.pftab) { pfTab = b.dataset.pftab; $('#pf-msg').textContent = ''; renderProfile(true); return; }
   if (b.dataset.add) { const k = b.dataset.add; if (k === 'lamp') placeLamp(tabSegs(true)); else tabSegs(true).push({ t: k, w: SEG[k].def, d: 1 }); saveProf(); renderProfile(true); return; }
@@ -4497,17 +4503,98 @@ $('#profil').addEventListener('change', e => {
   buildNoteUI(); if (DAY.res) renderDayResults();
   renderProfile(true);
 });
-$('#profil').addEventListener('dragstart', e => { const c = e.target.closest && e.target.closest('.pseg'); if (c) { dragI = +c.dataset.i; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(dragI)); } });
-$('#profil').addEventListener('dragover', e => { const c = e.target.closest && e.target.closest('.pseg'); if (c && dragI !== null) { e.preventDefault(); c.classList.add('drag-over'); } });
-$('#profil').addEventListener('dragleave', e => { const c = e.target.closest && e.target.closest('.pseg'); if (c) c.classList.remove('drag-over'); });
-$('#profil').addEventListener('drop', e => {
-  const c = e.target.closest && e.target.closest('.pseg');
-  if (!c || dragI === null) return;
+/* glisser-déposer à la souris (façon Streetmix) : on saisit un élément sur le dessin, sa carte, ou un élément de la palette ;
+   la limite entre deux éléments la plus proche du pointeur est repérée et marquée ; au lâcher, l'élément y est placé */
+const PD = { pend: null, on: false, src: null, ins: -1, x0: 0, y0: 0, ghost: null, noClick: false };
+// limites entre éléments, en abscisses écran : sur le dessin (repère du SVG) et dans la rangée des cartes
+function drawBounds() {
+  const svg = $('#pf-draw svg'); if (!svg) return null;
+  const m = svg.getScreenCTM(); if (!m) return null;
+  const xs = [0]; for (const s of tabSegs(false)) xs.push(xs[xs.length - 1] + s.w);
+  return xs.map(x => m.a * x * 100 + m.e);
+}
+function cardBounds() {
+  const cs = [...document.querySelectorAll('#pf-segs .pseg')].map(c => c.getBoundingClientRect());
+  if (!cs.length) return [];
+  return [cs[0].left].concat(cs.slice(1).map((r, k) => (cs[k].right + r.left) / 2), [cs[cs.length - 1].right]);
+}
+const nearest = (bs, x) => bs.reduce((b, v, k) => Math.abs(v - x) < Math.abs(bs[b] - x) ? k : b, 0);
+function pdMarkers(ins) {
+  document.querySelectorAll('#pf-insline, #pf-insbar').forEach(n => n.remove());
+  if (ins < 0) return;
+  const svg = $('#pf-draw svg');
+  if (svg) {
+    const xs = [0]; for (const s of tabSegs(false)) xs.push(xs[xs.length - 1] + s.w);
+    svg.insertAdjacentHTML('beforeend', `<line id="pf-insline" x1="${xs[ins] * 100}" y1="6" x2="${xs[ins] * 100}" y2="470" stroke="#1b5ea8" stroke-width="12" stroke-linecap="round"/>`);
+  }
+  const box = $('#pf-segs'), cb = cardBounds();
+  if (box && cb.length) {
+    const r = box.getBoundingClientRect();
+    box.insertAdjacentHTML('beforeend', `<div id="pf-insbar" style="left:${cb[ins] - r.left + box.scrollLeft - 2}px"></div>`);
+  }
+}
+function pdStart(e, src) {
+  if (e.button !== 0 || e.pointerType === 'touch') return;
+  PD.pend = src; PD.x0 = e.clientX; PD.y0 = e.clientY;
+}
+function pdMove(e) {
+  if (!PD.pend && !PD.on) return;
+  if (!PD.on) {
+    if (Math.hypot(e.clientX - PD.x0, e.clientY - PD.y0) < 5) return;
+    PD.on = true; PD.src = PD.pend; document.body.classList.add('pf-dragging');
+    const N = t('segNames'), tp = PD.src.kind === 'new' ? PD.src.t : tabSegs(false)[PD.src.i].t;
+    PD.ghost = document.createElement('div'); PD.ghost.className = 'pf-ghost';
+    PD.ghost.innerHTML = `<span class="sw" style="background:${SEG[tp].color}"></span>${esc(N[tp][0])}`;
+    document.body.appendChild(PD.ghost);
+    if (PD.src.kind === 'seg') document.querySelectorAll(`#pf-segs .pseg[data-i="${PD.src.i}"]`).forEach(c => c.classList.add('dragging'));
+  }
   e.preventDefault();
-  const segs = tabSegs(true), j = +c.dataset.i, [s] = segs.splice(dragI, 1);
-  segs.splice(j, 0, s); dragI = null; saveProf(); renderProfile(true);
+  PD.ghost.style.left = e.clientX + 12 + 'px'; PD.ghost.style.top = e.clientY + 12 + 'px';
+  // zone visée : le dessin ou la rangée des cartes (marge de 40 px autour)
+  const inZone = el => { if (!el) return false; const r = el.getBoundingClientRect(); return e.clientX > r.left - 40 && e.clientX < r.right + 40 && e.clientY > r.top - 40 && e.clientY < r.bottom + 40; };
+  let ins = -1;
+  if (inZone($('#pf-draw'))) { const b = drawBounds(); if (b) ins = nearest(b, e.clientX); }
+  else if (inZone($('#pf-segs'))) { const b = cardBounds(); if (b.length) ins = nearest(b, e.clientX); }
+  // poser un élément à sa propre place ne change rien : pas de marque
+  if (PD.src.kind === 'seg' && (ins === PD.src.i || ins === PD.src.i + 1)) ins = -1;
+  if (ins !== PD.ins) { PD.ins = ins; pdMarkers(ins); }
+}
+function pdEnd() {
+  const was = PD.on, src = PD.src, ins = PD.ins;
+  PD.pend = null; PD.on = false; PD.src = null; PD.ins = -1;
+  if (!was) return;
+  PD.noClick = true; setTimeout(() => { PD.noClick = false; }, 0);
+  document.body.classList.remove('pf-dragging');
+  if (PD.ghost) { PD.ghost.remove(); PD.ghost = null; }
+  pdMarkers(-1);
+  document.querySelectorAll('#pf-segs .pseg.dragging').forEach(c => c.classList.remove('dragging'));
+  if (ins < 0) return;
+  const segs = tabSegs(true);
+  if (src.kind === 'seg') { const [s] = segs.splice(src.i, 1); segs.splice(ins > src.i ? ins - 1 : ins, 0, s); }
+  else {
+    // poteau posé contre un trottoir : sa largeur est prise sur ce trottoir, comme avec le bouton
+    const w = SEG[src.t].def, nb = [segs[ins - 1], segs[ins]].find(s => s && s.t === 'walk' && s.w > w + 0.25);
+    if (src.t === 'lamp' && nb) nb.w = Math.round((nb.w - w) * 100) / 100;
+    segs.splice(ins, 0, { t: src.t, w, d: 1 });
+  }
+  saveProf(); renderProfile(true);
+}
+$('#profil').addEventListener('pointerdown', e => {
+  const pal = e.target.closest('[data-add]');
+  if (pal) { pdStart(e, { kind: 'new', t: pal.dataset.add }); return; }
+  const card = e.target.closest('#pf-segs .pseg');
+  if (card) { if (!e.target.closest('button, input, select')) pdStart(e, { kind: 'seg', i: +card.dataset.i }); return; }
+  const svg = e.target.closest('#pf-draw svg');
+  if (svg) {
+    const m = svg.getScreenCTM(); if (!m) return;
+    const xm = (e.clientX - m.e) / m.a / 100;
+    let x = 0, i = -1; tabSegs(false).forEach((s, k) => { if (xm >= x && xm < x + s.w) i = k; x += s.w; });
+    if (i >= 0) pdStart(e, { kind: 'seg', i });
+  }
 });
-$('#profil').addEventListener('dragend', () => { dragI = null; document.querySelectorAll('.pseg.drag-over').forEach(c => c.classList.remove('drag-over')); });
+window.addEventListener('pointermove', pdMove);
+window.addEventListener('pointerup', pdEnd);
+window.addEventListener('pointercancel', pdEnd);
 // section explicative : état replié mémorisé
 try { if (localStorage.getItem('mv-guide') === 'closed') $('#guide-details').open = false; } catch (e) { /* stockage indisponible */ }
 $('#guide-details').addEventListener('toggle', () => { try { localStorage.setItem('mv-guide', $('#guide-details').open ? 'open' : 'closed'); } catch (e) { /* stockage indisponible */ } });

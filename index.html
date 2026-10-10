@@ -3857,7 +3857,7 @@ function tileMapSVG(lat, lon, z, src, W, H, d) {
   T(14 + sb / 2, H - 19, `${sbm} m`, 11);
   const attr = src === 'osm' ? '© OpenStreetMap' : '© Esri';
   o.push(`<rect x="${W - 98}" y="${H - 18}" width="98" height="18" fill="#fff" fill-opacity="0.8"/>`); T(W - 6, H - 5, attr, 10, 'end');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Arial, Tahoma, sans-serif" role="img"><defs><clipPath id="mc${src}${z}"><rect width="${W}" height="${H}"/></clipPath></defs><g clip-path="url(#mc${src}${z})">${o.join('')}</g><rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" fill="none" stroke="#000"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" direction="ltr" font-family="Arial, Tahoma, sans-serif" role="img"><defs><clipPath id="mc${src}${z}"><rect width="${W}" height="${H}"/></clipPath></defs><g clip-path="url(#mc${src}${z})">${o.join('')}</g><rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" fill="none" stroke="#000"/></svg>`;
 }
 
 /* ---------- trafic sur la journée : profil type ou comptages, simulation continue de 5 h à 23 h ---------- */
@@ -4854,7 +4854,7 @@ new MutationObserver(relayoutTheme).observe(document.documentElement, { attribut
    critères : l'outil les applique un par un et classe les types par une règle publiée, sans note globale.
    ===================================================================================================== */
 const JXT = { fr: {
-  modCross: 'Traversée piétonne', modJx: 'Carrefour',
+  modCross: 'Traversée piétonne', modJx: 'Carrefour', skPlateau: 'plateau',
   jxEyebrow: 'Aide au choix · guide Certu « Carrefours urbains » (2010)',
   jxH1: 'Quel type de carrefour ?',
   jxLede: 'Décrivez le carrefour : contexte, géométrie, trafic de pointe, usagers et objectifs de la commune. L’outil applique une à une les règles du guide des carrefours urbains, écarte les types contre-indiqués, vérifie la capacité et propose les types à comparer.',
@@ -5040,7 +5040,7 @@ const JXT = { fr: {
   }
 } };
 JXT.ar = {
-  modCross: 'عبور المترجّلين', modJx: 'مفترق',
+  modCross: 'عبور المترجّلين', modJx: 'مفترق', skPlateau: 'منصّة مرتفعة',
   jxEyebrow: 'مساعدة على الاختيار · دليل Certu «Carrefours urbains» (2010)',
   jxH1: 'أيّ نوع من المفترقات؟',
   jxLede: 'صِف المفترق: السياق، والشكل الهندسي، وحركة المرور في ساعة الذروة، والمستعملين، وأهداف البلدية. تطبّق الأداة قواعد دليل المفترقات الحضرية واحدةً تلو الأخرى، وتستبعد الأنواع التي توجد موانع لاعتمادها، وتتحقّق من طاقة الاستيعاب، وتقترح الأنواع التي تجدر مقارنتها.',
@@ -5227,7 +5227,7 @@ JXT.ar = {
 };
 
 JXT.en = {
-  modCross: 'Pedestrian crossing', modJx: 'Intersection',
+  modCross: 'Pedestrian crossing', modJx: 'Intersection', skPlateau: 'raised plateau',
   jxEyebrow: 'Decision aid · Certu guide “Carrefours urbains” (2010)',
   jxH1: 'Which type of intersection?',
   jxLede: 'Describe the intersection: context, geometry, peak-hour traffic, users and the municipality’s objectives. The tool applies the rules of the urban intersections guide one by one, rules out contraindicated types, checks capacity and proposes the types to compare.',
@@ -5751,7 +5751,7 @@ function jxSPChart(P, S) {
   T(X(1250), y0 + 32, jt('spAxisP')); T(14, Y(800), jt('spAxisS'), 'middle', ` transform="rotate(-90 14 ${Y(800).toFixed(1)})"`);
   const px = X(Math.min(2500, P)), py = Y(Math.min(1600, S));
   o.push(`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="6" fill="#1b5ea8" stroke="#fff" stroke-width="2"/>`); T(px + 9, py - 8, jt('spPoint'), 'start', ' font-weight="600"');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Arial, Tahoma, sans-serif" role="img">${o.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" direction="ltr" font-family="Arial, Tahoma, sans-serif" role="img">${o.join('')}</svg>`;
 }
 
 /* ---------- schéma de principe du type (vue en plan, circulation à droite) ----------
@@ -5831,10 +5831,10 @@ function jxSketch(id, J) {
     o.push(`<line x1="${cx}" y1="${cy}" x2="${fx(cx + Rext * S * 0.707)}" y2="${fx(cy + Rext * S * 0.707)}" stroke="#fff" stroke-width="1"/><text x="${fx(cx + Rext * S * 0.5 + 4)}" y="${fx(cy + Rext * S * 0.5)}" font-size="11" fill="#fff">R = ${fm(Rext)} m</text>`);
   }
   if (id === 'psgr') o.push(rot(isMain(0) ? 0 : 90, `<rect x="0" y="${fx(Y(-3.5))}" width="${Wd}" height="${m(7)}" fill="none" stroke="#7fb3ff" stroke-width="2.5" stroke-dasharray="9 5"/><text x="12" y="${fx(Y(-4.5))}" font-size="12" fill="#1b5ea8">PSGR</text>`));
-  if (plateau) o.push(`<text x="${fx(cx + (core + 8) * S * 0.72 + 4)}" y="${fx(cy - (core + 8) * S * 0.72)}" font-size="11" fill="#7a3a2b">plateau</text>`);
+  if (plateau) o.push(`<text x="${fx(cx + (core + 8) * S * 0.72 + 4)}" y="${fx(cy - (core + 8) * S * 0.72)}" font-size="11" fill="#7a3a2b">${esc(jt('skPlateau'))}</text>`);
   const sb = S * 10;
   o.push(`<line x1="16" y1="${Hd - 16}" x2="${fx(16 + sb)}" y2="${Hd - 16}" stroke="#222" stroke-width="2"/><text x="16" y="${Hd - 22}" font-size="11" fill="#222">0</text><text x="${fx(16 + sb)}" y="${Hd - 22}" font-size="11" text-anchor="middle" fill="#222">10 m</text>`);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wd} ${Hd}" font-family="Arial, Tahoma, sans-serif" role="img"><defs><marker id="jxa" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6z" fill="#fff"/></marker></defs>${o.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wd} ${Hd}" direction="ltr" font-family="Arial, Tahoma, sans-serif" role="img"><defs><marker id="jxa" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6z" fill="#fff"/></marker></defs>${o.join('')}</svg>`;
 }
 
 /* ---------- interface du module carrefour ---------- */
@@ -6432,7 +6432,7 @@ const PV_COL = { BBSG: '#3a3d42', BB: '#3a3d42', BC: '#56595e', MC: '#56595e', E
 function pvSection(layers, w = 320) {
   if (!layers.length) return '';
   // coupe : une bande par couche, épaisseur à l'échelle (minimum lisible), libellé écrit dans la bande
-  const sc = 3.2, minH = 22, o = [], LAY = pt('lay'), x0 = 2, bw = w - 4;
+  const sc = 3.2, minH = 22, o = [], LAY = pt('lay'), x0 = 2, bw = w - 4, tdir = lang === 'ar' ? 'rtl' : 'ltr', tx = lang === 'ar' ? w - 12 : x0 + 10;
   const dark = c => { const n = parseInt(c.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return 0.299 * r + 0.587 * g + 0.114 * b < 150; };
   const hs = layers.map(l => Math.max(minH, l.e * sc));
   let y = 2;
@@ -6441,10 +6441,10 @@ function pvSection(layers, w = 320) {
     o.push(`<rect x="${x0}" y="${y.toFixed(1)}" width="${bw}" height="${h.toFixed(1)}" fill="${col}" stroke="#fff" stroke-width="1.5"/>`);
     if (l.m === 'PAV') for (let k = 1; k < 12; k++) o.push(`<line x1="${x0 + k * bw / 12}" y1="${y.toFixed(1)}" x2="${x0 + k * bw / 12}" y2="${(y + h).toFixed(1)}" stroke="#fff" stroke-width="1"/>`);
     const th = l.txt !== undefined ? l.txt : fm2(l.e), lab = `${LAY[l.m] || l.m}${th ? ` — ${th} ${pt('u').cm}` : ''}`;
-    o.push(`<text x="${x0 + 10}" y="${(y + h / 2 + 4.5).toFixed(1)}" font-size="13" fill="${dark(col) ? '#fff' : '#1d1d1d'}"${l.m === 'PAV' ? ' paint-order="stroke" stroke="#a5503d" stroke-width="3"' : ''}>${esc(lab)}</text>`);
+    o.push(`<text x="${tx}" y="${(y + h / 2 + 4.5).toFixed(1)}" direction="${tdir}" font-size="13" fill="${dark(col) ? '#fff' : '#1d1d1d'}"${l.m === 'PAV' ? ' paint-order="stroke" stroke="#a5503d" stroke-width="3"' : ''}>${esc(lab)}</text>`);
     y += h;
   });
-  o.push(`<rect x="${x0}" y="${y.toFixed(1)}" width="${bw}" height="20" fill="url(#pvh)"/><text x="${x0 + 10}" y="${(y + 14).toFixed(1)}" font-size="12" fill="#4a3f2c" paint-order="stroke" stroke="#e8e0cc" stroke-width="3">${esc(LAY.PLAT)}</text>`);
+  o.push(`<rect x="${x0}" y="${y.toFixed(1)}" width="${bw}" height="20" fill="url(#pvh)"/><text x="${tx}" y="${(y + 14).toFixed(1)}" direction="${tdir}" font-size="12" fill="#4a3f2c" paint-order="stroke" stroke="#e8e0cc" stroke-width="3">${esc(LAY.PLAT)}</text>`);
   const tot = layers.some(l => l.txt === '?') ? null : layers.reduce((a, l) => a + (l.m === 'FORME' ? 0 : l.e), 0);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${(y + 24).toFixed(0)}" font-family="Arial, Tahoma, sans-serif" role="img"><defs><pattern id="pvh" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#e8e0cc"/><line x1="0" y1="0" x2="0" y2="8" stroke="#a89878" stroke-width="2"/></pattern></defs>${o.join('')}</svg>`
     + (tot !== null ? `<p class="pv-tot">${esc(pt('total', fm2(Math.round(tot)) + ' ' + pt('u').cm))}</p>` : `<p class="pv-tot">${esc(pt('total', pt('toStudy')))}</p>`);

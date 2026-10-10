@@ -5696,40 +5696,87 @@ function jxSPChart(P, S) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Arial, Tahoma, sans-serif" role="img">${o.join('')}</svg>`;
 }
 
-/* ---------- schéma de principe du type (vue en plan, mètres) ---------- */
+/* ---------- schéma de principe du type (vue en plan, circulation à droite) ----------
+   Repère local de chaque branche : axe +x en s'éloignant du carrefour ; voie d'entrée du côté y < 0 (à droite du
+   conducteur qui arrive), voie de sortie du côté y > 0. Dimensions tirées du guide (rayons, anneau, îlots, reculs). */
 function jxSketch(id, J) {
-  const S = 6, Wd = 520, Hd = 380, cx = Wd / 2, cy = Hd / 2, o = [], wm = J.widthMain, ws = 3 * 2 * J.lanesSec, fx = v => v.toFixed(1);
+  const Wd = 520, Hd = 380, cx = Wd / 2, cy = Hd / 2, o = [], fx = v => v.toFixed(1);
   const n = J.nBr, angs = n === 3 ? [0, 90, 180] : Array.from({ length: n }, (_, i) => i * 360 / n);
-  o.push(`<rect width="${Wd}" height="${Hd}" fill="#eef1ea"/>`);
-  // chaussées des branches : trottoirs d'abord, puis chaussées, pour que le carrefour reste dégagé
-  const bw = i => (i % 2 === 0 && (n === 4 || n === 3 && i !== 1)) || n > 4 ? wm : ws;
-  angs.forEach((a, i) => { const w = bw(i); o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><rect x="${cx}" y="${fx(cy - w * S / 2 - 3 * S)}" width="${Wd}" height="${fx((w + 6) * S)}" fill="#d9d2c3"/></g>`); });
-  angs.forEach((a, i) => { const w = bw(i); o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><rect x="${fx(cx - w * S / 2)}" y="${fx(cy - w * S / 2)}" width="${Wd}" height="${fx(w * S)}" fill="#5b6169"/></g>`); });
-  if (n > 4) o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(Math.max(wm, ws) * S * 0.75)}" fill="#5b6169"/>`);
-  // passages piétons
-  const zebra = (a, dist, w) => { let s = ''; for (let k = -w / 2 + 0.25; k < w / 2; k += 1) s += `<rect x="${fx(cx + dist * S)}" y="${fx(cy + k * S)}" width="${4 * S}" height="${0.5 * S}" fill="#fff"/>`; return `<g transform="rotate(${-a} ${cx} ${cy})">${s}</g>`; };
-  const gir = GIR.includes(id), Rext = { mini: 10, compact: 13.5, moyen: 18, grand: 25 }[id] || 0;
-  angs.forEach((a, i) => { const w = (i % 2 === 0 && (n === 4 || n === 3 && i !== 1)) || n > 4 ? wm : ws; o.push(zebra(a, gir ? Rext + 3 : Math.max(wm, ws) / 2 + 3, w)); });
-  if (gir) {
-    const ann = id === 'mini' ? 6 : id === 'grand' ? 8 : 7, Ri = Rext - ann;
-    o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(Rext * S)}" fill="#5b6169"/>`);
-    o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(Ri * S)}" fill="${id === 'mini' ? '#c9c2b5' : '#9fbf86'}" stroke="#fff" stroke-width="2"${id === 'mini' ? ' stroke-dasharray="6 4"' : ''}/>`);
-    if (id !== 'mini') angs.forEach(a => o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><polygon points="${fx(cx + (Rext + 1) * S)},${cy} ${fx(cx + (Rext + 9) * S)},${fx(cy - 0.9 * S)} ${fx(cx + (Rext + 9) * S)},${fx(cy + 0.9 * S)}" fill="#c4d3ae" stroke="#fff"/></g>`));
-    o.push(`<line x1="${cx}" y1="${cy}" x2="${fx(cx + Rext * S * 0.707)}" y2="${fx(cy - Rext * S * 0.707)}" stroke="#fff" stroke-width="1.5"/><text x="${fx(cx + Rext * S * 0.4)}" y="${fx(cy - Rext * S * 0.4 - 4)}" font-size="12" fill="#fff">R = ${fm(Rext)} m</text>`);
-  }
-  if (id === 'feux' || id === 'feuxIlot') {
-    if (id === 'feuxIlot') o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(10 * S)}" fill="#9fbf86" stroke="#fff" stroke-width="2"/>`);
-    angs.forEach(a => o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><line x1="${fx(cx + (Math.max(wm, ws) / 2 + 8) * S)}" y1="${cy}" x2="${fx(cx + (Math.max(wm, ws) / 2 + 8) * S)}" y2="${fx(cy + wm * S / 2)}" stroke="#fff" stroke-width="3"/><rect x="${fx(cx + (Math.max(wm, ws) / 2 + 8.5) * S)}" y="${fx(cy + wm * S / 2 + 3)}" width="8" height="20" rx="2" fill="#222"/><circle cx="${fx(cx + (Math.max(wm, ws) / 2 + 8.5) * S + 4)}" cy="${fx(cy + wm * S / 2 + 8)}" r="2.5" fill="#e33"/><circle cx="${fx(cx + (Math.max(wm, ws) / 2 + 8.5) * S + 4)}" cy="${fx(cy + wm * S / 2 + 17)}" r="2.5" fill="#3c3"/></g>`));
-  }
-  if (id === 'clp' || id === 'stop') angs.forEach((a, i) => {
-    const sec = n === 4 ? i % 2 === 1 : n === 3 ? i === 1 : false; if (!sec) return;
-    const dx = Math.max(wm, ws) / 2 + 1;
-    o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><line x1="${fx(cx + dx * S)}" y1="${cy}" x2="${fx(cx + dx * S)}" y2="${fx(cy + ws * S / 2)}" stroke="#fff" stroke-width="3"${id === 'clp' ? ' stroke-dasharray="6 5"' : ''}/>${id === 'clp' ? `<polygon points="${fx(cx + (dx + 3) * S)},${fx(cy + ws * S / 4)} ${fx(cx + (dx + 6) * S)},${fx(cy + ws * S / 4 - 6)} ${fx(cx + (dx + 6) * S)},${fx(cy + ws * S / 4 + 6)}" fill="#fff"/>` : `<text x="${fx(cx + (dx + 4) * S)}" y="${fx(cy + ws * S / 4 + 4)}" font-size="12" font-weight="700" fill="#fff" transform="rotate(90 ${fx(cx + (dx + 4) * S)} ${fx(cy + ws * S / 4)})">STOP</text>`}</g>`);
+  const wm = Math.max(J.widthMain, 3 * 2 * J.lanesMain), ws = Math.max(5.5, 3 * 2 * J.lanesSec);
+  const isMain = i => n >= 5 || (n === 4 ? i % 2 === 0 : i !== 1), bw = i => isMain(i) ? wm : ws;
+  const ring = GIR.includes(id) || id === 'feuxIlot';
+  const Rext = { mini: 9, compact: 13.5, moyen: 18, grand: 25, feuxIlot: 18 }[id] || 0;       // rayons extérieurs (p. 124-125, 121)
+  const Ri = { mini: 2, compact: 6.5, moyen: 11, grand: 17, feuxIlot: 10 }[id] || 0;         // îlot central (mini : 1,50 à 2,50 m, p. 129)
+  const core = ring ? Rext : Math.max(wm, ws) / 2;
+  const S = Math.min(6, (Hd / 2 - 12) / (core + 13)), m = v => fx(v * S);
+  const rot = (a, s) => `<g transform="rotate(${-a} ${cx} ${cy})">${s}</g>`;
+  const X = d => cx + d * S, Y = d => cy + d * S;             // repère local de la branche (avant rotation)
+  const plateau = ['pad', 'clp', 'stop', 'feux', 'mini', 'compact'].includes(id) && J.ctx !== 'periurbain' && (J.speed || J.hMain === 'quartier' || J.hSec === 'quartier');
+  o.push(`<rect width="${Wd}" height="${Hd}" fill="#e4ebdf"/>`);
+  // trottoirs (3 m) puis chaussées ; zone du carrefour arrondie (pans coupés)
+  o.push(`<circle cx="${cx}" cy="${cy}" r="${m(core + 4)}" fill="#d9d2c3"/>`);
+  angs.forEach((a, i) => { const w = bw(i); o.push(rot(a, `<rect x="${cx}" y="${fx(Y(-w / 2 - 3))}" width="${Wd}" height="${m(w + 6)}" fill="#d9d2c3"/>`)); });
+  angs.forEach((a, i) => { const w = bw(i); o.push(rot(a, `<rect x="${cx}" y="${fx(Y(-w / 2))}" width="${Wd}" height="${m(w)}" fill="#5b6169"/>`)); });
+  o.push(`<circle cx="${cx}" cy="${cy}" r="${m(ring ? Rext : core)}" fill="#5b6169"/>`);
+  if (plateau) o.push(`<circle cx="${cx}" cy="${cy}" r="${m(core + 8)}" fill="#a5503d" fill-opacity=".13" stroke="#a5503d" stroke-width="1.2" stroke-dasharray="5 4"/>`);
+  const isl = ring && id !== 'mini';                          // îlots séparateurs (p. 127) ; facultatifs sur un mini-giratoire
+  angs.forEach((a, i) => {
+    const w = bw(i), s = [];
+    const xIsl0 = Rext + 1.5, xIsl1 = Rext + 12;
+    // axe de chaussée (tirets) au-delà du carrefour et des îlots
+    s.push(`<line x1="${fx(X(isl ? xIsl1 + 1 : core + 9))}" y1="${cy}" x2="${Wd}" y2="${cy}" stroke="#fff" stroke-width="1.5" stroke-dasharray="${m(3)} ${m(3.5)}"/>`);
+    if (isl) s.push(`<rect x="${fx(X(xIsl0))}" y="${fx(Y(-1))}" width="${m(xIsl1 - xIsl0)}" height="${m(2)}" rx="${m(1)}" fill="#c4d3ae" stroke="#fff" stroke-width="1"/>`);
+    // passages piétons : le guide déconseille de les marquer en priorité à droite (p. 100) ; en cédez-le-passage et stop,
+    // seulement sur la voie principale (p. 83, 99) ; en giratoire 2 à 5 m après la ligne (p. 132) ; aux feux 2 à 5 m du carrefour (p. 115)
+    const zx = ring ? Rext + (id === 'mini' || id === 'compact' ? 2 : 5) : core + 2.5;
+    const zebra = id !== 'pad' && (!['clp', 'stop'].includes(id) || isMain(i)) && !(id === 'psgr' && isMain(i));
+    if (zebra) for (let k = -w / 2 + 0.25; k < w / 2 - 0.2; k += 1) {
+      if (isl && Math.abs(k + 0.25) < 1.1) continue;          // traversée de l'îlot à niveau
+      s.push(`<rect x="${fx(X(zx))}" y="${fx(Y(k))}" width="${m(4)}" height="${m(0.5)}" fill="#fff"/>`);
+    }
+    // flèches de sens : entrée côté y < 0, sortie côté y > 0
+    const ax = (ring ? Rext + 16 : core + 13), arr = (x, y, dir) => `<path d="M${fx(X(x))} ${fx(Y(y))}l${dir * m(2.4)} 0m${-dir * m(0.9)} ${-m(0.7)}l${dir * m(0.9)} ${m(0.7)}l${-dir * m(0.9)} ${m(0.7)}" stroke="#fff" stroke-width="1.6" fill="none"/>`;
+    s.push(arr(ax + 2.4, -w / 4, -1), arr(ax, w / 4, 1));
+    const entering = `y1="${fx(Y(-w / 2))}" y2="${fx(Y(isl ? -1 : 0))}"`;
+    if (id === 'clp' && !isMain(i)) {
+      s.push(`<line x1="${fx(X(core + 0.5))}" x2="${fx(X(core + 0.5))}" ${entering} stroke="#fff" stroke-width="2.5" stroke-dasharray="${m(0.5)} ${m(0.5)}"/>`);
+      // triangle « cédez le passage », pointe tournée vers le conducteur qui arrive
+      s.push(`<polygon points="${fx(X(core + 12.5))},${fx(Y(-w / 4))} ${fx(X(core + 9))},${fx(Y(-w / 4 - 1))} ${fx(X(core + 9))},${fx(Y(-w / 4 + 1))}" fill="#fff"/>`);
+    }
+    if (id === 'stop' && !isMain(i)) {
+      s.push(`<line x1="${fx(X(core + 0.5))}" x2="${fx(X(core + 0.5))}" ${entering} stroke="#fff" stroke-width="3"/>`);
+      const tx = X(core + 4), ty = Y(-w / 4);
+      s.push(`<text x="${fx(tx)}" y="${fx(ty)}" font-size="${m(1.6)}" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 ${fx(tx)} ${fx(ty)})">STOP</text>`);
+    }
+    if (ring && id !== 'feuxIlot') s.push(`<line x1="${fx(X(Rext + 0.3))}" x2="${fx(X(Rext + 0.3))}" ${entering} stroke="#fff" stroke-width="2" stroke-dasharray="${m(0.5)} ${m(0.5)}"/>`);
+    if (id === 'feux' || id === 'feuxIlot' || (id === 'psgr' && !isMain(i))) {
+      const sx = zx + 5;                                      // ligne d'effet en amont du passage
+      s.push(`<line x1="${fx(X(sx))}" x2="${fx(X(sx))}" ${entering} stroke="#fff" stroke-width="3"/>`);
+      const hx = X(sx + 0.3), hy = Y(-w / 2 - 1.6);              // feu à droite du conducteur, sur le trottoir
+      s.push(`<rect x="${fx(hx - 4)}" y="${fx(hy - 10)}" width="8" height="20" rx="2" fill="#222"/><circle cx="${fx(hx)}" cy="${fx(hy - 5)}" r="2.6" fill="#e33"/><circle cx="${fx(hx)}" cy="${fx(hy + 5)}" r="2.6" fill="#3c3"/>`);
+    }
+    o.push(rot(angs[i], s.join('')));
   });
-  if (id === 'psgr') o.push(`<rect x="0" y="${fx(cy - 3.5 * S)}" width="${Wd}" height="${7 * S}" fill="none" stroke="#1b5ea8" stroke-width="3" stroke-dasharray="10 6"/><text x="12" y="${fx(cy - 4 * S)}" font-size="12" fill="#1b5ea8">PSGR</text>`);
-  if (['pad', 'clp', 'stop', 'feux', 'mini', 'compact'].includes(id) && J.ctx !== 'periurbain' && (J.speed || J.hMain === 'quartier' || J.hSec === 'quartier')) o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(Math.max(wm, ws) * S * 0.75 + (gir ? (Rext - 7) * S : 0))}" fill="none" stroke="#a5503d" stroke-width="2" stroke-dasharray="4 4" opacity=".7"/>`);
-  o.push(`<line x1="16" y1="${Hd - 16}" x2="${16 + 10 * S}" y2="${Hd - 16}" stroke="#222" stroke-width="2"/><text x="16" y="${Hd - 22}" font-size="11" fill="#222">0</text><text x="${16 + 10 * S}" y="${Hd - 22}" font-size="11" text-anchor="middle" fill="#222">10 m</text>`);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wd} ${Hd}" font-family="Arial, Tahoma, sans-serif" role="img">${o.join('')}</svg>`;
+  // anneau et îlot central des giratoires ; carrefour à feux à îlot central
+  if (ring) {
+    if (id === 'mini') o.push(`<circle cx="${cx}" cy="${cy}" r="${m(Ri)}" fill="#cfc8bb" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 3"/>`);
+    else {
+      if (id !== 'feuxIlot') o.push(`<circle cx="${cx}" cy="${cy}" r="${m(Ri)}" fill="#cfc8bb"/>`);   // bande franchissable de 1,50 à 2 m (p. 126)
+      o.push(`<circle cx="${cx}" cy="${cy}" r="${m(id === 'feuxIlot' ? Ri : Ri - 1.75)}" fill="#9fbf86" stroke="#fff" stroke-width="1.5"/>`);
+    }
+    // sens de rotation : anti-horaire en circulation à droite
+    const rr = (Rext + Ri) / 2;
+    for (let k = 0; k < 4; k++) {
+      const t = (45 + k * 90) * Math.PI / 180, px = cx + rr * S * Math.cos(t), py = cy - rr * S * Math.sin(t), tx = -Math.sin(t), ty = -Math.cos(t), L = m(2.2);
+      o.push(`<path d="M${fx(px - tx * L / 2)} ${fx(py - ty * L / 2)}L${fx(px + tx * L / 2)} ${fx(py + ty * L / 2)}" stroke="#fff" stroke-width="1.6" marker-end="url(#jxa)"/>`);
+    }
+    o.push(`<line x1="${cx}" y1="${cy}" x2="${fx(cx + Rext * S * 0.707)}" y2="${fx(cy + Rext * S * 0.707)}" stroke="#fff" stroke-width="1"/><text x="${fx(cx + Rext * S * 0.5 + 4)}" y="${fx(cy + Rext * S * 0.5)}" font-size="11" fill="#fff">R = ${fm(Rext)} m</text>`);
+  }
+  if (id === 'psgr') o.push(rot(isMain(0) ? 0 : 90, `<rect x="0" y="${fx(Y(-3.5))}" width="${Wd}" height="${m(7)}" fill="none" stroke="#7fb3ff" stroke-width="2.5" stroke-dasharray="9 5"/><text x="12" y="${fx(Y(-4.5))}" font-size="12" fill="#1b5ea8">PSGR</text>`));
+  if (plateau) o.push(`<text x="${fx(cx + (core + 8) * S * 0.72 + 4)}" y="${fx(cy - (core + 8) * S * 0.72)}" font-size="11" fill="#7a3a2b">plateau</text>`);
+  const sb = S * 10;
+  o.push(`<line x1="16" y1="${Hd - 16}" x2="${fx(16 + sb)}" y2="${Hd - 16}" stroke="#222" stroke-width="2"/><text x="16" y="${Hd - 22}" font-size="11" fill="#222">0</text><text x="${fx(16 + sb)}" y="${Hd - 22}" font-size="11" text-anchor="middle" fill="#222">10 m</text>`);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wd} ${Hd}" font-family="Arial, Tahoma, sans-serif" role="img"><defs><marker id="jxa" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6z" fill="#fff"/></marker></defs>${o.join('')}</svg>`;
 }
 
 /* ---------- interface du module carrefour ---------- */

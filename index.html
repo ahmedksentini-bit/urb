@@ -154,6 +154,12 @@ main { padding-block: 6px 48px; }
 .prof-tools label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
 .prof-tools input, .prof-tools select { font: 500 14px/1.2 var(--font-body); padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); }
 .prof-tools input { width: 90px; direction: ltr; text-align: right; }
+.prof-preset { display: contents; }
+.prof-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 4px; }
+.prof-hint { margin: 4px 0 6px; }
+.prof-status { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; margin: 0 0 6px; font-size: 13.5px; color: var(--muted); }
+.prof-status select { font: 500 14px/1.2 var(--font-body); padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); margin-inline-start: 6px; }
+#pf-acts { display: inline-flex; flex-wrap: wrap; gap: 8px; }
 .prof-palette { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0 10px; }
 .prof-palette .btn { padding: 6px 9px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
 .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(0, 0, 0, .25); flex: none; }
@@ -2557,13 +2563,18 @@ function buildNote(id) {
   }
   h1 += `${H2('cond')}<p>${esc(N.condIntro)}</p>${tbl(N.condCols, conds.map(x => `<tr><td>${esc(x.txt)}</td><td class="st st-${x.st}">${esc(N.st[x.st])}</td></tr>`))}`;
   h1 += `${H2('dims')}<p>${esc(N.dimsIntro)}</p>${tbl(N.dimCols, dims(sc).map(([k2, v]) => `<tr><td>${esc(N.dim[k2])}</td><td class="n">${esc(v)}</td></tr>`))}`;
-  // profil en travers : existant, puis au droit du passage pour la variante retenue
-  const SN = t('segNames'), PC = crossProfile(PROF, id), ckl = arr => '<ul>' + arr.map(([l, m]) => `<li class="ck-${l}">${esc(m)}</li>`).join('') + '</ul>';
+  // profil en travers : existant, projeté en section courante, au droit du passage pour la variante retenue
+  const SN = t('segNames'), PC = crossOf(id), ckl = arr => '<ul>' + arr.map(([l, m]) => `<li class="ck-${l}">${esc(m)}</li>`).join('') + '</ul>';
   const segRow = s => `<tr><td>${esc(SN[s.t][0] + (SEG[s.t].dir ? ` (${s.d > 0 ? t('dir1') : t('dir2')})` : ''))}</td><td class="n">${fm(s.w)}</td></tr>`;
+  const totRow = `<tr><th>${esc(t('pfTotal'))}</th><th class="n">${fm(PROF.total)}</th></tr>`;
   h1 += `${H2('profile')}<p>${esc(N.profIntro)}</p>`;
   h1 += `<h3>${esc(t('pfExisting'))}</h3><figure class="pf-fig">${profileSVG(PROF.segs, PROF.total)}</figure>`;
-  h1 += tbl(N.profCols, PROF.segs.map(segRow).concat(`<tr><th>${esc(t('pfTotal'))}</th><th class="n">${fm(PROF.total)}</th></tr>`)) + ckl(profChecks(PROF));
-  h1 += `<h3>${esc(t('pfCrossTitle', name))}</h3><figure class="pf-fig">${profileSVG(PC.segs, PROF.total, { stages: PC.stages })}</figure>${ckl(PC.notes)}`;
+  h1 += tbl(N.profCols, PROF.segs.map(segRow).concat(totRow)) + ckl(profChecks(PROF));
+  h1 += `<h3>${esc(t('pfProjected'))}</h3>`;
+  if (!PROJ || sameSegs(PROJ, PROF.segs)) h1 += `<p>${esc(t('pfProjSame'))}</p>`;
+  else h1 += `<figure class="pf-fig">${profileSVG(PROJ, PROF.total)}</figure>` + tbl(N.profCols, PROJ.map(segRow).concat(totRow)) + ckl(profChecks({ total: PROF.total, segs: PROJ }));
+  h1 += `<h3>${esc(t('pfCrossTitle', name))}</h3><figure class="pf-fig">${profileSVG(PC.segs, PROF.total, { stages: PC.stages })}</figure>`;
+  h1 += tbl(N.profCols, PC.segs.map(segRow).concat(totRow)) + ckl(PC.notes);
   // 5-12
   let h2 = '';
   if (V) {
@@ -3422,7 +3433,7 @@ Object.assign(I18N.fr, {
     <h3>Les étapes</h3>
     <ol>
       <li><strong>Situer le lieu</strong> sur la carte, puis « Analyser le lieu » : rue, écoles et établissements de santé proches, arrêts de bus, densité de population.</li>
-      <li><strong>Décrire la rue</strong> dans le profil en travers : trottoirs, voies, stationnement, voies bus, aménagements cyclables, terre-plein, d’une façade à l’autre. Le profil au droit du passage, pour la variante retenue, en est déduit.</li>
+      <li><strong>Décrire la rue</strong> dans le profil en travers, d’une façade à l’autre (trottoirs, voies, stationnement, voies bus, aménagements cyclables, terre-plein, îlot, poteaux d’éclairage) et en trois temps : l’existant, le projeté en section courante (la rue après travaux, hors du passage) et le profil au droit du passage. Ce dernier est calculé pour la variante choisie ; vous pouvez le modifier.</li>
       <li><strong>Saisir le trafic</strong> : débit de pointe par sens, part de poids lourds et de bus, vitesse mesurée, piétons, limitation de vitesse ; et, si possible, vos comptages heure par heure.</li>
       <li><strong>Régler les aménagements</strong> : dimensions du rétrécissement et de la chicane, durée du feu. Puis « Appliquer et relancer ».</li>
       <li><strong>Regarder les simulations</strong> : une bande animée par aménagement, avec ses chiffres clés et une vue 3D (clic sur la vignette). Le mode présentation les affiche toutes sur un écran.</li>
@@ -3449,12 +3460,24 @@ Object.assign(I18N.fr, {
     </ul>
     <p class="note">L’outil aide à décider ; il ne remplace pas une étude. Ses valeurs de référence sont des ordres de grandeur, à confirmer par des mesures locales.</p>`,
   pfTitle: 'Profil en travers de la rue',
-  pfNote: 'Décrivez la rue telle qu’elle est, d’une façade à l’autre : ajoutez les éléments, réglez leur largeur, déplacez-les (glisser-déposer ou flèches). Le profil au droit du passage, pour la variante retenue, est déduit automatiquement.',
+  pfNote: 'Décrivez la rue d’une façade à l’autre, en trois temps : telle qu’elle est, telle qu’elle sera après travaux en section courante, et au droit du passage. Dans chaque onglet, ajoutez des éléments, réglez leur largeur, déplacez-les (glisser-déposer ou flèches) ou supprimez-les.',
+  tabEx: 'Existant', tabPr: 'Projeté (section courante)',
+  hintEx: 'La rue telle qu’elle est aujourd’hui. C’est la situation de référence de la simulation.',
+  hintPr: 'La rue après travaux, hors du passage : voies ramenées à 3,00 m, trottoirs élargis, bande cyclable, plantations… Tant que vous ne le modifiez pas, il reprend l’existant.',
+  hintCr: 'Le profil au droit du passage, pour la variante choisie. Il est calculé à partir du profil projeté ; dès que vous le modifiez, c’est votre version qui compte, dans la page et dans la note.',
+  stSame: 'Identique à l’existant.', stProjMod: 'Modifié par rapport à l’existant.', stAuto: 'Calculé automatiquement.', stCustom: 'Modifié à la main.',
+  pfVar: 'Variante', pfResetPr: 'Repartir de l’existant', pfResetCr: 'Revenir au profil calculé',
+  pfDesign: 'Reporter dans les choix de conception', pfDesignNone: 'Rien à reporter : seuls le rétrécissement et la chicane ont des largeurs réglables dans les choix de conception.',
+  pfDesignDone: s => `Reporté dans les choix de conception : ${s}. Cliquez sur « Appliquer et relancer ».`,
+  dsLane: v => `largeur de voie ${fm(v)} m`, dsIsl: v => `largeur d’îlot ${fm(v)} m`, dsClamp: ' (ramenée dans les bornes admises)',
+  pfCustomNote: 'Profil modifié à la main par la commune.',
+  pfProjected: 'Profil projeté (section courante)', pfProjSame: 'Le profil projeté en section courante est identique à l’existant.',
+  ckIslandWarn: w => `Îlot de ${fm(w)} m : 1,50 m au minimum pour qu’il serve de refuge, 2,00 m avec une poussette ou un vélo.`,
   pfTotal: 'Largeur disponible (façade à façade)', pfPreset: 'Modèle de rue', pfLoad: 'Charger le modèle', pfAdd: 'Ajouter :',
   presets: { defaut: 'Rue à deux voies (12 m)', quartier: 'Rue de quartier (10 m)', avenue: 'Avenue avec stationnement (16 m)', bus: 'Avenue avec voies bus (19,5 m)',
     boulevard: 'Boulevard 2 × 2 voies avec terre-plein (22 m)', sensunique: 'Rue à sens unique avec stationnement (9 m)', velo: 'Rue avec bandes cyclables (14 m)' },
   segNames: { walk: ['Trottoir', 'Trottoir'], ext: ['Avancée de trottoir', 'Avancée'], trees: ['Bande plantée', 'Plantation'], park: ['Stationnement', 'Stationnement'],
-    lane: ['Voie de circulation', 'Voie'], bus: ['Voie bus', 'Voie bus'], bike: ['Bande cyclable', 'Bande vélo'], track: ['Piste cyclable', 'Piste vélo'], median: ['Terre-plein central', 'Terre-plein'] },
+    lane: ['Voie de circulation', 'Voie'], bus: ['Voie bus', 'Voie bus'], bike: ['Bande cyclable', 'Bande vélo'], track: ['Piste cyclable', 'Piste vélo'], median: ['Terre-plein central', 'Terre-plein'], island: ['Îlot refuge', 'Îlot'], lamp: ['Poteau d’éclairage', 'Éclairage'] },
   dir1: 'sens 1', dir2: 'sens 2', pfLeft: 'Déplacer à gauche', pfRight: 'Déplacer à droite', pfDel: 'Supprimer', pfWidth: 'Largeur',
   pfExact: 'La largeur disponible est entièrement affectée.', pfRest: r => `Reste ${fm(r)} m non affecté.`, pfOver: r => `Dépasse la largeur disponible de ${fm(r)} m.`, pfRestLabel: 'non affecté',
   ckWalkBad: w => `Trottoir de ${fm(w)} m : au moins 1,40 m libre d’obstacle est nécessaire pour un fauteuil roulant ou une poussette.`,
@@ -3482,6 +3505,9 @@ Object.assign(I18N.fr, {
   pfRaised: 'Le passage est surélevé : trottoirs et chaussée sont au même niveau, ou presque.',
   pfSigNote: 'Les feux et les boutons d’appel se placent sur les trottoirs, de chaque côté du passage.',
   pfCrossLen: (a, b) => b !== undefined ? `Traversée en deux temps : ${fm(a)} m, puis ${fm(b)} m.` : `Longueur de traversée : ${fm(a)} m.`,
+  pfLampNone: 'Aucun poteau d’éclairage au droit du passage : un passage piéton doit être éclairé de nuit (voir la section « Éclairage » de la note de calcul).',
+  pfLampOne: 'Un seul poteau d’éclairage au droit du passage : un deuxième, de l’autre côté, éclaire les piétons dans les deux sens de circulation.',
+  pfLampOk: n => `${n} poteaux d’éclairage au droit du passage.`,
   pfCrossLong: 'Traversée de plus de 9 m d’un seul tenant : un refuge central est conseillé.',
   pfUse: 'Utiliser ce profil dans la simulation', pfUsed: lw => `Largeur de voie reportée dans les données : ${fm(lw)} m. Cliquez sur « Appliquer et relancer ».`, pfUseNone: 'Ce profil ne contient aucune voie de circulation.',
   pfCrossing: 'Traversée'
@@ -3492,7 +3518,7 @@ Object.assign(I18N.ar, {
     <h3>المراحل</h3>
     <ol>
       <li><strong>تحديد الموقع</strong> على الخريطة، ثم «تحليل الموقع»: النهج، والمدارس والمؤسّسات الصحّية القريبة، ومحطّات الحافلات، وكثافة السكّان.</li>
-      <li><strong>وصف النهج</strong> في المقطع العرضي: الأرصفة، والمسالك، وأماكن الوقوف، ومسالك الحافلات والدرّاجات، والفاصل الوسطي، من واجهة إلى أخرى. ويُستنتج منه المقطع عند الممرّ للتهيئة المعتمدة.</li>
+      <li><strong>وصف النهج</strong> في المقطع العرضي، من واجهة إلى أخرى (الأرصفة، والمسالك، وأماكن الوقوف، ومسالك الحافلات والدرّاجات، والفاصل الوسطي، والجزيرة، وأعمدة الإنارة)، وعلى ثلاث مراحل: الوضع الحالي، والمقطع المبرمج في الجزء الجاري (النهج بعد الأشغال، خارج الممرّ)، والمقطع عند الممرّ. ويُحسب هذا الأخير للتهيئة المختارة، ويمكنك تعديله.</li>
       <li><strong>إدخال حركة المرور</strong>: تدفّق الذروة في كل اتجاه، ونسبة العربات الثقيلة والحافلات، والسرعة المقاسة، والمترجّلون، والسرعة القصوى؛ وإن أمكن، عمليات العدّ ساعة بساعة.</li>
       <li><strong>ضبط التهيئات</strong>: أبعاد التضييق والتعرّج، ومدّة الإشارة الضوئية، ثم «تطبيق وإعادة التشغيل».</li>
       <li><strong>مشاهدة المحاكاة</strong>: شريحة متحرّكة لكل تهيئة، مع أرقامها الرئيسية وصورة ثلاثية الأبعاد (اضغط على الصورة المصغّرة). ويعرضها وضع العرض كلّها في شاشة واحدة.</li>
@@ -3519,12 +3545,24 @@ Object.assign(I18N.ar, {
     </ul>
     <p class="note">الأداة تساعد على القرار ولا تعوّض الدراسة. قيمها المرجعية تقريبية ويجب تأكيدها بقياسات محلية.</p>`,
   pfTitle: 'المقطع العرضي للنهج',
-  pfNote: 'صف النهج كما هو، من واجهة إلى أخرى: أضف العناصر، واضبط عرضها، وحرّكها (بالسحب والإفلات أو بالأسهم). ويُستنتج المقطع عند الممرّ، للتهيئة المعتمدة، آليًا.',
+  pfNote: 'صف النهج من واجهة إلى أخرى على ثلاث مراحل: كما هو، وكما سيكون بعد الأشغال في الجزء الجاري، وعند الممرّ. في كل تبويب، أضف عناصر، واضبط عرضها، وحرّكها (بالسحب والإفلات أو بالأسهم) أو احذفها.',
+  tabEx: 'الوضع الحالي', tabPr: 'المبرمج (الجزء الجاري)',
+  hintEx: 'النهج كما هو اليوم. وهو الوضع المرجعي للمحاكاة.',
+  hintPr: 'النهج بعد الأشغال خارج الممرّ: مسالك بعرض 3,00 م، وأرصفة أعرض، وشريط للدرّاجات، وغراسة… وما لم تعدّله، فهو يطابق الوضع الحالي.',
+  hintCr: 'المقطع عند الممرّ للتهيئة المختارة. يُحسب انطلاقًا من المقطع المبرمج، وبمجرّد أن تعدّله تُعتمد نسختك في الصفحة وفي المذكّرة.',
+  stSame: 'مطابق للوضع الحالي.', stProjMod: 'معدّل مقارنة بالوضع الحالي.', stAuto: 'محسوب آليًا.', stCustom: 'معدّل يدويًا.',
+  pfVar: 'التهيئة', pfResetPr: 'الانطلاق من الوضع الحالي', pfResetCr: 'العودة إلى المقطع المحسوب',
+  pfDesign: 'نقل القيم إلى خيارات التصميم', pfDesignNone: 'لا شيء يُنقل: التضييق والتعرّج وحدهما لهما عروض قابلة للضبط في خيارات التصميم.',
+  pfDesignDone: s => `نُقلت إلى خيارات التصميم: ${s}. اضغط على «تطبيق وإعادة التشغيل».`,
+  dsLane: v => `عرض المسلك ${fm(v)} م`, dsIsl: v => `عرض الجزيرة ${fm(v)} م`, dsClamp: ' (أُعيد إلى الحدود المسموح بها)',
+  pfCustomNote: 'مقطع عدّلته البلدية يدويًا.',
+  pfProjected: 'المقطع المبرمج (الجزء الجاري)', pfProjSame: 'المقطع المبرمج في الجزء الجاري مطابق للوضع الحالي.',
+  ckIslandWarn: w => `جزيرة بعرض ${fm(w)} م: يلزم 1,50 م على الأقلّ لتكون ملجأً، و2,00 م مع عربة أطفال أو درّاجة.`,
   pfTotal: 'العرض المتاح (من واجهة إلى واجهة)', pfPreset: 'نموذج النهج', pfLoad: 'تحميل النموذج', pfAdd: 'إضافة:',
   presets: { defaut: 'نهج بمسلكين (12 م)', quartier: 'نهج سكني (10 م)', avenue: 'شارع مع أماكن وقوف (16 م)', bus: 'شارع مع مسالك للحافلات (19,5 م)',
     boulevard: 'شارع 2 × 2 مسالك مع فاصل وسطي (22 م)', sensunique: 'نهج ذو اتجاه واحد مع وقوف (9 م)', velo: 'نهج مع أشرطة للدرّاجات (14 م)' },
   segNames: { walk: ['رصيف', 'رصيف'], ext: ['امتداد الرصيف', 'امتداد'], trees: ['شريط مغروس', 'غراسة'], park: ['أماكن الوقوف', 'وقوف'],
-    lane: ['مسلك سير', 'مسلك'], bus: ['مسلك الحافلات', 'حافلات'], bike: ['شريط للدرّاجات', 'شريط درّاجات'], track: ['مسلك للدرّاجات', 'مسلك درّاجات'], median: ['فاصل وسطي', 'فاصل'] },
+    lane: ['مسلك سير', 'مسلك'], bus: ['مسلك الحافلات', 'حافلات'], bike: ['شريط للدرّاجات', 'شريط درّاجات'], track: ['مسلك للدرّاجات', 'مسلك درّاجات'], median: ['فاصل وسطي', 'فاصل'], island: ['جزيرة ملجأ', 'جزيرة'], lamp: ['عمود إنارة', 'إنارة'] },
   dir1: 'الاتجاه 1', dir2: 'الاتجاه 2', pfLeft: 'تحريك إلى اليسار', pfRight: 'تحريك إلى اليمين', pfDel: 'حذف', pfWidth: 'العرض',
   pfExact: 'العرض المتاح مخصّص بالكامل.', pfRest: r => `يبقى ${fm(r)} م غير مخصّص.`, pfOver: r => `يتجاوز العرض المتاح بـ ${fm(r)} م.`, pfRestLabel: 'غير مخصّص',
   ckWalkBad: w => `رصيف بعرض ${fm(w)} م: يلزم 1,40 م على الأقلّ خالية من العوائق لمرور كرسيّ متحرّك أو عربة أطفال.`,
@@ -3552,12 +3590,15 @@ Object.assign(I18N.ar, {
   pfRaised: 'الممرّ مرتفع: الأرصفة والمعبّد في نفس المستوى أو قريبًا منه.',
   pfSigNote: 'توضع الإشارات الضوئية وأزرار الطلب على الأرصفة من جانبي الممرّ.',
   pfCrossLen: (a, b) => b !== undefined ? `عبور على مرحلتين: ${fm(a)} م ثم ${fm(b)} م.` : `طول العبور: ${fm(a)} م.`,
+  pfLampNone: 'لا يوجد أيّ عمود إنارة عند الممرّ: يجب أن يكون ممرّ المترجّلين مضاءً ليلًا (انظر قسم «الإنارة» في مذكّرة الحساب).',
+  pfLampOne: 'عمود إنارة واحد فقط عند الممرّ: عمود ثانٍ في الجهة المقابلة يُضيء المترجّلين في اتجاهي السير.',
+  pfLampOk: n => n === 2 ? 'عمودا إنارة عند الممرّ.' : `${n} أعمدة إنارة عند الممرّ.`,
   pfCrossLong: 'عبور يتجاوز 9 م دون توقّف: يُنصح بملجأ وسطي.',
   pfUse: 'استعمال هذا المقطع في المحاكاة', pfUsed: lw => `نُقل عرض المسلك إلى المعطيات: ${fm(lw)} م. اضغط على «تطبيق وإعادة التشغيل».`, pfUseNone: 'لا يحتوي هذا المقطع على أيّ مسلك سير.',
   pfCrossing: 'العبور'
 });
-Object.assign(NOTE.fr, { profIntro: 'Profil de la rue décrit par la commune, de façade à façade, puis profil déduit au droit du passage pour la variante retenue. Largeurs en mètres.', profCols: ['Élément', 'Largeur (m)'] });
-Object.assign(NOTE.ar, { profIntro: 'مقطع النهج كما وصفته البلدية من واجهة إلى أخرى، ثم المقطع المستنتج عند الممرّ للتهيئة المعتمدة. العروض بالمتر.', profCols: ['العنصر', 'العرض (م)'] });
+Object.assign(NOTE.fr, { profIntro: 'La rue décrite par la commune, de façade à façade, en trois temps : l’existant, le projeté en section courante (après travaux, hors du passage) et le profil au droit du passage pour la variante retenue. Largeurs en mètres.', profCols: ['Élément', 'Largeur (m)'] });
+Object.assign(NOTE.ar, { profIntro: 'النهج كما وصفته البلدية من واجهة إلى أخرى، على ثلاث مراحل: الوضع الحالي، والمقطع المبرمج في الجزء الجاري (بعد الأشغال، خارج الممرّ)، والمقطع عند الممرّ للتهيئة المعتمدة. العروض بالمتر.', profCols: ['العنصر', 'العرض (م)'] });
 NOTE.fr.s.profile = 'Profil en travers';
 NOTE.ar.s.profile = 'المقطع العرضي';
 
@@ -3571,9 +3612,12 @@ const SEG = {
   bus:    { raised: false, color: '#a5503d', def: 3.5, dir: true },
   bike:   { raised: false, color: '#4f9a66', def: 1.5, dir: true },
   track:  { raised: true,  color: '#3f8a58', def: 2.0, dir: true },
-  median: { raised: true,  color: '#9fbf86', def: 2.0 }
+  median: { raised: true,  color: '#9fbf86', def: 2.0 },
+  island: { raised: true,  color: '#c4d3ae', def: 2.0 },
+  lamp:   { raised: true,  color: '#8a9099', def: 0.6 }
 };
-const SEG_ADD = ['walk', 'trees', 'park', 'lane', 'bus', 'bike', 'track', 'median'];
+const SEG_ADD = ['walk', 'ext', 'trees', 'lamp', 'park', 'lane', 'bus', 'bike', 'track', 'median', 'island'];
+const isRefuge = s => (s.t === 'median' || s.t === 'island') && s.w >= ISLAND_MIN;
 const PRESETS = {
   defaut: { total: 12, segs: [['walk', 2.5], ['lane', 3.5, 1], ['lane', 3.5, -1], ['walk', 2.5]] },
   quartier: { total: 10, segs: [['walk', 2], ['lane', 3, 1], ['lane', 3, -1], ['walk', 2]] },
@@ -3584,12 +3628,27 @@ const PRESETS = {
   velo: { total: 14, segs: [['walk', 2.25], ['bike', 1.5, 1], ['lane', 3.25, 1], ['lane', 3.25, -1], ['bike', 1.5, -1], ['walk', 2.25]] }
 };
 const presetProfile = k => ({ total: PRESETS[k].total, segs: PRESETS[k].segs.map(([tp, w, d]) => ({ t: tp, w, d: d || 1 })) });
-let PROF = presetProfile('defaut');
-try { const s = JSON.parse(localStorage.getItem('mv-prof') || 'null'); if (s && Array.isArray(s.segs) && s.segs.every(g => SEG[g.t] && g.w > 0)) PROF = { total: +s.total || 12, segs: s.segs.map(g => ({ t: g.t, w: +g.w, d: g.d < 0 ? -1 : 1 })) }; } catch (e) { /* stockage indisponible */ }
-const saveProf = () => { try { localStorage.setItem('mv-prof', JSON.stringify(PROF)); } catch (e) { /* stockage indisponible */ } };
+// trois profils sur la même largeur de façade à façade : existant (PROF), projeté en section courante (PROJ, null = identique
+// à l'existant) et, par variante, profil au droit du passage modifié à la main (CROSS[id], absent = calculé)
+const cloneSegs = segs => segs.map(s => ({ t: s.t, w: s.w, d: s.d }));
+const okSegs = a => Array.isArray(a) && a.length > 0 && a.every(g => g && SEG[g.t] && g.w > 0);
+const readSegs = a => a.map(g => ({ t: g.t, w: +g.w, d: g.d < 0 ? -1 : 1 }));
+const sameSegs = (a, b) => a.length === b.length && a.every((s, i) => s.t === b[i].t && Math.abs(s.w - b[i].w) < 0.005 && s.d === b[i].d);
+let PROF = presetProfile('defaut'), PROJ = null, pfTab = 'ex';
+const CROSS = {};
+try {
+  const s = JSON.parse(localStorage.getItem('mv-prof') || 'null');
+  if (s && okSegs(s.segs)) {
+    PROF = { total: +s.total || 12, segs: readSegs(s.segs) };
+    if (okSegs(s.proj)) PROJ = readSegs(s.proj);
+    if (s.cross) for (const k of Object.keys(s.cross)) if (okSegs(s.cross[k])) CROSS[k] = readSegs(s.cross[k]);
+  }
+} catch (e) { /* stockage indisponible */ }
+const saveProf = () => { try { localStorage.setItem('mv-prof', JSON.stringify({ total: PROF.total, segs: PROF.segs, proj: PROJ, cross: CROSS })); } catch (e) { /* stockage indisponible */ } };
 const profSum = segs => segs.reduce((a, s) => a + s.w, 0);
+const projProfile = () => ({ total: PROF.total, segs: PROJ || PROF.segs });
 
-function profChecks(pf) {
+function profChecks(pf, atCrossing = false) {
   const out = [], d = pf.total - profSum(pf.segs);
   out.push(Math.abs(d) <= 0.005 ? ['ok', t('pfExact')] : d > 0 ? ['warn', t('pfRest', d)] : ['bad', t('pfOver', -d)]);
   for (const s of pf.segs) {
@@ -3600,10 +3659,11 @@ function profChecks(pf) {
     else if (s.t === 'bike' && s.w < 1.2) out.push(['bad', t('ckBikeBad', s.w)]);
     else if (s.t === 'track' && s.w < 1.5) out.push(['bad', t('ckTrackBad', s.w)]);
     else if (s.t === 'median' && s.w < ISLAND_MIN) out.push(['warn', t('ckMedianWarn', s.w)]);
+    else if (s.t === 'island' && s.w < 2.0) out.push([s.w < ISLAND_MIN ? 'bad' : 'warn', t('ckIslandWarn', s.w)]);
   }
   const lanes = pf.segs.filter(s => s.t === 'lane'), n1 = lanes.filter(s => s.d > 0).length, n2 = lanes.length - n1;
   if (!lanes.length) out.push(['bad', t('ckNoLane')]);
-  else {
+  else if (!atCrossing) {
     if (Math.max(n1, n2) >= 2) out.push(['warn', t('ckMulti', Math.max(n1, n2))]);
     if (!n1 || !n2) out.push(['warn', t('ckOneWay')]);
   }
@@ -3615,7 +3675,7 @@ function crossStages(segs) {
   const xs = []; let x = 0; for (const s of segs) { xs.push(x); x += s.w; }
   const runs = []; let cur = null;
   segs.forEach((s, i) => {
-    const crossable = !SEG[s.t].raised || s.t === 'track' || (s.t === 'median' && s.w < ISLAND_MIN);
+    const crossable = !SEG[s.t].raised || s.t === 'track' || ((s.t === 'median' || s.t === 'island') && !isRefuge(s));
     if (crossable) { if (!cur) cur = { xa: xs[i], w: 0 }; cur.w += s.w; cur.xb = xs[i] + s.w; }
     else if (cur) { runs.push(cur); cur = null; }
   });
@@ -3653,13 +3713,13 @@ function crossProfile(pf, id) {
   };
   if (id === 'ret') {
     segs.forEach(s => { if (s.t === 'lane') s.w = P.retLane; });
-    const med = segs.find(s => s.t === 'median'), dirs = new Set(segs.filter(s => SEG[s.t].dir).map(s => s.d));
+    const med = segs.find(s => s.t === 'median' || s.t === 'island'), dirs = new Set(segs.filter(s => SEG[s.t].dir).map(s => s.d));
     if (med) { med.w = Math.max(med.w, P.retIsl); notes.push(['info', t('pfIslMed')]); }
     else if (dirs.size < 2) notes.push(['warn', t('pfOneWayNoIsl')]);
     else {
       let k = segs.findIndex((s, j) => j > 0 && SEG[s.t].dir && s.d < 0 && segs.slice(0, j).some(q => SEG[q.t].dir && q.d > 0));
       if (k < 0) k = Math.floor(segs.length / 2);
-      segs.splice(k, 0, { t: 'median', w: P.retIsl, d: 1 });
+      segs.splice(k, 0, { t: 'island', w: P.retIsl, d: 1 });
       notes.push(['info', t('pfIslAdd', P.retIsl)]);
     }
     const miss = fitWidth();
@@ -3674,9 +3734,22 @@ function crossProfile(pf, id) {
     if (id === 'sig') notes.push(['info', t('pfSigNote')]);
   }
   const stages = crossStages(segs);
-  if (stages.length >= 2) notes.push(['ok', t('pfCrossLen', stages[0].w, stages[1].w)]);
-  else if (stages.length === 1) { notes.push(['info', t('pfCrossLen', stages[0].w)]); if (stages[0].w > 9) notes.push(['warn', t('pfCrossLong')]); }
-  return { segs, notes, stages };
+  return { segs, notes: notes.concat(stageNotes(stages), lampNotes(segs)), stages, custom: false };
+}
+function lampNotes(segs) {
+  const n = segs.filter(s => s.t === 'lamp').length;
+  return [n === 0 ? ['warn', t('pfLampNone')] : n === 1 ? ['info', t('pfLampOne')] : ['ok', t('pfLampOk', n)]];
+}
+function stageNotes(stages) {
+  if (stages.length >= 2) return [['ok', t('pfCrossLen', stages[0].w, stages[1].w)]];
+  if (stages.length === 1) return [['info', t('pfCrossLen', stages[0].w)]].concat(stages[0].w > 9 ? [['warn', t('pfCrossLong')]] : []);
+  return [];
+}
+// profil au droit du passage retenu pour une variante : celui de la commune s'il existe, sinon le profil calculé
+function crossOf(id) {
+  if (!CROSS[id]) return crossProfile(projProfile(), id);
+  const segs = CROSS[id], stages = crossStages(segs);
+  return { segs, stages, custom: true, notes: [['info', t('pfCustomNote')]].concat(profChecks({ total: PROF.total, segs }, true), stageNotes(stages), lampNotes(segs)) };
 }
 
 /* dessin du profil en travers, en élévation (unités : centimètres) */
@@ -3706,7 +3779,7 @@ function profileSVG(segs, total, opts = {}) {
   const bike = (cx, top) => `<rect x="${fx(cx - 5)}" y="${top - 66}" width="10" height="66" rx="5" fill="#222"/><rect x="${fx(cx - 30)}" y="${top - 112}" width="60" height="7" rx="3" fill="#444"/>` + person(cx, top - 40, 2).replace(/<rect x="[^"]+" y="[^"]+" width="12" height="68" fill="#2f3a4a"\/>/g, '');
   const tree = (cx, top, w) => `<rect x="${fx(cx - 11)}" y="${top - 210}" width="22" height="210" fill="#6b4f35"/><circle cx="${fx(cx)}" cy="${top - 270}" r="${fx(Math.min(115, w / 2))}" fill="#5f8f45"/>`;
   const shrub = (cx, top, w) => { let s = ''; for (let k = -1; k <= 1; k++) s += `<circle cx="${fx(cx + k * Math.min(45, w / 4))}" cy="${top - 26}" r="28" fill="#6f9a52"/>`; return s; };
-  let x = 0;
+  let x = 0; const glow = [];
   segs.forEach((s, i) => {
     const S = SEG[s.t], w = s.w * U, top = S.raised ? yR - curb : yR, cx = x + w / 2;
     o.push(`<rect x="${fx(x)}" y="${top}" width="${fx(w)}" height="${380 - top}" fill="${S.color}"/>`);
@@ -3721,16 +3794,30 @@ function profileSVG(segs, total, opts = {}) {
     else if (s.t === 'bike' || s.t === 'track') o.push(bike(cx, top));
     else if (s.t === 'trees') o.push(tree(cx, top, w));
     else if (s.t === 'median') o.push(shrub(cx, top, w));
+    else if (s.t === 'island') o.push(`<rect x="${fx(cx - 5)}" y="${top - 190}" width="10" height="190" fill="#7a8088"/><circle cx="${fx(cx)}" cy="${top - 205}" r="30" fill="#1f5fae" stroke="#fff" stroke-width="4"/><path d="M${fx(cx - 12)} ${top - 220}L${fx(cx + 10)} ${top - 198}M${fx(cx + 10)} ${top - 212}L${fx(cx + 10)} ${top - 198}L${fx(cx - 4)} ${top - 198}" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/>`);
+    else if (s.t === 'lamp') {
+      // crosse tournée vers la chaussée ; double crosse si le poteau est entre deux chaussées
+      const lowL = i > 0 && !SEG[segs[i - 1].t].raised, lowR = i < segs.length - 1 && !SEG[segs[i + 1].t].raised;
+      const sides = lowL && lowR ? [-1, 1] : lowL ? [-1] : lowR ? [1] : [cx < total * U / 2 ? 1 : -1];
+      o.push(`<rect x="${fx(cx - 6)}" y="48" width="12" height="${top - 48}" fill="#59606a"/><rect x="${fx(cx - 14)}" y="${top - 30}" width="28" height="30" fill="#4a5059"/>`);
+      for (const d of sides) {
+        const lx = cx + d * 125;
+        o.push(`<path d="M${fx(cx)} 60Q${fx(cx + d * 20)} 34 ${fx(cx + d * 70)} 34L${fx(lx)} 34" stroke="#59606a" stroke-width="9" fill="none"/><rect x="${fx(lx - 32)}" y="30" width="64" height="15" rx="6" fill="#3f454d"/>`);
+        glow.push(`<path d="M${fx(lx - 26)} 46L${fx(lx + 26)} 46L${fx(lx + 120)} ${yR}L${fx(lx - 120)} ${yR}Z" fill="#ffe28a" opacity=".28"/>`);
+      }
+      txt(cx, 22, N.lamp[1], 18);
+    }
     // marquage entre deux éléments de chaussée
     const nx = segs[i + 1];
     if (nx && !S.raised && !SEG[nx.t].raised) o.push(`<rect x="${fx(x + w - 6)}" y="${yR - 3}" width="12" height="5" fill="#ffffff"/>`);
     // étiquettes
     const nm = N[s.t][1] + (S.dir ? (s.d > 0 ? ' ↑' : ' ↓') : '');
-    txt(cx, 412, nm, w < 140 ? 19 : 24);
+    if (s.t !== 'lamp') txt(cx, 412, nm, w < 140 ? 19 : 24);
     txt(cx, 442, fm(s.w), w < 140 ? 22 : 26, ' font-weight="600"');
     o.push(`<line x1="${fx(x)}" y1="385" x2="${fx(x)}" y2="450" stroke="#888" stroke-width="2"/>`);
     x += w;
   });
+  o.push(...glow);
   o.push(`<line x1="${fx(x)}" y1="385" x2="${fx(x)}" y2="450" stroke="#888" stroke-width="2"/>`);
   o.push(`<rect x="${-M}" y="380" width="${W + 2 * M}" height="4" fill="#555"/>`);
   if (sum < total - 0.005) {
@@ -3752,64 +3839,126 @@ function profileSVG(segs, total, opts = {}) {
 }
 
 function profFocusId() { try { return scenarios[focusIndex()].id; } catch (e) { return 'ret'; } }
+// éléments de l'onglet actif ; edit = true crée la copie modifiable (projeté ou profil au passage) à la première retouche
+function tabSegs(edit) {
+  if (pfTab === 'ex') return PROF.segs;
+  if (pfTab === 'pr') { if (edit && !PROJ) PROJ = cloneSegs(PROF.segs); return PROJ || PROF.segs; }
+  const id = profFocusId();
+  if (edit && !CROSS[id]) CROSS[id] = cloneSegs(crossProfile(projProfile(), id).segs);
+  return CROSS[id] || crossProfile(projProfile(), id).segs;
+}
 function buildProfileUI() {
   const N = t('segNames'), PR = t('presets');
   $('#profil').innerHTML = `<h3>${t('pfTitle')}</h3><p class="note">${t('pfNote')}</p>
     <div class="prof-tools">
       <label>${t('pfTotal')}<input id="pf-total" type="number" min="3" max="80" step="0.25" value="${PROF.total}"></label>
-      <label>${t('pfPreset')}<select id="pf-preset">${Object.keys(PRESETS).map(k => `<option value="${k}">${esc(PR[k])}</option>`).join('')}</select></label>
-      <button class="btn" type="button" id="pf-load">${t('pfLoad')}</button>
+      <span class="prof-preset" id="pf-preset-row"><label>${t('pfPreset')}<select id="pf-preset">${Object.keys(PRESETS).map(k => `<option value="${k}">${esc(PR[k])}</option>`).join('')}</select></label>
+      <button class="btn" type="button" id="pf-load">${t('pfLoad')}</button></span>
     </div>
+    <div class="prof-tabs" role="group">
+      <button class="btn" type="button" data-pftab="ex">${t('tabEx')}</button>
+      <button class="btn" type="button" data-pftab="pr">${t('tabPr')}</button>
+      <button class="btn" type="button" data-pftab="cr" id="pf-tab-cr"></button>
+    </div>
+    <p class="note prof-hint" id="pf-hint"></p>
+    <div class="prof-status" id="pf-status"></div>
     <div class="prof-palette"><span class="group-label">${t('pfAdd')}</span>${SEG_ADD.map(k => `<button class="btn" type="button" data-add="${k}"><span class="sw" style="background:${SEG[k].color}"></span>${esc(N[k][0])}</button>`).join('')}</div>
-    <h4>${t('pfExisting')}</h4>
     <div class="prof-draw" id="pf-draw"></div>
     <div class="prof-segs" id="pf-segs"></div>
     <div class="prof-checks" id="pf-checks"></div>
-    <h4 id="pf-cross-title"></h4>
-    <div class="prof-draw" id="pf-cross"></div>
-    <div class="prof-checks" id="pf-cross-notes"></div>
-    <div class="form-actions"><button class="btn primary" type="button" id="pf-use">${t('pfUse')}</button><span class="msg" id="pf-msg"></span></div>`;
+    <div class="form-actions"><span id="pf-acts"></span><span class="msg" id="pf-msg"></span></div>`;
   renderProfile(true);
 }
 function renderProfile(cards) {
   if (!$('#pf-draw')) return;
-  const N = t('segNames');
-  $('#pf-draw').innerHTML = profileSVG(PROF.segs, PROF.total);
-  if (cards) $('#pf-segs').innerHTML = PROF.segs.map((s, i) => `<div class="pseg" draggable="true" data-i="${i}">
+  const N = t('segNames'), id = profFocusId(), sc = scenarios.find(s => s.id === id), btn = (bid, txt, cls = '') => `<button class="btn${cls}" type="button" id="${bid}">${esc(txt)}</button>`;
+  $('#pf-tab-cr').textContent = t('pfCrossTitle', sc ? scName(sc) : id);
+  document.querySelectorAll('[data-pftab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pftab === pfTab)));
+  $('#pf-preset-row').hidden = pfTab !== 'ex';
+  $('#pf-hint').textContent = t({ ex: 'hintEx', pr: 'hintPr', cr: 'hintCr' }[pfTab]);
+  let status = '', acts = '';
+  if (pfTab === 'ex') acts = btn('pf-use', t('pfUse'), ' primary');
+  else if (pfTab === 'pr') {
+    status = `<span>${esc(!PROJ || sameSegs(PROJ, PROF.segs) ? t('stSame') : t('stProjMod'))}</span>`;
+    if (PROJ) acts = btn('pf-reset-pr', t('pfResetPr'));
+  } else {
+    const opts = scenarios.slice(1).map(s => `<option value="${s.id}"${s.id === id ? ' selected' : ''}>${esc(scName(s))}</option>`).join('');
+    status = `<label>${esc(t('pfVar'))} <select id="pf-var">${opts}</select></label><span>${esc(CROSS[id] ? t('stCustom') : t('stAuto'))}</span>`;
+    if (CROSS[id]) acts += btn('pf-reset-cr', t('pfResetCr'));
+    if (id === 'ret' || id === 'chi') acts += btn('pf-design', t('pfDesign'), ' primary');
+  }
+  $('#pf-status').innerHTML = status; $('#pf-status').hidden = !status;
+  $('#pf-acts').innerHTML = acts;
+  const segs = tabSegs(false), C = pfTab === 'cr' ? crossOf(id) : null;
+  $('#pf-draw').innerHTML = profileSVG(segs, PROF.total, C ? { stages: C.stages } : {});
+  if (cards) $('#pf-segs').innerHTML = segs.map((s, i) => `<div class="pseg" draggable="true" data-i="${i}">
       <div class="nm"><span class="sw" style="background:${SEG[s.t].color}"></span>${esc(N[s.t][0])}</div>
-      <div class="wrow"><button class="btn mini" type="button" data-act="minus" data-i="${i}" aria-label="−0,25 m">−</button><input type="number" min="0.25" max="30" step="0.05" value="${s.w}" data-act="w" data-i="${i}" aria-label="${esc(t('pfWidth'))}"><button class="btn mini" type="button" data-act="plus" data-i="${i}" aria-label="+0,25 m">+</button><span>${t('m')}</span></div>
+      <div class="wrow"><button class="btn mini" type="button" data-act="minus" data-i="${i}" aria-label="−0,25 m">−</button><input type="number" min="0.25" max="30" step="0.05" value="${Math.round(s.w * 100) / 100}" data-act="w" data-i="${i}" aria-label="${esc(t('pfWidth'))}"><button class="btn mini" type="button" data-act="plus" data-i="${i}" aria-label="+0,25 m">+</button><span>${t('m')}</span></div>
       ${SEG[s.t].dir ? `<button class="btn mini dir" type="button" data-act="dir" data-i="${i}">${s.d > 0 ? '↑ ' + esc(t('dir1')) : '↓ ' + esc(t('dir2'))}</button>` : ''}
       <div class="wrow"><button class="btn mini" type="button" data-act="left" data-i="${i}" aria-label="${esc(t('pfLeft'))}">◀</button><button class="btn mini" type="button" data-act="right" data-i="${i}" aria-label="${esc(t('pfRight'))}">▶</button><button class="btn mini" type="button" data-act="del" data-i="${i}" aria-label="${esc(t('pfDel'))}">✕</button></div>
     </div>`).join('');
-  $('#pf-checks').innerHTML = profChecks(PROF).map(([l, m]) => `<div class="${l}">${esc(m)}</div>`).join('');
-  renderProfileCross();
+  $('#pf-checks').innerHTML = (C ? C.notes : profChecks({ total: PROF.total, segs })).map(([l, m]) => `<div class="${l}">${esc(m)}</div>`).join('');
 }
+// appelée quand la variante choisie ou les paramètres changent : ne reconstruit pas les cartes pendant une saisie
 function renderProfileCross() {
-  if (!$('#pf-cross')) return;
-  const id = profFocusId(), sc = scenarios.find(s => s.id === id), C = crossProfile(PROF, id);
-  $('#pf-cross-title').textContent = t('pfCrossTitle', sc ? scName(sc) : id);
-  $('#pf-cross').innerHTML = profileSVG(C.segs, PROF.total, { stages: C.stages });
-  $('#pf-cross-notes').innerHTML = C.notes.map(([l, m]) => `<div class="${l}">${esc(m)}</div>`).join('');
+  if (!$('#pf-draw')) return;
+  const a = document.activeElement, typing = a && a.closest && a.closest('#pf-segs');
+  renderProfile(pfTab === 'cr' && !typing);
+}
+const fieldDef = k => FIELDS.flatMap(g => g.items).find(f => f.k === k);
+function reportDesign(id) {
+  const segs = crossOf(id).segs, lanes = segs.filter(s => s.t === 'lane'), out = [];
+  if (!lanes.length) return t('pfUseNone');
+  const put = (k, v, lab) => {
+    const f = fieldDef(k), r = Math.round(v * 20) / 20, c = Math.min(f.max, Math.max(f.min, r));
+    $('#p-' + k).value = c; out.push(lab(c) + (Math.abs(c - r) > 1e-9 ? t('dsClamp') : ''));
+  };
+  const lw = lanes.reduce((a, s) => a + s.w, 0) / lanes.length;
+  if (id === 'ret') {
+    put('retLane', lw, v => t('dsLane', v));
+    const isl = segs.filter(s => s.t === 'island' || s.t === 'median').reduce((a, s) => Math.max(a, s.w), 0);
+    if (isl > 0) put('retIsl', isl, v => t('dsIsl', v));
+  } else if (id === 'chi') put('chLane', lw, v => t('dsLane', v));
+  else return t('pfDesignNone');
+  return t('pfDesignDone', out.join(', '));
+}
+// poteau d'éclairage : au bord du trottoir, côté chaussée, sur le trottoir le plus large qui n'en a pas encore ;
+// sa largeur est prise sur ce trottoir pour garder la largeur de façade à façade
+function placeLamp(segs) {
+  const L0 = SEG.lamp.def;
+  const cand = segs.map((s, i) => ({ s, i, side: segs.slice(i + 1).some(q => !SEG[q.t].raised) ? 1 : 0 }))
+    .filter(c => c.s.t === 'walk')
+    .map(c => ({ ...c, at: c.side ? c.i + 1 : c.i, has: segs[c.side ? c.i + 1 : c.i - 1] && segs[c.side ? c.i + 1 : c.i - 1].t === 'lamp' }));
+  const free = cand.filter(c => !c.has), pool = free.length ? free : cand;
+  if (!pool.length) { segs.push({ t: 'lamp', w: L0, d: 1 }); return; }
+  const c = pool.reduce((a, x) => x.s.w > a.s.w ? x : a, pool[0]);
+  if (c.s.w > L0 + 0.25) c.s.w = Math.round((c.s.w - L0) * 100) / 100;
+  segs.splice(c.at, 0, { t: 'lamp', w: L0, d: 1 });
 }
 let dragI = null;
 $('#profil').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.add) { const k = b.dataset.add; PROF.segs.push({ t: k, w: SEG[k].def, d: 1 }); saveProf(); renderProfile(true); return; }
+  if (b.dataset.pftab) { pfTab = b.dataset.pftab; $('#pf-msg').textContent = ''; renderProfile(true); return; }
+  if (b.dataset.add) { const k = b.dataset.add; if (k === 'lamp') placeLamp(tabSegs(true)); else tabSegs(true).push({ t: k, w: SEG[k].def, d: 1 }); saveProf(); renderProfile(true); return; }
   if (b.id === 'pf-load') { PROF = presetProfile($('#pf-preset').value); $('#pf-total').value = PROF.total; saveProf(); renderProfile(true); return; }
+  if (b.id === 'pf-reset-pr') { PROJ = null; saveProf(); renderProfile(true); return; }
+  if (b.id === 'pf-reset-cr') { delete CROSS[profFocusId()]; saveProf(); renderProfile(true); return; }
+  if (b.id === 'pf-design') { $('#pf-msg').textContent = reportDesign(profFocusId()); return; }
   if (b.id === 'pf-use') {
     const lanes = PROF.segs.filter(s => s.t === 'lane');
     if (!lanes.length) { $('#pf-msg').textContent = t('pfUseNone'); return; }
     const lw = Math.min(3.75, Math.max(2.75, Math.round(lanes.reduce((a, s) => a + s.w, 0) / lanes.length * 20) / 20));
     $('#p-laneW').value = lw; $('#pf-msg').textContent = t('pfUsed', lw); return;
   }
-  const i = +b.dataset.i, s = PROF.segs[i]; if (!s) return;
+  if (!b.dataset.act || !tabSegs(false)[+b.dataset.i]) return;
+  const segs = tabSegs(true), i = +b.dataset.i, s = segs[i];
   switch (b.dataset.act) {
     case 'minus': s.w = Math.max(0.25, Math.round((s.w - 0.25) * 100) / 100); break;
     case 'plus': s.w = Math.round((s.w + 0.25) * 100) / 100; break;
     case 'dir': s.d = -s.d; break;
-    case 'left': if (i > 0) PROF.segs.splice(i - 1, 0, PROF.segs.splice(i, 1)[0]); break;
-    case 'right': if (i < PROF.segs.length - 1) PROF.segs.splice(i + 1, 0, PROF.segs.splice(i, 1)[0]); break;
-    case 'del': PROF.segs.splice(i, 1); break;
+    case 'left': if (i > 0) segs.splice(i - 1, 0, segs.splice(i, 1)[0]); break;
+    case 'right': if (i < segs.length - 1) segs.splice(i + 1, 0, segs.splice(i, 1)[0]); break;
+    case 'del': segs.splice(i, 1); break;
     default: return;
   }
   saveProf(); renderProfile(true);
@@ -3817,7 +3966,13 @@ $('#profil').addEventListener('click', e => {
 $('#profil').addEventListener('input', e => {
   const el = e.target;
   if (el.id === 'pf-total') { const v = parseFloat(el.value); if (v > 0) { PROF.total = v; saveProf(); renderProfile(false); } return; }
-  if (el.dataset.act === 'w') { const v = parseFloat(el.value), s = PROF.segs[+el.dataset.i]; if (s && v > 0) { s.w = v; saveProf(); renderProfile(false); } }
+  if (el.dataset.act === 'w') { const v = parseFloat(el.value), segs = tabSegs(true), s = segs[+el.dataset.i]; if (s && v > 0) { s.w = v; saveProf(); renderProfile(false); } }
+});
+$('#profil').addEventListener('change', e => {
+  if (e.target.id !== 'pf-var') return;
+  pickedVariant = e.target.value; $('#pf-msg').textContent = '';
+  buildNoteUI(); if (DAY.res) renderDayResults();
+  renderProfile(true);
 });
 $('#profil').addEventListener('dragstart', e => { const c = e.target.closest && e.target.closest('.pseg'); if (c) { dragI = +c.dataset.i; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(dragI)); } });
 $('#profil').addEventListener('dragover', e => { const c = e.target.closest && e.target.closest('.pseg'); if (c && dragI !== null) { e.preventDefault(); c.classList.add('drag-over'); } });
@@ -3826,8 +3981,8 @@ $('#profil').addEventListener('drop', e => {
   const c = e.target.closest && e.target.closest('.pseg');
   if (!c || dragI === null) return;
   e.preventDefault();
-  const j = +c.dataset.i, [s] = PROF.segs.splice(dragI, 1);
-  PROF.segs.splice(j, 0, s); dragI = null; saveProf(); renderProfile(true);
+  const segs = tabSegs(true), j = +c.dataset.i, [s] = segs.splice(dragI, 1);
+  segs.splice(j, 0, s); dragI = null; saveProf(); renderProfile(true);
 });
 $('#profil').addEventListener('dragend', () => { dragI = null; document.querySelectorAll('.pseg.drag-over').forEach(c => c.classList.remove('drag-over')); });
 // section explicative : état replié mémorisé
@@ -3977,7 +4132,7 @@ const onLibs = () => {
 if (document.readyState === 'complete') onLibs(); else window.addEventListener('load', onLibs);
 
 // accès console pour vérification
-window.__mv = { prof: { get: () => PROF, PRESETS, presetProfile, crossProfile, profChecks, crossStages, profileSVG }, stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P,
+window.__mv = { prof: { get: () => PROF, proj: () => PROJ, cross: () => CROSS, PRESETS, presetProfile, crossProfile, crossOf, profChecks, crossStages, profileSVG }, stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P,
   note: id => buildNote(id), setLang: l => setLang(l),
   site: (la, lo) => { if (MAP) MAP.setView([la, lo], 17); setPoint(la, lo); return analyseSite(); }, siteData: () => SITE, day: () => DAY };
 })();

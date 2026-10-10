@@ -683,7 +683,7 @@ fr: {
   pricesNote: 'Valeurs indicatives 2026, à remplacer par le bordereau des prix de la commune.',
   rateLabel: 'Taux de change : dinars pour 1 euro',
   btnNote: 'Générer la note de calcul', noteWait: 'La note sera disponible à la fin de l’évaluation.',
-  noteOpened: 'La note s’est ouverte dans un nouvel onglet.', noteBlocked: 'Le navigateur a bloqué le nouvel onglet :', noteLink: 'ouvrir la note',
+  notePrep: 'Préparation de la note (cartes)…', noteOpened: 'La note s’est ouverte dans un nouvel onglet.', noteBlocked: 'Le navigateur a bloqué le nouvel onglet :', noteLink: 'ouvrir la note',
   lede: P => `Chaque bande reçoit les mêmes véhicules, aux mêmes instants : ${f0(P.q)} véh/h par sens, ${f0(P.pPL)} % de poids lourds et de bus, ${f0(P.qPed)} piétons/h au passage. Seul l’aménagement change. Vitesses, files, attentes et risques sont calculés par une microsimulation, pas dessinés à la main. Cliquez sur une vignette pour voir l’aménagement en 3D.`,
   barSub: P => `${f0(P.q)} véh/h par sens · ${f0(P.pPL)} % de PL et bus · ${f0(P.qPed)} piétons/h`,
   langBtn: 'العربية', presentation: 'Mode présentation', fullPage: 'Page complète', fullscreen: 'Plein écran',
@@ -808,7 +808,7 @@ ar: {
   pricesNote: 'قيم تقريبية لسنة 2026، يجب تعويضها بجدول أسعار البلدية.',
   rateLabel: 'سعر الصرف: دينار مقابل 1 يورو',
   btnNote: 'إعداد مذكّرة الحساب', noteWait: 'تصبح المذكّرة متاحة عند انتهاء التقييم.',
-  noteOpened: 'فُتحت المذكّرة في علامة تبويب جديدة.', noteBlocked: 'منع المتصفّح فتح علامة التبويب الجديدة:', noteLink: 'افتح المذكّرة',
+  notePrep: 'جارٍ إعداد المذكّرة (الخرائط)…', noteOpened: 'فُتحت المذكّرة في علامة تبويب جديدة.', noteBlocked: 'منع المتصفّح فتح علامة التبويب الجديدة:', noteLink: 'افتح المذكّرة',
   lede: P => `تستقبل كل شريحة نفس العربات في نفس اللحظات: ${f0(P.q)} عربة/س في كل اتجاه، و${f0(P.pPL)} % من العربات الثقيلة والحافلات، و${f0(P.qPed)} مترجّلًا/س عند الممرّ. التهيئة وحدها هي التي تتغيّر. السرعات والطوابير وأوقات الانتظار والمخاطر محسوبة بمحاكاة مجهرية، وليست مرسومة باليد. اضغط على صورة مصغّرة لرؤية التهيئة ثلاثية الأبعاد.`,
   barSub: P => `${f0(P.q)} عربة/س في كل اتجاه · ${f0(P.pPL)} % ثقيلة وحافلات · ${f0(P.qPed)} مترجّل/س`,
   langBtn: 'Français', presentation: 'وضع العرض', fullPage: 'الصفحة الكاملة', fullscreen: 'ملء الشاشة',
@@ -933,7 +933,7 @@ en: {
   pricesNote: 'Indicative 2026 values, to be replaced with the municipality’s schedule of unit prices.',
   rateLabel: 'Exchange rate: dinars per 1 euro',
   btnNote: 'Generate the design report', noteWait: 'The report will be available once the evaluation is complete.',
-  noteOpened: 'The report opened in a new tab.', noteBlocked: 'The browser blocked the new tab:', noteLink: 'open the report',
+  notePrep: 'Preparing the report (maps)…', noteOpened: 'The report opened in a new tab.', noteBlocked: 'The browser blocked the new tab:', noteLink: 'open the report',
   lede: P => `Each strip receives the same vehicles at the same moments: ${f0(P.q)} veh/h per direction, ${f0(P.pPL)}% heavy vehicles and buses, ${f0(P.qPed)} pedestrians/h at the crossing. Only the measure changes. Speeds, queues, waiting times and risks are calculated by a microsimulation, not drawn by hand. Click a thumbnail to see the measure in 3D.`,
   barSub: P => `${f0(P.q)} veh/h per direction · ${f0(P.pPL)}% HV and buses · ${f0(P.qPed)} pedestrians/h`,
   langBtn: 'English', presentation: 'Presentation mode', fullPage: 'Full page', fullscreen: 'Full screen',
@@ -3763,12 +3763,45 @@ const TILE_SRC = {
   sat: (z, x, y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`
 };
 function mercPx(lat, lon, z) { const n = 256 * 2 ** z, s = Math.sin(lat * Math.PI / 180); return [(lon + 180) / 360 * n, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n]; }
+/* les tuiles sont assemblées en image dans la page (qui envoie l'en-tête Referer exigé par OpenStreetMap), puis
+   intégrées à la note : la note, ouverte dans un nouvel onglet sans Referer, n'appelle plus aucun serveur de tuiles */
+const MAPIMG = new Map();
+const mapKey = (lat, lon, z, src, W, H) => [lat.toFixed(6), lon.toFixed(6), z, src, W, H].join('|');
+function loadTile(url) { return new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); setTimeout(() => res(null), 9000); im.src = url; }); }
+async function renderTiles(lat, lon, z, src, W, H) {
+  const key = mapKey(lat, lon, z, src, W, H);
+  if (MAPIMG.has(key)) return MAPIMG.get(key);
+  const [cx, cy] = mercPx(lat, lon, z), x0 = cx - W / 2, y0 = cy - H / 2, cv = document.createElement('canvas'), jobs = [];
+  cv.width = W; cv.height = H; const g = cv.getContext('2d'); g.fillStyle = '#e8e8e8'; g.fillRect(0, 0, W, H);
+  for (let tx = Math.floor(x0 / 256); tx * 256 < x0 + W; tx++) for (let ty = Math.floor(y0 / 256); ty * 256 < y0 + H; ty++)
+    jobs.push(loadTile(TILE_SRC[src](z, tx, ty)).then(im => { if (im) g.drawImage(im, tx * 256 - x0, ty * 256 - y0); }));
+  await Promise.all(jobs);
+  let url = null; try { url = cv.toDataURL(src === 'sat' ? 'image/jpeg' : 'image/png', 0.88); } catch (e) { url = null; }
+  if (url) MAPIMG.set(key, url);
+  return url;
+}
+// cartes de la note pour le lieu pointé (plan de situation et vue aérienne)
+const prepNoteMaps = () => SITE.lat === null ? Promise.resolve() : Promise.all([renderTiles(SITE.lat, SITE.lon, 17, 'osm', 700, 470), renderTiles(SITE.lat, SITE.lon, 18, 'sat', 700, 400)]);
+// ouvre la note : onglet ouvert tout de suite (pas de blocage), cartes préparées, puis affichage
+async function openNote(build, msgSel, prevUrl) {
+  const w = window.open('', '_blank'), msg = $(msgSel);
+  if (w) w.document.write(`<p style="font:16px sans-serif;padding:24px">${esc(t('notePrep'))}</p>`);
+  msg.textContent = t('notePrep');
+  await prepNoteMaps();
+  if (prevUrl) URL.revokeObjectURL(prevUrl);
+  const url = URL.createObjectURL(new Blob([build()], { type: 'text/html;charset=utf-8' }));
+  if (w && !w.closed) { w.location.href = url; msg.textContent = t('noteOpened'); }
+  else msg.innerHTML = `${esc(t('noteBlocked'))} <a href="${url}" target="_blank" rel="noopener">${esc(t('noteLink'))}</a>`;
+  return url;
+}
 function tileMapSVG(lat, lon, z, src, W, H, d) {
   const [cx, cy] = mercPx(lat, lon, z), x0 = cx - W / 2, y0 = cy - H / 2, o = [], fx = v => v.toFixed(1);
   const mpp = 156543.034 * Math.cos(lat * Math.PI / 180) / 2 ** z;   // mètres par pixel
   const P = (la, lo) => { const p = mercPx(la, lo, z); return [p[0] - x0, p[1] - y0]; };
   const T = (x, y, s, size, anchor = 'middle', extra = '') => o.push(`<text x="${fx(x)}" y="${fx(y)}" font-size="${size}" text-anchor="${anchor}" fill="#000" paint-order="stroke" stroke="#fff" stroke-width="3"${extra}>${esc(s)}</text>`);
-  for (let tx = Math.floor(x0 / 256); tx * 256 < x0 + W; tx++) for (let ty = Math.floor(y0 / 256); ty * 256 < y0 + H; ty++)
+  const pre = MAPIMG.get(mapKey(lat, lon, z, src, W, H));
+  if (pre) o.push(`<image href="${pre}" x="0" y="0" width="${W}" height="${H}"/>`);
+  else for (let tx = Math.floor(x0 / 256); tx * 256 < x0 + W; tx++) for (let ty = Math.floor(y0 / 256); ty * 256 < y0 + H; ty++)
     o.push(`<image href="${TILE_SRC[src](z, tx, ty)}" x="${fx(tx * 256 - x0)}" y="${fx(ty * 256 - y0)}" width="256" height="256"/>`);
   if (d) {
     // établissements et rue : anneaux en mètres autour du point analysé, ramenés en latitude / longitude
@@ -4699,16 +4732,10 @@ $('#note-gen').addEventListener('input', e => {
 });
 $('#note-gen').addEventListener('change', e => { if (e.target.id === 'sel-variant') { pickedVariant = e.target.value; if (DAY.res) renderDayResults(); renderProfileCross(); } });
 let noteUrl = null;
-$('#note-gen').addEventListener('click', e => {
+$('#note-gen').addEventListener('click', async e => {
   if (e.target.id !== 'btn-note' || !evalRes) return;
   const id = $('#sel-variant').value;
-  const html = buildNote(id);
-  if (noteUrl) URL.revokeObjectURL(noteUrl);
-  noteUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-  const w = window.open(noteUrl, '_blank');
-  const msg = $('#note-msg');
-  if (w) msg.textContent = t('noteOpened');
-  else msg.innerHTML = `${esc(t('noteBlocked'))} <a href="${noteUrl}" target="_blank" rel="noopener">${esc(t('noteLink'))}</a>`;
+  noteUrl = await openNote(() => buildNote(id), '#note-msg', noteUrl);
 });
 
 /* ---------- langue ---------- */
@@ -5841,13 +5868,10 @@ $('#jx-note').addEventListener('input', e => {
   if (/^jx-(commune|lieu|auteur)$/.test(el.id)) { META[el.id.slice(3)] = el.value; try { localStorage.setItem('mv-meta', JSON.stringify(META)); } catch (err) { /* stockage indisponible */ } }
 });
 let jxNoteUrl = null;
-$('#jx-note').addEventListener('click', e => {
+$('#jx-note').addEventListener('click', async e => {
   if (e.target.id !== 'jx-btn-note') return;
-  const id = $('#jx-pick').value, html = buildJxNote(id);
-  if (jxNoteUrl) URL.revokeObjectURL(jxNoteUrl);
-  jxNoteUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-  const w = window.open(jxNoteUrl, '_blank'), msg = $('#jx-note-msg');
-  if (w) msg.textContent = t('noteOpened'); else msg.innerHTML = `${esc(t('noteBlocked'))} <a href="${jxNoteUrl}" target="_blank" rel="noopener">${esc(t('noteLink'))}</a>`;
+  const id = $('#jx-pick').value;
+  jxNoteUrl = await openNote(() => buildJxNote(id), '#jx-note-msg', jxNoteUrl);
 });
 
 /* ---------- note de choix du carrefour ---------- */

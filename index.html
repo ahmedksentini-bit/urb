@@ -300,6 +300,7 @@ body.no3d .thumb { display: none; }
 .pill.irap, .irs { letter-spacing: .04em; border-color: transparent; } .pill.irap { font-size: 12.5px; padding: 3px 8px; } .irs { display: inline-block; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
 .irap.s5, .irs.s5 { background: #00a651; color: #fff; } .irap.s4, .irs.s4 { background: #ffd200; color: #222; } .irap.s3, .irs.s3 { background: #f7941d; color: #222; }
 .irap.s2, .irs.s2 { background: #ed1c24; color: #fff; } .irap.s1, .irs.s1 { background: #231f20; color: #fff; }
+.irap-mini { display: inline-flex; gap: 4px; flex-wrap: wrap; vertical-align: middle; } .irap-mini .irs { font-size: 11px; padding: 1px 5px; } body.compact .irap-mini { display: none; }
 .sh { display: none; }
 .kpis { display: grid; grid-template-columns: repeat(5, auto); gap: 4px 22px; margin: 0; }
 .kpis dt { font: 500 10.5px/1.2 var(--font-display); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
@@ -760,7 +761,7 @@ fr: {
   dlgRendering: 'Rendu en 3840 × 2160 px…', dlgReady: '3840 × 2160 px', dlgDownload: 'Télécharger l’image (PNG)', dlgClose: 'Fermer',
   sumTitle: 'Synthèse',
   thead: [['Aménagement', ''], ['V85 au passage', 'km/h'], ['Temps sur 500 m', 's'], ['Écart à la référence', 's par véhicule'], ['Débit écoulé', 'véh/h/sens'],
-    ['Véhicules arrêtés', '%'], ['File max', 'm'], ['Attente piéton', 's, moyenne'], ['Conducteurs qui cèdent', '%'], ['Arrêt à temps', 'piéton surgissant'], ['Risque de décès', 'si choc, moyenne'], ['Étoiles iRAP piétons', 'indicatif, score']],
+    ['Véhicules arrêtés', '%'], ['File max', 'm'], ['Attente piéton', 's, moyenne'], ['Conducteurs qui cèdent', '%'], ['Arrêt à temps', 'piéton surgissant'], ['Risque de décès', 'si choc, moyenne'], ['Étoiles iRAP piétons', 'indicatif, score'], ['iRAP voitures, motos, vélos', 'estimation à valider']],
   sumNote: (P, fpTxt) => `Évaluation : ${REPS} simulations d’une heure (tirages ${P.seed} à ${P.seed + REPS - 1}, fixés à l’avance), après 2 min de mise en régime ; moyennes des cinq. « Arrêt à temps » et « risque de décès » : piéton surgissant à ${f0(P.dSurg)} m, réaction en ${f1(P.tReact)} s, freinage à ${f0(P.bEmerg)} m/s². Dans une bande saturée, la file et le temps de parcours dépendent de la durée simulée, ici une heure. ${fpTxt}`,
   sumRunning: p => `Évaluation en cours : ${p} %. En attendant, le tableau montre les valeurs de l’animation.`,
   calibRef: fp => `Calibrage de référence, code de contrôle ${fp}.`, calibMod: fp => `Calibrage modifié, code de contrôle ${fp} : résultats non comparables au calibrage de référence.`,
@@ -790,6 +791,8 @@ fr: {
   vSmallGain: 'Gain de sécurité faible par rapport à la référence (moins de 0,1 point).',
   irapTip: ir => `Classement iRAP piétons (indicatif) : score ${f1(ir.total)} (traversée ${f1(ir.cross)}, marche le long ${f1(ir.alongAvg)}) ; 5 étoiles sous 5, 3 étoiles de 15 à 40, 1 étoile à partir de 90.`,
   vIrap: (a, b) => `Classement par étoiles iRAP pour les piétons (indicatif) : ${starHtml(a.stars)} aujourd’hui, ${starHtml(b.stars)} avec cet aménagement. L’objectif Système Sûr est d’au moins 3 étoiles.`,
+  irapUserTip: (k, r) => `${({ vo: 'Occupants des voitures', mc: 'Motocyclistes', bc: 'Cyclistes' })[k]} : score ${f1(r.score)} — estimation iRAP indicative, approximation à valider par un expert iRAP`,
+  vIrap2: (a, b) => `Estimation pour les autres usagers (approximation à valider par un expert iRAP) : voitures ${starHtml(a.vo.stars)} → ${starHtml(b.vo.stars)}, motos ${starHtml(a.mc.stars)} → ${starHtml(b.mc.stars)}, cyclistes ${starHtml(a.bc.stars)} → ${starHtml(b.bc.stars)}.`,
   vExcluded: 'Écartées :', sep: ' ; ',
   reasonSat: (e, P) => `saturé, ${f0(e.flow)} véh/h écoulés pour ${f0(P.q)} demandés`, reasonReg: 'hors cadre réglementaire',
   vRunning: p => `Évaluation en cours (${REPS} simulations d’une heure) : ${p} %…`,
@@ -803,7 +806,7 @@ fr: {
         <li><strong>Deux voies par sens.</strong> Quand la rue en compte deux, chaque véhicule entre sur la voie la plus dégagée (les poids lourds préfèrent la voie de droite) et peut changer de voie pour dépasser, puis se rabattre (modèle MOBIL simplifié, Kesting et al., 2007). Aucun changement de voie dans les 40 m qui précèdent le passage : on ne dépasse pas un véhicule arrêté pour laisser passer un piéton. Le piéton doit trouver un créneau, ou un conducteur qui cède, sur chacune des voies qu’il franchit.</li>
         <li><strong>Piétons.</strong> Un piéton traverse quand le créneau suffit (temps de traversée + marge) ou quand un conducteur lui cède le passage. Chaque conducteur qui voit un piéton attendre décide une fois, tant qu’il peut encore s’arrêter à 3 m/s² ; sa probabilité de céder dépend de la vitesse qu’il aurait au passage. S’il voit le piéton trop tard, il ne cède pas. Un conducteur arrêté pour rien repart au bout de 8 s. Sans îlot, un piéton engagé sur la première voie impose l’arrêt sur la seconde si le véhicule peut s’arrêter à 3 m/s². Avec un îlot d’au moins 1,50 m, la traversée se fait en deux temps.</li>
         <li><strong>Gravité.</strong> Un piéton surgit à <em>D</em> mètres devant chaque véhicule : le conducteur réagit, puis freine à fond. La vitesse restante au moment du choc donne le risque de décès <span class="formula">P = 1 / (1 + e<sup>6,9 − 0,090 v</sup>)</span> (Rosén et Sander, 2009 ; v en km/h).</li>
-        <li><strong>Classement par étoiles iRAP (indicatif).</strong> Pour chaque aménagement, le score piéton de la méthode iRAP est calculé à partir de ses facteurs de risque publiés (modèle 3.02, fiches 2013-2014) : type de traversée (marquée, surélevée, avec refuge, à feux), nombre de voies, terre-plein, éclairage, modération de la vitesse, trottoirs lus dans le profil en travers, trafic par voie et V85 simulée (option « vitesse pratiquée seule » du modèle 3.10). Score = produit des facteurs de probabilité × gravité (90) × flux extérieur × facteur de vitesse, pour la traversée de la rue et la marche le long de chaque trottoir ; étoiles selon les paliers de la fiche 7 (5 étoiles sous 5, 1 étoile à partir de 90). Ce n’est pas une notation iRAP officielle, qui exige un codage accrédité dans ViDA.</li>
+        <li><strong>Classement par étoiles iRAP (indicatif).</strong> Pour chaque aménagement, le score piéton de la méthode iRAP est calculé à partir de ses facteurs de risque publiés (modèle 3.02, fiches 2013-2014) : type de traversée (marquée, surélevée, avec refuge, à feux), nombre de voies, terre-plein, éclairage, modération de la vitesse, trottoirs lus dans le profil en travers, trafic par voie et V85 simulée (option « vitesse pratiquée seule » du modèle 3.10). Score = produit des facteurs de probabilité × gravité (90) × flux extérieur × facteur de vitesse, pour la traversée de la rue et la marche le long de chaque trottoir ; étoiles selon les paliers de la fiche 7 (5 étoiles sous 5, 1 étoile à partir de 90). Ce n’est pas une notation iRAP officielle, qui exige un codage accrédité dans ViDA. Le même modèle donne une estimation pour les voitures, les motos et les vélos (abords lus dans le profil en travers, carrefours non comptés) : c’est une approximation à faire valider par un expert iRAP.</li>
         <li><strong>Évaluation.</strong> Les chiffres affichés sont la moyenne de cinq simulations d’une heure, avec des tirages différents mais fixés à l’avance. On ne peut donc pas choisir un tirage favorable.</li>
         <li><strong>Indicateurs.</strong> V85 mesurée au centre du passage. Temps de parcours compté depuis l’heure d’arrivée prévue, attente à l’entrée comprise. File : véhicules à moins de 8 km/h en amont du dispositif.</li>
       </ul>
@@ -893,7 +896,7 @@ ar: {
   dlgRendering: 'جارٍ العرض بدقّة 3840 × 2160 بكسل…', dlgReady: '3840 × 2160 بكسل', dlgDownload: 'تنزيل الصورة (PNG)', dlgClose: 'إغلاق',
   sumTitle: 'الخلاصة',
   thead: [['التهيئة', ''], ['V85 عند الممرّ', 'كم/س'], ['زمن قطع 500 م', 'ث'], ['الفارق مع المرجع', 'ث لكل عربة'], ['التدفّق المُصرَّف', 'عربة/س/اتجاه'],
-    ['العربات المتوقّفة', '%'], ['أقصى طابور', 'م'], ['انتظار المترجّل', 'ث، متوسط'], ['السائقون الذين يُفسحون', '%'], ['التوقّف في الوقت', 'مترجّل يظهر فجأة'], ['نجوم iRAP للمترجّلين', 'استرشادي، النقاط']],
+    ['العربات المتوقّفة', '%'], ['أقصى طابور', 'م'], ['انتظار المترجّل', 'ث، متوسط'], ['السائقون الذين يُفسحون', '%'], ['التوقّف في الوقت', 'مترجّل يظهر فجأة'], ['نجوم iRAP للمترجّلين', 'استرشادي، النقاط'], ['iRAP للسيارات والدرّاجات', 'تقدير يجب التحقّق منه']],
   sumNote: (P, fpTxt) => `التقييم: ${REPS} محاكاة مدّة كل منها ساعة (السحوبات من ${P.seed} إلى ${P.seed + REPS - 1}، محدّدة مسبقًا)، بعد دقيقتين من الاستقرار؛ القيم متوسّطات المحاكاة الخمس. «التوقّف في الوقت» و«خطر الوفاة»: مترجّل يظهر فجأة على بعد ${f0(P.dSurg)} م، زمن ردّ الفعل ${f1(P.tReact)} ث، فرملة بـ ${f0(P.bEmerg)} م/ث². في شريحة مُشبَعة، يرتبط طول الطابور وزمن القطع بمدّة المحاكاة، وهي هنا ساعة. ${fpTxt}`,
   sumRunning: p => `جارٍ التقييم: ${p} %. في الأثناء، يعرض الجدول قيم الحركة الجارية.`,
   calibRef: fp => `المعايرة المرجعية، رمز التحقّق ${fp}.`, calibMod: fp => `المعايرة مُعدَّلة، رمز التحقّق ${fp}: النتائج غير قابلة للمقارنة مع المعايرة المرجعية.`,
@@ -923,6 +926,8 @@ ar: {
   vSmallGain: 'المكسب في السلامة ضعيف مقارنةً بالمرجع (أقلّ من 0,1 نقطة).',
   irapTip: ir => `تصنيف iRAP بالنجوم للمترجّلين (استرشادي): ${f1(ir.total)} نقطة (العبور ${f1(ir.cross)}، المشي على طول الطريق ${f1(ir.alongAvg)})؛ 5 نجوم تحت 5 نقاط، و3 نجوم من 15 إلى 40، ونجمة واحدة ابتداءً من 90.`,
   vIrap: (a, b) => `تصنيف iRAP بالنجوم للمترجّلين (استرشادي): ${starHtml(a.stars)} اليوم، و${starHtml(b.stars)} مع هذه التهيئة. هدف النظام الآمن 3 نجوم على الأقلّ.`,
+  irapUserTip: (k, r) => `${({ vo: 'ركّاب السيارات', mc: 'سائقو الدرّاجات النارية', bc: 'راكبو الدرّاجات الهوائية' })[k]}: ${f1(r.score)} نقطة — تقدير iRAP استرشادي، تقريبي ويجب أن يتحقّق منه خبير iRAP`,
+  vIrap2: (a, b) => `تقدير لبقية مستعملي الطريق (تقريبي ويجب أن يتحقّق منه خبير iRAP): السيارات ${starHtml(a.vo.stars)} ← ${starHtml(b.vo.stars)}، والدرّاجات النارية ${starHtml(a.mc.stars)} ← ${starHtml(b.mc.stars)}، والدرّاجات الهوائية ${starHtml(a.bc.stars)} ← ${starHtml(b.bc.stars)}.`,
   vExcluded: 'الحلول المستبعدة:', sep: '؛ ',
   reasonSat: (e, P) => `مُشبَع، ${f0(e.flow)} عربة/س مُصرَّفة من أصل ${f0(P.q)} مطلوبة`, reasonReg: 'خارج الإطار الترتيبي',
   vRunning: p => `جارٍ التقييم (${REPS} محاكاة مدّة كل منها ساعة): ${p} %…`,
@@ -936,7 +941,7 @@ ar: {
         <li><strong>مسلكان في كل اتجاه.</strong> عندما يضمّ النهج مسلكين، تدخل كل عربة المسلك الأكثر فراغًا (وتفضّل العربات الثقيلة المسلك الأيمن)، ويمكنها تغيير المسلك للتجاوز ثم العودة إلى اليمين (نموذج MOBIL مبسّط، Kesting وآخرون، 2007). لا تغيير للمسلك في الأمتار الأربعين التي تسبق الممرّ: لا تُتجاوز عربة متوقّفة لتفسح المجال لمترجّل. وعلى المترجّل أن يجد فجوة كافية أو سائقًا يفسح له في كل مسلك يعبره.</li>
         <li><strong>المترجّلون.</strong> يعبر المترجّل عندما تكون الفجوة كافية (زمن العبور مع هامش) أو عندما يُفسح له سائق المرور. كل سائق يرى مترجّلًا ينتظر يقرّر مرّة واحدة ما دام قادرًا على التوقّف بتباطؤ 3 م/ث²، واحتمال إفساحه مرتبط بالسرعة التي سيمرّ بها عند الممرّ. إذا رأى المترجّل متأخّرًا لا يُفسح. والسائق الذي توقّف دون جدوى ينطلق بعد 8 ث. دون جزيرة، يفرض المترجّل الذي شرع في عبور المسلك الأوّل التوقّف على المسلك الثاني إذا كانت العربة قادرة على التوقّف بتباطؤ 3 م/ث². ومع جزيرة لا يقلّ عرضها عن 1,50 م يتمّ العبور على مرحلتين.</li>
         <li><strong>الخطورة.</strong> يظهر مترجّل فجأة على بعد <em>D</em> متر أمام كل عربة: يتفاعل السائق ثم يفرمل بأقصى قوّة. وتعطي السرعة المتبقّية لحظة الصدم خطر الوفاة <span class="formula">P = 1 / (1 + e<sup>6,9 − 0,090 v</sup>)</span> (Rosén وSander، 2009؛ v بالكم/س).</li>
-        <li><strong>تصنيف iRAP بالنجوم (استرشادي).</strong> لكل تهيئة، تُحسب نقاط المترجّلين وفق منهجية iRAP انطلاقًا من عوامل الخطر المنشورة (النموذج 3.02، البطاقات المنشورة في 2013-2014): نوع ممرّ العبور (مُعلَّم، مرتفع، بجزيرة ملجأ، بإشارات ضوئية)، وعدد المسالك، والفاصل الوسطي، والإنارة، وتهدئة السرعة، والأرصفة المأخوذة من المقطع العرضي، والحركة في كل مسلك، وV85 المُحاكاة (خيار «السرعة الفعلية وحدها» في النموذج 3.10). النقاط = جداء عوامل الاحتمال × الخطورة (90) × التدفّق الخارجي × عامل السرعة، لعبور النهج وللمشي على طول كل رصيف؛ والنجوم حسب عتبات البطاقة 7 (5 نجوم تحت 5 نقاط، ونجمة واحدة ابتداءً من 90). ليس هذا تصنيفًا رسميًا من iRAP، إذ يتطلّب التصنيف الرسمي ترميزًا معتمدًا في برنامج ViDA.</li>
+        <li><strong>تصنيف iRAP بالنجوم (استرشادي).</strong> لكل تهيئة، تُحسب نقاط المترجّلين وفق منهجية iRAP انطلاقًا من عوامل الخطر المنشورة (النموذج 3.02، البطاقات المنشورة في 2013-2014): نوع ممرّ العبور (مُعلَّم، مرتفع، بجزيرة ملجأ، بإشارات ضوئية)، وعدد المسالك، والفاصل الوسطي، والإنارة، وتهدئة السرعة، والأرصفة المأخوذة من المقطع العرضي، والحركة في كل مسلك، وV85 المُحاكاة (خيار «السرعة الفعلية وحدها» في النموذج 3.10). النقاط = جداء عوامل الاحتمال × الخطورة (90) × التدفّق الخارجي × عامل السرعة، لعبور النهج وللمشي على طول كل رصيف؛ والنجوم حسب عتبات البطاقة 7 (5 نجوم تحت 5 نقاط، ونجمة واحدة ابتداءً من 90). ليس هذا تصنيفًا رسميًا من iRAP، إذ يتطلّب التصنيف الرسمي ترميزًا معتمدًا في برنامج ViDA. ويعطي النموذج نفسه تقديرًا للسيارات والدرّاجات النارية والهوائية (جوانب الطريق من المقطع العرضي، دون احتساب المفترقات): وهو تقدير تقريبي يجب أن يتحقّق منه خبير iRAP.</li>
         <li><strong>التقييم.</strong> الأرقام المعروضة هي متوسّط خمس محاكاة مدّة كل منها ساعة، بسحوبات مختلفة لكنها محدّدة مسبقًا. ولذلك لا يمكن اختيار سحب ملائم.</li>
         <li><strong>المؤشّرات.</strong> تُقاس V85 في وسط الممرّ. يُحتسب زمن القطع انطلاقًا من موعد الوصول المتوقّع، بما في ذلك الانتظار عند المدخل. الطابور: العربات التي تقلّ سرعتها عن 8 كم/س قبل التهيئة.</li>
       </ul>
@@ -1026,7 +1031,7 @@ en: {
   dlgRendering: 'Rendering at 3840 × 2160 px…', dlgReady: '3840 × 2160 px', dlgDownload: 'Download the image (PNG)', dlgClose: 'Close',
   sumTitle: 'Summary',
   thead: [['Measure', ''], ['V85 at crossing', 'km/h'], ['Time over 500 m', 's'], ['Difference from reference', 's per vehicle'], ['Throughput', 'veh/h/direction'],
-    ['Vehicles stopped', '%'], ['Max queue', 'm'], ['Pedestrian wait', 's, average'], ['Drivers who yield', '%'], ['Stops in time', 'darting-out pedestrian'], ['Fatality risk', 'if hit, average'], ['iRAP pedestrian stars', 'indicative, score']],
+    ['Vehicles stopped', '%'], ['Max queue', 'm'], ['Pedestrian wait', 's, average'], ['Drivers who yield', '%'], ['Stops in time', 'darting-out pedestrian'], ['Fatality risk', 'if hit, average'], ['iRAP pedestrian stars', 'indicative, score'], ['iRAP cars, motorcycles, bicycles', 'estimate to be validated']],
   sumNote: (P, fpTxt) => `Evaluation: ${REPS} one-hour simulations (random draws ${P.seed} to ${P.seed + REPS - 1}, fixed in advance), after a 2 min warm-up; averages of the five. “Stops in time” and “fatality risk”: pedestrian darting out ${f0(P.dSurg)} m ahead, reaction time ${f1(P.tReact)} s, braking at ${f0(P.bEmerg)} m/s². In a saturated strip, the queue and the travel time depend on the simulated duration, here one hour. ${fpTxt}`,
   sumRunning: p => `Evaluation in progress: ${p}%. In the meantime, the table shows the values from the animation.`,
   calibRef: fp => `Reference calibration, check code ${fp}.`, calibMod: fp => `Modified calibration, check code ${fp}: results are not comparable with the reference calibration.`,
@@ -1056,6 +1061,8 @@ en: {
   vSmallGain: 'Small safety gain compared with the reference (less than 0.1 percentage point).',
   irapTip: ir => `iRAP pedestrian star rating (indicative): score ${f1(ir.total)} (crossing ${f1(ir.cross)}, walking along ${f1(ir.alongAvg)}); 5 stars below 5, 3 stars from 15 to 40, 1 star from 90.`,
   vIrap: (a, b) => `iRAP pedestrian star rating (indicative): ${starHtml(a.stars)} today, ${starHtml(b.stars)} with this measure. The Safe System target is at least 3 stars.`,
+  irapUserTip: (k, r) => `${({ vo: 'Car occupants', mc: 'Motorcyclists', bc: 'Bicyclists' })[k]}: score ${f1(r.score)} — indicative iRAP estimate, an approximation to be validated by an iRAP expert`,
+  vIrap2: (a, b) => `Estimate for the other road users (approximation to be validated by an iRAP expert): cars ${starHtml(a.vo.stars)} → ${starHtml(b.vo.stars)}, motorcycles ${starHtml(a.mc.stars)} → ${starHtml(b.mc.stars)}, bicycles ${starHtml(a.bc.stars)} → ${starHtml(b.bc.stars)}.`,
   vExcluded: 'Ruled out:', sep: '; ',
   reasonSat: (e, P) => `saturated, ${f0(e.flow)} veh/h handled out of ${f0(P.q)} demanded`, reasonReg: 'outside the regulatory framework',
   vRunning: p => `Evaluation in progress (${REPS} one-hour simulations): ${p}%…`,
@@ -1069,7 +1076,7 @@ en: {
         <li><strong>Two lanes per direction.</strong> When the street has two, each vehicle enters the least congested lane (trucks prefer the right lane) and may change lanes to overtake, then move back to the right (simplified MOBIL model, Kesting et al., 2007). No lane changes in the 40 m before the crossing: nobody overtakes a vehicle stopped for a pedestrian. The pedestrian needs a gap or a yielding driver in every lane crossed.</li>
         <li><strong>Pedestrians.</strong> A pedestrian crosses when the gap in traffic is long enough (crossing time + margin) or when a driver yields. Each driver who sees a pedestrian waiting decides once, as long as they can still stop at 3 m/s²; their probability of yielding depends on the speed they would have at the crossing. If the driver sees the pedestrian too late, they do not yield. A driver who stopped for nothing moves off again after 8 s. Without an island, a pedestrian already on the first lane forces vehicles in the second lane to stop if they can stop at 3 m/s². With an island at least 1.50 m wide, pedestrians cross in two stages.</li>
         <li><strong>Severity.</strong> A pedestrian darts out <em>D</em> meters in front of each vehicle: the driver reacts, then brakes as hard as possible. The speed remaining at impact gives the fatality risk <span class="formula">P = 1 / (1 + e<sup>6.9 − 0.090 v</sup>)</span> (Rosén and Sander, 2009; v in km/h).</li>
-        <li><strong>iRAP star rating (indicative).</strong> For each measure, the pedestrian score of the iRAP method is computed from its public risk factors (model 3.02, fact sheets 2013–2014): crossing type (marked, raised, with refuge, signal-controlled), number of lanes, median, lighting, traffic calming, sidewalks taken from the cross-section, traffic per lane and simulated V85 (the “operating speed only” option of model 3.10). Score = product of the likelihood factors × severity (90) × external flow × speed factor, for crossing the street and walking along each sidewalk; stars by the bands of fact sheet 7 (5 stars below 5, 1 star from 90). It is not an official iRAP rating, which requires accredited coding in ViDA.</li>
+        <li><strong>iRAP star rating (indicative).</strong> For each measure, the pedestrian score of the iRAP method is computed from its public risk factors (model 3.02, fact sheets 2013–2014): crossing type (marked, raised, with refuge, signal-controlled), number of lanes, median, lighting, traffic calming, sidewalks taken from the cross-section, traffic per lane and simulated V85 (the “operating speed only” option of model 3.10). Score = product of the likelihood factors × severity (90) × external flow × speed factor, for crossing the street and walking along each sidewalk; stars by the bands of fact sheet 7 (5 stars below 5, 1 star from 90). It is not an official iRAP rating, which requires accredited coding in ViDA. The same model gives an estimate for cars, motorcycles and bicycles (roadside read from the cross-section, intersections not counted): an approximation to be validated by an iRAP expert.</li>
         <li><strong>Evaluation.</strong> The figures shown are the average of five one-hour simulations, with different random draws that are fixed in advance. It is therefore not possible to pick a favorable draw.</li>
         <li><strong>Indicators.</strong> V85 measured at the center of the crossing. Travel time counted from the scheduled arrival time, including any wait at the entry point. Queue: vehicles traveling below 8 km/h upstream of the device.</li>
       </ul>
@@ -1631,8 +1638,31 @@ const IRAP = {
   fac: { marked: 4.8, markedRefuge: 3.8, raised: 3.2, raisedRefuge: 2.5, signal: 1.25, signalRefuge: 1.0 },
   // trottoirs : probabilité (marche le long)
   walk: { none: 20, informal: 6, adj: 0.1, sep1: 0.09, sep3: 0.075 },
-  bandsTotal: [5, 15, 40, 90], bandsCross: [4.8, 14, 32.5, 75], bandsAlong: [0.2, 1, 7.5, 15]
+  bandsTotal: [5, 15, 40, 90], bandsCross: [4.8, 14, 32.5, 75], bandsAlong: [0.2, 1, 7.5, 15],
+  // estimation pour les autres usagers (même modèle, mêmes fiches) : vitesse occupants et motos (v/150)³ et cyclistes,
+  // flux des chocs frontaux en dépassement (fiche 5, figure 3), paliers occupants-motos et cyclistes (fiche 7)
+  vGen: [0.0080, 0.0133, 0.0191, 0.0271, 0.0372, 0.0489, 0.0643, 0.0813, 0.1020, 0.1254, 0.1520, 0.1823, 0.2163,
+    0.2540, 0.2960, 0.3432, 0.3943, 0.4511, 0.5122, 0.5792, 0.6509, 0.7290, 0.8130, 0.9033, 1],
+  vUrbDiv: [0, 0, 0, 0, 0.0080, 0.0212, 0.0383, 0.0579, 0.0829, 0.1110, 0.1451, 0.1823, 0.2163,
+    0.2540, 0.2960, 0.3432, 0.3943, 0.4511, 0.5122, 0.5792, 0.6509, 0.7290, 0.8130, 0.9033, 1],
+  vBc: [0.0069, 0.0170, 0.0313, 0.0489, 0.0733, 0.1031, 0.1403, 0.1844, 0.2359, 0.2960, 0.3650, 0.4442, 0.5329,
+    0.6334, 0.6663, 0.7003, 0.7333, 0.7662, 0.8002, 0.8332, 0.8672, 0.9001, 0.9331, 0.9670, 1],
+  efOt: [0, 0.0100, 0.0201, 0.0301, 0.0420, 0.0600, 0.0860, 0.1161, 0.1481, 0.1801, 0.2000],
+  bandsMot: [2.5, 5, 12.5, 22.5], bandsBc: [5, 10, 30, 60]
 };
+// abords d'un côté (segments de la façade vers la chaussée) : premier obstacle rigide en partant de la voie
+// (poteau d'éclairage, arbre, sinon la façade) et sa distance au bord de voie
+function irapRoadside(side) {
+  let d = 0;
+  for (let j = side.length - 1; j >= 0; j--) {
+    const s = side[j];
+    if (s.t === 'lamp') return { obj: 'pole', d };
+    if (s.t === 'trees') return { obj: 'tree', d };
+    d += s.w;
+  }
+  return { obj: 'building', d };
+}
+const irapDistF = (d, bc) => d < 1 ? 1 : d < 5 ? (bc ? 0.6 : 0.8) : d < 10 ? (bc ? 0.1 : 0.35) : (bc ? 0.01 : 0.1);
 const irapInterp = (tab, x0, dx, x) => { const u = Math.max(0, Math.min(tab.length - 1, (x - x0) / dx)), k = Math.min(tab.length - 2, Math.floor(u)); return tab[k] + (tab[k + 1] - tab[k]) * (u - k); };
 const irapStars = (s, b) => s < b[0] ? 5 : s < b[1] ? 4 : s < b[2] ? 3 : s < b[3] ? 2 : 1;
 // trottoir d'un côté (segments de la façade vers la chaussée) : le plus large, et sa séparation de la première voie
@@ -1670,11 +1700,42 @@ function irapPed(sc, e) {
   const walks = sides.map(irapSide);
   const along = walks.map(w => IRAP.walk[w.cat] * lwF * calmF * (w.cat === 'none' ? parkF : 1) * 1.25 * litF * 90 * ef * vF);
   const alongAvg = (along[0] + along[1]) / 2, total = alongAvg + cross;
+  // ── estimation pour les occupants, les motocyclistes et les cyclistes (approximation à valider par un expert iRAP) ──
+  // rue droite et plate, chaussée et adhérence bonnes, balisage correct, pas de bande rugueuse (rive 1,25, axe 1,2),
+  // abords lus dans le profil (poteau, arbre ou façade et sa distance), gravité 60 ; carrefours et accès non comptés
+  const rs = sides.map(irapRoadside);
+  const sevVo = rs.reduce((a, r) => a + irapDistF(r.d, false) * 60, 0) / 2, sevBc = rs.reduce((a, r) => a + irapDistF(r.d, true) * 60, 0) / 2;
+  const medW = Math.max(0, ...segs.filter(s => s.t === 'median').map(s => s.w)), divided = medW > 0;
+  const medLoc = medW >= 20 ? 2 : medW >= 10 ? 10 : medW >= 5 ? 35 : medW >= 1 ? 80 : medW > 0 ? 90 : 100, medOt = divided ? 0 : 100;
+  const ho = 0.5 * (1 - Math.pow(1 - sat, nl)), efRoD = !divided && nl === 1 ? 0.5 - ho : 0.5;
+  const vG = irapInterp(IRAP.vGen, 30, 5, e.v85), vHo = irapInterp(divided ? IRAP.vUrbDiv : IRAP.vGen, 30, 5, e.v85);
+  const vB = irapInterp(IRAP.vBc, 30, 5, e.v85), efOt = irapInterp(IRAP.efOt, 0, 0.1, sat);
+  const lRo = lwF * 1.25, lHo = lwF * 1.2, lOt = nl > 1 ? 0.02 : 1;
+  const part = (k, v) => [k, v];
+  const motor = mc => {
+    const parts = [part('roD', lRo * sevVo * vG * efRoD), part('roP', lRo * sevVo * vG * 0.5), part('ho', lHo * medLoc * vHo * ho)];
+    if (!divided) parts.push(part('ot', lOt * medOt * vG * efOt));
+    if (mc) parts.push(part('mcAlong', 2 * 50 * vG * Math.min(0.1, 0.5 * sat)));
+    const score = parts.reduce((a, p) => a + p[1], 0);
+    return { score, stars: irapStars(score, IRAP.bandsMot), parts };
+  };
+  const bikeSeg = segs.find(s => s.t === 'track') ? 'track' : segs.find(s => s.t === 'bike') ? 'bike' : 'none';
+  const bikeF = { track: 0.1, bike: 12, none: 20 }[bikeSeg];
+  const bcParts = [part('bcAlong', bikeF * lwF * calmF * 1.25 * (bikeSeg === 'none' ? parkF : 1) * litF * 90 * ef * vB),
+    part('bcRo', lwF * litF * sevBc * ef * 0.011)];
+  const bcScore = bcParts[0][1] + bcParts[1][1];
+  const vo = motor(false), mc = motor(true), bc = { score: bcScore, stars: irapStars(bcScore, IRAP.bandsBc), parts: bcParts };
   return { fac, median, refuge, calm, lit, nl, walks, lw, aadt, sat, ef, v: e.v85, vF, cross, along, alongAvg, total,
-    stars: irapStars(total, IRAP.bandsTotal), crossStars: irapStars(cross, IRAP.bandsCross), alongStars: irapStars(alongAvg, IRAP.bandsAlong) };
+    stars: irapStars(total, IRAP.bandsTotal), crossStars: irapStars(cross, IRAP.bandsCross), alongStars: irapStars(alongAvg, IRAP.bandsAlong),
+    vo, mc, bc, roadside: rs, bikeSeg, medW };
 }
 const starTxt = n => '★'.repeat(n) + '☆'.repeat(5 - n);
 const starHtml = n => `<span class="irs s${n}">${starTxt(n)}</span>`;
+// étoiles estimées des autres usagers : voitures, motos, cyclistes (pictogramme et infobulle)
+const IRAP_ICON = { vo: '🚗', mc: '🏍', bc: '🚲' };
+function irapMini(ir, block) {
+  return ['vo', 'mc', 'bc'].map(k => `<span class="irs s${ir[k].stars}" title="${esc(t('irapUserTip', k, ir[k]))}">${IRAP_ICON[k]} ${starTxt(ir[k].stars)}</span>`).join(block ? '<br>' : '');
+}
 // classement de tous les aménagements, recalculé seulement quand l'évaluation ou les profils changent
 let irapKey = null, irapVer = -1, irapRes = null, profVer = 0;
 function irapAll() {
@@ -2598,6 +2659,20 @@ fr: {
     flow: (a, s) => `${f0(a)} véh/j ; saturation ${nf2.format(s)}`,
     caveat: 'Scores : produit des facteurs de probabilité × gravité (90) × flux extérieur × facteur de vitesse (fiches iRAP 5, 6, 7 et 9 et « Road Attribute Risk Factors », 2013-2014). Paliers des étoiles pour les piétons : 5 étoiles sous 5, 4 de 5 à 15, 3 de 15 à 40, 2 de 40 à 90, 1 à partir de 90. Vitesse : V85 simulée seule (option du modèle 3.10) ; avec la règle du modèle 3.02 (la plus forte de la limitation et de la V85), les dispositifs qui ne changent pas la limitation gagneraient moins. Hypothèses : pas de barrière piétonne, chaussée en bon état, bonne visibilité, rue droite et plate ; trafic journalier = 10 fois l’heure de pointe ; l’éclairage dédié du passage est compris dans chaque variante.'
   },
+  irapO: {
+    title: 'Estimation pour les voitures, les motos et les vélos',
+    intro: 'Le même modèle iRAP donne aussi une estimation pour les occupants des voitures, les motocyclistes et les cyclistes. C’est une APPROXIMATION, À FAIRE VALIDER PAR UN EXPERT iRAP : la rue est supposée droite et plate, les abords sont lus dans le profil en travers (poteau, arbre ou façade et sa distance à la voie), les carrefours et les accès riverains ne sont pas comptés, et deux valeurs que les fiches ne publient pas sont calées sur leur exemple chiffré (flux de l’accident moto « le long », vitesse du cycliste en sortie de route).',
+    cols: ['Usager', 'Aujourd’hui', 'Avec la variante'],
+    users: { vo: 'Occupants des voitures', mc: 'Motocyclistes', bc: 'Cyclistes' },
+    parts: { roD: 'sortie de route côté conducteur', roP: 'sortie de route côté passager', ho: 'choc frontal (perte de contrôle)', ot: 'choc frontal (dépassement)', mcAlong: 'moto le long de la rue', bcAlong: 'cycliste le long de la rue', bcRo: 'sortie de route du cycliste' },
+    attrTitle: 'Caractéristiques retenues pour cette estimation',
+    a: { side1: 'Abords, côté 1', side2: 'Abords, côté 2', median: 'Terre-plein central', bike: 'Aménagement cyclable' },
+    obj: { pole: 'poteau d’éclairage', tree: 'arbre', building: 'façade' },
+    at: d => `à ${fm(d)} m de la voie`,
+    medNone: 'aucun (ligne axiale)', medW: w => `${fm(w)} m`,
+    bike: { none: 'aucun', bike: 'bande cyclable', track: 'piste cyclable' },
+    bands: 'Paliers des étoiles (fiche 7) : voitures et motos 2,5 / 5 / 12,5 / 22,5 ; cyclistes 5 / 10 / 30 / 60.'
+  },
   changeIntro: 'Comparaison avec la situation actuelle, sans aménagement, sous le même trafic. Chaque valeur est la moyenne de cinq simulations d’une heure.',
   changeCols: ['Indicateur', 'Aujourd’hui', 'Avec la variante', 'Ce que cela veut dire'],
   ind: { v85: 'Vitesse des voitures au passage (V85)', tt: 'Temps pour parcourir 500 m', flow: 'Véhicules écoulés par heure et par sens', q: 'File d’attente la plus longue', ped: 'Attente moyenne d’un piéton',
@@ -2704,6 +2779,20 @@ ar: {
     flow: (a, s) => `${f0(a)} عربة/يوم؛ التشبّع ${nf2.format(s)}`,
     caveat: 'النقاط: جداء عوامل الاحتمال × الخطورة (90) × التدفّق الخارجي × عامل السرعة (بطاقات iRAP 5 و6 و7 و9 و«Road Attribute Risk Factors»، 2013-2014). عتبات النجوم للمترجّلين: 5 نجوم تحت 5 نقاط، و4 من 5 إلى 15، و3 من 15 إلى 40، و2 من 40 إلى 90، ونجمة واحدة ابتداءً من 90. السرعة: V85 المُحاكاة وحدها (خيار في النموذج 3.10)؛ ووفق قاعدة النموذج 3.02 (الأعلى بين السرعة القصوى المسموح بها وV85)، تكسب التهيئات التي لا تغيّر السرعة القصوى أقلّ. الفرضيات: لا حواجز للمترجّلين، والمعبّد في حالة جيّدة، والرؤية جيّدة، والنهج مستقيم ومستوٍ؛ الحركة اليومية = 10 أضعاف ساعة الذروة؛ والإنارة المخصّصة للممرّ مُدرجة في كل تهيئة.'
   },
+  irapO: {
+    title: 'تقدير للسيارات والدرّاجات النارية والهوائية',
+    intro: 'يعطي نموذج iRAP نفسه أيضًا تقديرًا لركّاب السيارات ولسائقي الدرّاجات النارية ولراكبي الدرّاجات الهوائية. وهو تقدير تقريبي يجب أن يتحقّق منه خبير iRAP: يُفترض أنّ النهج مستقيم ومستوٍ، وتُقرأ جوانب الطريق من المقطع العرضي (عمود أو شجرة أو واجهة وبعدها عن المسلك)، ولا تُحتسب المفترقات ولا المداخل المجاورة، وقيمتان لا تنشرهما البطاقات معايَرتان على مثالها المرقّم (تدفّق حادث الدرّاجة النارية «على طول الطريق»، وسرعة راكب الدرّاجة عند الخروج عن الطريق).',
+    cols: ['المستعمل', 'اليوم', 'مع التهيئة'],
+    users: { vo: 'ركّاب السيارات', mc: 'سائقو الدرّاجات النارية', bc: 'راكبو الدرّاجات الهوائية' },
+    parts: { roD: 'الخروج عن الطريق من جهة السائق', roP: 'الخروج عن الطريق من جهة الراكب', ho: 'اصطدام أمامي (فقدان السيطرة)', ot: 'اصطدام أمامي (تجاوز)', mcAlong: 'درّاجة نارية على طول النهج', bcAlong: 'درّاجة هوائية على طول النهج', bcRo: 'خروج الدرّاجة الهوائية عن الطريق' },
+    attrTitle: 'الخصائص المعتمدة في هذا التقدير',
+    a: { side1: 'جانب الطريق 1', side2: 'جانب الطريق 2', median: 'الفاصل الوسطي', bike: 'تهيئة الدرّاجات' },
+    obj: { pole: 'عمود إنارة', tree: 'شجرة', building: 'واجهة' },
+    at: d => `على بعد ${fm(d)} م من المسلك`,
+    medNone: 'لا يوجد (خطّ محوري)', medW: w => `${fm(w)} م`,
+    bike: { none: 'لا توجد', bike: 'شريط للدرّاجات', track: 'مسلك للدرّاجات' },
+    bands: 'عتبات النجوم (البطاقة 7): السيارات والدرّاجات النارية 2,5 / 5 / 12,5 / 22,5؛ والدرّاجات الهوائية 5 / 10 / 30 / 60.'
+  },
   changeIntro: 'مقارنة مع الوضع الحالي دون تهيئة، تحت نفس حركة المرور. كل قيمة هي متوسّط خمس محاكاة مدّة كل منها ساعة.',
   changeCols: ['المؤشّر', 'اليوم', 'مع التهيئة', 'ماذا يعني ذلك'],
   ind: { v85: 'سرعة السيارات عند الممرّ (V85)', tt: 'زمن قطع 500 م', flow: 'العربات المُصرَّفة في الساعة وفي كل اتجاه', q: 'أطول طابور انتظار', ped: 'متوسّط انتظار المترجّل',
@@ -2809,6 +2898,20 @@ en: {
     yes: 'yes', no: 'no',
     flow: (a, s) => `${f0(a)} veh/day; saturation ${nf2.format(s)}`,
     caveat: 'Scores: product of the likelihood factors × severity (90) × external flow × speed factor (iRAP fact sheets 5, 6, 7 and 9 and “Road Attribute Risk Factors”, 2013–2014). Pedestrian star bands: 5 stars below 5, 4 from 5 to 15, 3 from 15 to 40, 2 from 40 to 90, 1 from 90. Speed: simulated V85 only (an option of model 3.10); under the model 3.02 rule (the higher of the speed limit and V85), measures that do not change the speed limit would gain less. Assumptions: no pedestrian fencing, road in good condition, good sight distance, straight and flat street; daily traffic = 10 times the peak hour; the dedicated crossing lighting is included in every option.'
+  },
+  irapO: {
+    title: 'Estimate for cars, motorcycles and bicycles',
+    intro: 'The same iRAP model also gives an estimate for car occupants, motorcyclists and bicyclists. It is an APPROXIMATION, TO BE VALIDATED BY AN iRAP EXPERT: the street is assumed straight and flat, the roadside is read from the cross-section (pole, tree or façade and its distance from the lane), intersections and property accesses are not counted, and two values the fact sheets do not publish are calibrated on their worked example (external flow of the motorcyclist along-the-road crash, bicyclist speed in a run-off).',
+    cols: ['Road user', 'Today', 'With the option'],
+    users: { vo: 'Car occupants', mc: 'Motorcyclists', bc: 'Bicyclists' },
+    parts: { roD: 'run-off, driver side', roP: 'run-off, passenger side', ho: 'head-on (loss of control)', ot: 'head-on (overtaking)', mcAlong: 'motorcyclist along the street', bcAlong: 'bicyclist along the street', bcRo: 'bicyclist run-off' },
+    attrTitle: 'Features used for this estimate',
+    a: { side1: 'Roadside, side 1', side2: 'Roadside, side 2', median: 'Central median', bike: 'Bicycle facility' },
+    obj: { pole: 'lighting pole', tree: 'tree', building: 'façade' },
+    at: d => `${fm(d)} m from the lane`,
+    medNone: 'none (centre line)', medW: w => `${fm(w)} m`,
+    bike: { none: 'none', bike: 'bicycle lane', track: 'cycle track' },
+    bands: 'Star bands (fact sheet 7): cars and motorcycles 2.5 / 5 / 12.5 / 22.5; bicycles 5 / 10 / 30 / 60.'
   },
   changeIntro: 'Comparison with the current situation, without any measure, under the same traffic. Each value is the average of five one-hour simulations.',
   changeCols: ['Indicator', 'Today', 'With the option', 'What this means'],
@@ -3223,6 +3326,13 @@ function buildNote(id) {
       aRow(IT.a.speed, `${f0(a.v)} ${u.kmh}`, `${f0(b.v)} ${u.kmh}`), aRow(IT.a.flow, IT.flow(a.aadt, a.sat), IT.flow(b.aadt, b.sat))];
     h1 += `${H2('irap')}<p>${esc(IT.intro)}</p><table><thead><tr>${IT.colsS.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rowsS.join('')}</tbody></table>`;
     h1 += `<h3>${esc(IT.attrTitle)}</h3>${tbl(IT.colsA, rowsA)}<p class="small">${esc(IT.caveat)}</p>`;
+    // autres usagers : estimation, à faire valider par un expert iRAP
+    const IO = N.irapO, uCell = r => `${esc(f1(r.score))} ${starHtml(r.stars)}<br><span class="small">${r.parts.filter(p => p[1] >= 0.005).map(p => esc(IO.parts[p[0]] + ' ' + f1(p[1]))).join(' · ')}</span>`;
+    const rowsO = ['vo', 'mc', 'bc'].map(k => `<tr><td>${esc(IO.users[k])}</td><td>${uCell(a[k])}</td><td>${uCell(b[k])}</td></tr>`);
+    const side = r => `${IO.obj[r.obj]} ${IO.at(r.d)}`, med = x => x.medW > 0 ? IO.medW(x.medW) : IO.medNone;
+    const rowsOA = [aRow(IO.a.side1, side(a.roadside[0]), side(b.roadside[0])), aRow(IO.a.side2, side(a.roadside[1]), side(b.roadside[1])),
+      aRow(IO.a.median, med(a), med(b)), aRow(IO.a.bike, IO.bike[a.bikeSeg], IO.bike[b.bikeSeg])];
+    h1 += `<h3>${esc(IO.title)}</h3><div class="box">${esc(IO.intro)}</div>${tbl(IO.cols, rowsO)}<h3>${esc(IO.attrTitle)}</h3>${tbl(IT.colsA, rowsOA)}<p class="small">${esc(IO.bands)}</p>`;
   }
   if (hasDay) {
     // journée : référence, variante retenue et, si elle diffère, variante recommandée
@@ -3311,7 +3421,7 @@ function buildStrips() {
       <div class="strip-head">
         <button class="thumb" type="button" data-k="thumb" aria-label="${esc(t('thumbAria', scName(sc)))}"><img alt=""></button>
         <div class="strip-title">
-          <h3>${lg(scName(sc), scShort(sc))}<span class="pill rec" data-k="rec" hidden>${lg(...t('rec'))}</span><span class="pill ok" data-k="state">${lg(...t('stFluid'))}</span><span class="pill irap" data-k="stars" hidden></span>${sc.reg ? `<span class="pill warn" title="${esc(t('regTitle'))}">${lg(...t('reg'))}</span>` : ''}${sc.ban ? `<span class="pill warn" title="${esc(t('banTitle'))}">${lg(...t('ban'))}</span>` : ''}</h3>
+          <h3>${lg(scName(sc), scShort(sc))}<span class="pill rec" data-k="rec" hidden>${lg(...t('rec'))}</span><span class="pill ok" data-k="state">${lg(...t('stFluid'))}</span><span class="pill irap" data-k="stars" hidden></span><span class="irap-mini" data-k="stars2"></span>${sc.reg ? `<span class="pill warn" title="${esc(t('regTitle'))}">${lg(...t('reg'))}</span>` : ''}${sc.ban ? `<span class="pill warn" title="${esc(t('banTitle'))}">${lg(...t('ban'))}</span>` : ''}</h3>
           <p class="desc">${scDesc(sc)}</p>
         </div>
         <dl class="kpis">
@@ -3413,10 +3523,12 @@ function updateKpis() {
     const art = views[i].art, q = k => art.querySelector(`[data-k="${k}"]`);
     const stp = q('stars'), ir = IR && IR[i];
     if (ir) {
-      const html = `<span class="lg">iRAP ${starTxt(ir.stars)}</span><span class="sh">${starTxt(ir.stars)}</span>`;
+      const html = `<span class="lg">iRAP 🚶 ${starTxt(ir.stars)}</span><span class="sh">🚶 ${starTxt(ir.stars)}</span>`;
       if (stp.innerHTML !== html) stp.innerHTML = html;
       stp.className = 'pill irap s' + ir.stars; stp.title = t('irapTip', ir); stp.hidden = false;
     } else stp.hidden = true;
+    const mini = q('stars2'), mh = ir ? irapMini(ir) : '';
+    if (mini.innerHTML !== mh) mini.innerHTML = mh;
     const e1 = q('v85'); e1.innerHTML = `${f0(s.v85)} <small>${u('kmh')}</small>`; setClass(e1, lvl(s.v85, 30, 40));
     q('tt').innerHTML = `${f0(s.tt)} ${u('s')}` + (i ? ` <small>${sgn(s.tt - ref.tt)}</small>` : '');
     q('q').innerHTML = `${f0(s.qMax)} <small>${u('m')}</small>`;
@@ -3443,7 +3555,8 @@ function updateKpis() {
       + c(f0(s.yieldPct), lvl(s.yieldPct, 70, 40, false))
       + c(f0(s.surgStop) + ' %', lvl(s.surgStop, 90, 60, false))
       + c(f1(s.surgRisk) + ' %', lvl(s.surgRisk, 0.5, 2))
-      + c(IR && IR[i] ? `${starHtml(IR[i].stars)} <small>${f1(IR[i].total)}</small>` : '–', '') + '</tr>';
+      + c(IR && IR[i] ? `${starHtml(IR[i].stars)} <small>${f1(IR[i].total)}</small>` : '–', '')
+      + c(IR && IR[i] ? irapMini(IR[i], true) : '–', 'irap-cell') + '</tr>';
   }).join('');
   if (rows !== lastTable) { lastTable = rows; $('#summary tbody').innerHTML = rows; }
   const fp = fingerprint(P), fpTxt = calibModified ? t('calibMod', fp) : t('calibRef', fp);
@@ -3465,7 +3578,7 @@ function renderVerdict() {
       h += `<p class="${e.v85 <= 30 ? 'ok-t' : 'warn-t'}">${e.v85 <= 30 ? t('vSafeOk') : t('vSafeKo', e.v85)}</p>`;
       if (ref.surgRisk - e.surgRisk < 0.1) h += `<p class="warn-t">${t('vSmallGain')}</p>`;
       const IR = irapAll();
-      if (IR && IR[0] && IR[r.best]) h += `<p>${t('vIrap', IR[0], IR[r.best])}</p>`;
+      if (IR && IR[0] && IR[r.best]) h += `<p>${t('vIrap', IR[0], IR[r.best])}</p><p class="v-excl">${t('vIrap2', IR[0], IR[r.best])}</p>`;
     }
     if (r.excluded.length) {
       const why = x => x.why.map(w => w === 'sat' ? t('reasonSat', evalRes[x.i], evalP) : w === 'ban' ? t('reasonBan') : t('reasonReg')).join(t('sep'));
@@ -4272,7 +4385,7 @@ Object.assign(I18N.fr, {
     <h3>Où trouver les résultats</h3>
     <ul>
       <li><strong>Dans le profil en travers</strong> : largeurs à corriger, et profil au droit du passage avec la longueur de traversée.</li>
-      <li><strong>Dans chaque bande</strong> : vitesse au passage, temps de parcours, file d’attente, attente des piétons, risque pour un piéton heurté, et le classement par étoiles iRAP des piétons (indicatif, de 1 à 5 étoiles ; objectif : 3 au moins), aussi détaillé dans la note de calcul.</li>
+      <li><strong>Dans chaque bande</strong> : vitesse au passage, temps de parcours, file d’attente, attente des piétons, risque pour un piéton heurté, et le classement par étoiles iRAP des piétons (indicatif, de 1 à 5 étoiles ; objectif : 3 au moins), avec une estimation pour les voitures, les motos et les vélos (approximation à faire valider par un expert iRAP), aussi détaillés dans la note de calcul.</li>
       <li><strong>Dans « Résultats »</strong> : la solution la plus adéquate et pourquoi, le tableau comparatif, le trafic heure par heure.</li>
       <li><strong>Dans la note de calcul</strong> (bouton « Générer la note de calcul ») : tout ce qui précède expliqué simplement, l’emplacement sur un plan de situation et une vue aérienne, le profil en travers, le plan coté, la signalisation, l’éclairage, les trottoirs, le coût et le plan d’action.</li>
     </ul>
@@ -4364,7 +4477,7 @@ Object.assign(I18N.ar, {
     <h3>أين توجد النتائج</h3>
     <ul>
       <li><strong>في المقطع العرضي</strong>: العروض التي يجب تصحيحها، والمقطع عند الممرّ مع طول العبور.</li>
-      <li><strong>في كل شريحة</strong>: السرعة عند الممرّ، وزمن القطع، والطابور، وانتظار المترجّلين، والخطر على مترجّل مصدوم، وتصنيف iRAP بالنجوم للمترجّلين (استرشادي، من نجمة إلى 5 نجوم؛ والهدف 3 على الأقلّ)، المفصّل أيضًا في مذكّرة الحساب.</li>
+      <li><strong>في كل شريحة</strong>: السرعة عند الممرّ، وزمن القطع، والطابور، وانتظار المترجّلين، والخطر على مترجّل مصدوم، وتصنيف iRAP بالنجوم للمترجّلين (استرشادي، من نجمة إلى 5 نجوم؛ والهدف 3 على الأقلّ)، مع تقدير للسيارات والدرّاجات النارية والهوائية (تقريبي يجب أن يتحقّق منه خبير iRAP)، المفصّلَين أيضًا في مذكّرة الحساب.</li>
       <li><strong>في «النتائج»</strong>: الحلّ الأنسب وأسبابه، والجدول المقارن، وحركة المرور ساعة بساعة.</li>
       <li><strong>في مذكّرة الحساب</strong> (زرّ «إعداد مذكّرة الحساب»): كل ما سبق مشروحًا ببساطة، والموقع على مخطّط موقع وصورة جوية، والمقطع العرضي، والمخطّط بالأبعاد، والإشارات، والإنارة، والأرصفة، والكلفة، وخطّة العمل.</li>
     </ul>
@@ -4456,7 +4569,7 @@ Object.assign(I18N.en, {
     <h3>Where to find the results</h3>
     <ul>
       <li><strong>In the cross-section</strong>: widths to correct, and the cross-section at the crossing with the crossing length.</li>
-      <li><strong>In each strip</strong>: speed at the crossing, travel time, queue, pedestrian waiting time, risk for a pedestrian who is hit, and the iRAP pedestrian star rating (indicative, 1 to 5 stars; target: at least 3), also detailed in the calculation note.</li>
+      <li><strong>In each strip</strong>: speed at the crossing, travel time, queue, pedestrian waiting time, risk for a pedestrian who is hit, and the iRAP pedestrian star rating (indicative, 1 to 5 stars; target: at least 3), with an estimate for cars, motorcycles and bicycles (an approximation to be validated by an iRAP expert), also detailed in the calculation note.</li>
       <li><strong>In “Results”</strong>: the most suitable solution and why, the comparison table, hour-by-hour traffic.</li>
       <li><strong>In the design report</strong> (“Generate the design report” button): everything above explained in plain terms, the location on a site map and an aerial view, the cross-section, the dimensioned plan, signage, lighting, sidewalks, cost and action plan.</li>
     </ul>

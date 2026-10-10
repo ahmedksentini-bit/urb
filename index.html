@@ -106,7 +106,11 @@ h1 { margin: 0 0 10px; font-size: clamp(26px, 3.4vw, 40px); line-height: 1.12; f
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn[aria-pressed="true"], .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .btn:disabled { opacity: .55; cursor: progress; }
-.lang-switch { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.top-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; }
+.lang-switch { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; margin: 0; }
+.proj-bar { display: flex; flex-wrap: wrap; gap: 6px; }
+.proj-msg { margin: 6px 0 0; font-size: 13px; color: var(--ok); } .proj-msg:empty { display: none; }
+.proj-notice { margin: 4px 0 12px; font-size: 12px; color: var(--muted); max-width: 110ch; }
 .lang-switch .btn { font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; letter-spacing: 0; }
 .seg { display: inline-flex; }
 .seg .btn { border-radius: 0; margin-inline-start: -1px; }
@@ -135,6 +139,40 @@ main { padding-block: 6px 48px; }
 .nf > span { color: var(--muted); font: 500 11px/1.2 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
 .nf select, .nf input, .ptable input { font: 500 14px/1.2 var(--font-body); padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); min-width: 0; width: 100%; }
 .nf select:focus-visible, .nf input:focus-visible, .ptable input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* module carrefour */
+.mod-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 0; }
+.mod-switch .btn { font-size: 15px; padding: 10px 18px; }
+body.mod-jx #donnees, body.mod-jx .bar, body.mod-jx #compact-head, body.mod-jx main { display: none; }
+body:not(.mod-jx) #carrefour { display: none; }
+#jx-site-slot .site-map { margin-bottom: 6px; }
+#jx-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 14px; align-items: start; margin: 14px 0 18px; }
+#jx-form .jx-obj { grid-column: 1 / -1; }
+#jx-form .jx-obj { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); column-gap: 18px; }
+#jx-form .jx-obj legend { grid-column: 1 / -1; }
+.jx-f { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 48%); gap: 8px; align-items: center; padding-block: 3px; font-size: 13.5px; }
+.jx-f select, .jx-f input { font: 500 14px/1.2 var(--font-body); padding: 5px 7px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); width: 100%; min-width: 0; }
+.jx-num { display: flex; align-items: center; gap: 6px; }
+.jx-num input { width: 100px; direction: ltr; text-align: right; }
+.jx-num small { color: var(--muted); font-size: 12px; }
+.jx-chk { display: flex; gap: 8px; align-items: flex-start; padding-block: 4px; font-size: 13.5px; }
+.jx-verdict h4 { margin: 4px 0 8px; font: 600 20px/1.3 var(--font-display); }
+.jx-verdict .small { font-size: 12.5px; }
+.jx-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin: 14px 0; }
+.jx-cols figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.jx-cols figcaption { font: 600 13px/1.3 var(--font-display); margin-bottom: 6px; }
+.jx-cols svg { display: block; width: 100%; height: auto; direction: ltr; border-radius: 4px; }
+table.jx-tab { min-width: 760px; }
+.jx-tab td { vertical-align: top; text-align: start; }
+.jx-tab td.jx-why { font-size: 13px; max-width: 70ch; }
+.jx-why summary { cursor: pointer; }
+.jx-why ul { margin: 4px 0; padding-inline-start: 18px; }
+.jx-why ul.bad li { color: var(--bad); } .jx-why ul.warn li { color: var(--warn); } .jx-why ul.ok li { color: var(--ok); } .jx-why ul.info li { color: var(--muted); }
+.jx-l { margin: 6px 0 0; font-size: 12px; }
+.jx-cap.ok { color: var(--ok); } .jx-cap.tight { color: var(--warn); } .jx-cap.insuff { color: var(--bad); } .jx-cap.na { color: var(--muted); }
+tr.st-excl td.name { text-decoration: line-through; color: var(--muted); }
+.jx-assoc li { font-size: 14px; margin: 3px 0; max-width: 110ch; }
+#jx-note .note-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px 18px; margin-bottom: 12px; }
+#jx-note { margin-top: 22px; padding-top: 6px; border-top: 1px solid var(--line); }
 .ptable { min-width: 560px; }
 .ptable td { text-align: start; }
 .ptable td:nth-child(2) { width: 130px; }
@@ -319,7 +357,7 @@ body.compact #compact-head { display: grid; }
 body.no3d #compact-head { grid-template-columns: 0 var(--leftcol) minmax(0, 1fr); }
 #compact-head .ch-kpis { grid-column: 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 8px; align-items: end; }
 #compact-head #ch-view { grid-column: 3; }
-body.compact header.top, body.compact #guide, body.compact #donnees, body.compact #resultats, body.compact #note-gen, body.compact #calibrage,
+body.compact header.top, body.compact #guide, body.compact #donnees, body.compact #resultats, body.compact #note-gen, body.compact #calibrage, body.compact #carrefour,
 body.compact #methode, body.compact .desc, body.compact .ped-key:first-of-type { display: none; }
 body.compact .bar { position: static; }
 body.compact .bar .wrap { padding-block: 6px; gap: 6px 14px; }
@@ -348,14 +386,20 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
 
 <header class="top">
   <div class="wrap">
-    <div class="lang-switch" id="lang-switch" role="group" aria-label="Langue · اللغة · Language">
-      <button class="btn" type="button" data-lang="fr" lang="fr" dir="ltr">Français</button>
-      <button class="btn" type="button" data-lang="ar" lang="ar" dir="rtl">العربية</button>
-      <button class="btn" type="button" data-lang="en" lang="en" dir="ltr">English</button>
+    <div class="top-tools">
+      <div class="proj-bar" id="proj-bar"></div>
+      <div class="lang-switch" id="lang-switch" role="group" aria-label="Langue · اللغة · Language">
+        <button class="btn" type="button" data-lang="fr" lang="fr" dir="ltr">Français</button>
+        <button class="btn" type="button" data-lang="ar" lang="ar" dir="rtl">العربية</button>
+        <button class="btn" type="button" data-lang="en" lang="en" dir="ltr">English</button>
+      </div>
     </div>
+    <p class="proj-msg" id="proj-msg" role="status"></p>
+    <p class="proj-notice" id="proj-notice"></p>
     <p class="eyebrow" id="eyebrow"></p>
     <h1 data-i18n="h1"></h1>
     <p class="lede" id="lede"></p>
+    <nav class="mod-switch" id="mod-switch" aria-label="Module"></nav>
   </div>
 </header>
 
@@ -467,6 +511,15 @@ body.compact canvas.plan { grid-column: 3; grid-row: 1 / 4; align-self: center; 
     <div class="cols" id="method-body"></div>
   </section>
 </main>
+<section class="wrap block-top" id="carrefour">
+  <h2 id="jx-title"></h2>
+  <p class="note" id="jx-intro"></p>
+  <div id="jx-site-slot"></div>
+  <p class="note" id="jx-site-hint"></p>
+  <form id="jx-form" novalidate></form>
+  <div id="jx-res"></div>
+  <div id="jx-note"></div>
+</section>
 
 <dialog id="dlg3d">
   <figure>
@@ -3026,7 +3079,7 @@ function computeCompactRowH() {
   document.documentElement.style.setProperty('--rowh', Math.max(40, compactRowH) + 'px');
 }
 function setHash() {
-  const tok = [isCompact() ? 'presentation' : '', lang !== 'fr' ? lang : ''].filter(Boolean).join('-');
+  const tok = [isCompact() ? 'presentation' : '', typeof MOD !== 'undefined' && MOD === 'jx' ? 'carrefour' : '', lang !== 'fr' ? lang : ''].filter(Boolean).join('-');
   try { history.replaceState(null, '', tok ? '#' + tok : location.href.split('#')[0]); } catch (e) { /* adresse non modifiable : sans effet */ }
 }
 function setCompact(on) {
@@ -3873,6 +3926,10 @@ Object.assign(I18N.fr, {
       <li><strong>Lire les résultats</strong> : solution recommandée et ses raisons, tableau de synthèse, trafic sur la journée.</li>
       <li><strong>Choisir la variante et produire la note de calcul</strong>, à imprimer ou à enregistrer en PDF.</li>
     </ol>
+    <h3>Le module « Carrefour »</h3>
+    <p>Le bouton « Carrefour », sous le titre, ouvre l’aide au choix du type de carrefour selon le guide Certu « Carrefours urbains » (2010). Décrivez le contexte (hiérarchie des voies, vitesses), la géométrie (branches, emprise, pente, visibilité), le trafic de pointe des deux voies, les usagers et les objectifs de la commune. L’outil écarte les types contre-indiqués, vérifie la capacité (attente sur la voie secondaire, graphique « feux ou pas de feux », réserve des feux, ordres de grandeur des giratoires) et propose les types à comparer, avec les aménagements associés. Choisissez ensuite le type retenu pour produire sa note.</p>
+    <h3>Enregistrer et ouvrir un projet</h3>
+    <p>« Enregistrer le projet », en haut de la page, télécharge un fichier qui contient tout : lieu, données, profils, journée, carrefour. « Ouvrir un projet » le recharge. Une copie de chaque enregistrement et l’adresse IP de l’ordinateur sont transmises à l’administrateur de l’application.</p>
     <h3>Les données nécessaires</h3>
     <div class="table-wrap"><table><thead><tr><th>Donnée</th><th>Comment l’obtenir</th><th>Indispensable ?</th></tr></thead><tbody>
       <tr><td>Débit de pointe par sens</td><td>Comptage d’une heure à la pointe du matin ou du soir</td><td>Oui</td></tr>
@@ -3958,6 +4015,10 @@ Object.assign(I18N.ar, {
       <li><strong>قراءة النتائج</strong>: الحلّ الموصى به وأسبابه، وجدول الخلاصة، وحركة المرور على مدار اليوم.</li>
       <li><strong>اختيار التهيئة وإعداد مذكّرة الحساب</strong>، للطباعة أو الحفظ بصيغة PDF.</li>
     </ol>
+    <h3>وحدة «المفترق»</h3>
+    <p>يفتح زرّ «المفترق»، تحت العنوان، أداة المساعدة على اختيار نوع المفترق وفق دليل Certu «Carrefours urbains» (2010). صف السياق (تسلسل الطرق والسرعات)، والهندسة (الفروع، والعرض المتاح، والانحدار، والرؤية)، وحركة الذروة على الطريقين، والمستعملين، وأهداف البلدية. تستبعد الأداة الأنواع غير الملائمة، وتتثبّت من طاقة الاستيعاب (الانتظار على الطريق الثانوية، ومنحنى «إشارات ضوئية أم لا»، واحتياطي الإشارات، والقيم التقريبية للمفترقات الدائرية)، وتقترح الأنواع الواجب مقارنتها مع التهيئات المصاحبة. ثم اختر النوع المعتمد لإعداد مذكّرته.</p>
+    <h3>حفظ مشروع وفتحه</h3>
+    <p>يُنزّل زرّ «حفظ المشروع»، أعلى الصفحة، ملفًّا يحتوي على كل شيء: الموقع، والمعطيات، والمقاطع، واليوم، والمفترق. ويعيد زرّ «فتح مشروع» تحميله. وتُرسَل نسخة من كل حفظ وعنوان IP للحاسوب إلى مشرف التطبيق.</p>
     <h3>المعطيات اللازمة</h3>
     <div class="table-wrap"><table><thead><tr><th>المعطى</th><th>كيفية الحصول عليه</th><th>ضروري؟</th></tr></thead><tbody>
       <tr><td>تدفّق الذروة في كل اتجاه</td><td>عدّ لمدّة ساعة في ذروة الصباح أو المساء</td><td>نعم</td></tr>
@@ -4043,6 +4104,10 @@ Object.assign(I18N.en, {
       <li><strong>Read the results</strong>: recommended solution and the reasons for it, summary table, traffic over the day.</li>
       <li><strong>Choose the option and produce the design report</strong>, to print or save as a PDF.</li>
     </ol>
+    <h3>The “Intersection” module</h3>
+    <p>The “Intersection” button, below the title, opens the decision aid for choosing an intersection type according to the Certu guide “Carrefours urbains” (2010). Describe the context (road hierarchy, speeds), the geometry (legs, available space, gradient, visibility), the peak traffic on both roads, the users and the municipality’s objectives. The tool rules out contraindicated types, checks capacity (delay on the minor road, the “signals or no signals” chart, signal reserve capacity, roundabout orders of magnitude) and proposes the types to compare, with the associated features. Then choose the selected type to produce its report.</p>
+    <h3>Saving and opening a project</h3>
+    <p>“Save the project”, at the top of the page, downloads a file containing everything: site, data, cross-sections, daily traffic, intersection. “Open a project” reloads it. A copy of each save and the computer’s IP address are sent to the application administrator.</p>
     <h3>Data needed</h3>
     <div class="table-wrap"><table><thead><tr><th>Data</th><th>How to obtain it</th><th>Required?</th></tr></thead><tbody>
       <tr><td>Peak flow per direction</td><td>One-hour count at the morning or evening peak</td><td>Yes</td></tr>
@@ -4667,6 +4732,8 @@ function setLang(l) {
   $('#eyebrow').textContent = t('eyebrow', P);
   $('#guide-body').innerHTML = t('guideBody');
   buildProfileUI();
+  buildJxUI();
+  buildProjBar();
   try { localStorage.setItem('mv-lang', lang); } catch (e) { /* stockage indisponible */ }
   setHash();
   readColors();
@@ -4723,12 +4790,1219 @@ const relayoutTheme = () => { readColors(); layoutAll(); };
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', relayoutTheme);
 new MutationObserver(relayoutTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
+/* =====================================================================================================
+   MODULE CARREFOUR : aide au choix du type de carrefour urbain, selon le guide Certu « Carrefours urbains »
+   (édition 2010) et l'IISR, 3e partie. Chaque règle renvoie à la page du guide. Le guide ne pondère pas ses
+   critères : l'outil les applique un par un et classe les types par une règle publiée, sans note globale.
+   ===================================================================================================== */
+const JXT = { fr: {
+  modCross: 'Traversée piétonne', modJx: 'Carrefour',
+  jxEyebrow: 'Aide au choix · guide Certu « Carrefours urbains » (2010)',
+  jxH1: 'Quel type de carrefour ?',
+  jxLede: 'Décrivez le carrefour : contexte, géométrie, trafic de pointe, usagers et objectifs de la commune. L’outil applique une à une les règles du guide des carrefours urbains, écarte les types contre-indiqués, vérifie la capacité et propose les types à comparer.',
+  title: 'Aide au choix du type de carrefour',
+  intro: 'Les résultats se mettent à jour à chaque modification. Chaque critère renvoie à la page du guide Certu « Carrefours urbains » (2010). Le guide ne pondère pas ses critères et demande de comparer plusieurs partis d’aménagement en concertation : l’outil prépare cette comparaison, il ne la remplace pas.',
+  siteHint: 'Le lieu pointé sur la carte figure dans la note (plan de situation et vue aérienne).',
+  g: { ctx: 'Contexte', geo: 'Géométrie et emprise', traf: 'Trafic à l’heure de pointe', users: 'Usagers', obj: 'Objectifs de la commune (à hiérarchiser)' },
+  f: {
+    ctx: 'Milieu', hMain: 'Voie principale', hSec: 'Voie secondaire', vMain: 'Vitesse limite, voie principale', vSec: 'Vitesse limite, voie secondaire',
+    prio: 'Voie principale classée prioritaire (panneau AB6)', entree: 'Entrée d’agglomération',
+    nBr: 'Nombre de branches', angles: 'Angles entre branches compris entre 80° et 140°', lanesMain: 'Voies par sens, voie principale', lanesSec: 'Voies par sens, voie secondaire',
+    widthMain: 'Largeur de chaussée, voie principale', emprise: 'Diamètre du cercle disponible entre façades', slope: 'Pente en long la plus forte', visib: 'Visibilité depuis la voie secondaire',
+    Pveh: 'Voie principale, deux sens', Sveh: 'Voie secondaire, deux sens', pPL: 'Part de poids lourds et bus', tag: 'Tourne-à-gauche le plus chargé depuis la voie principale', tad: 'Tourne-à-droite le plus chargé',
+    ped: 'Piétons', velo: 'Cyclistes', tc: 'Transports collectifs', siteProp: 'Site propre bidirectionnel latéral',
+    speed: 'Modérer la vitesse', peds: 'Faciliter les traversées piétonnes et l’accessibilité', bike: 'Sécuriser les cyclistes', tco: 'Favoriser les transports collectifs',
+    flow: 'Écouler le trafic de pointe', gate: 'Marquer un lieu (repère, effet de porte)', cost: 'Moyens financiers limités'
+  },
+  u: { m: 'm', pct: '%', kmh: 'km/h', vh: 'véh/h', uvp: 'uvp/h', br: 'branches', lanes: 'voie(s)' },
+  o: {
+    ctx: { dense: 'Centre-ville dense', urbain: 'Urbain', periurbain: 'Périurbain' },
+    h: { vru: 'Voie rapide urbaine (70 km/h)', struct: 'Voie structurante (artère, liaison inter-quartiers)', quartier: 'Voie de quartier (desserte, zone 30)' },
+    visib: { bonne: 'Bonne', reduite: 'Réduite par des masques', tardive: 'Très tardive' },
+    ped: { faible: 'Peu nombreux', important: 'Nombreux (plus de 250 par heure environ)', tres: 'Très nombreux (école, gare, commerces)' },
+    velo: { peu: 'Peu nombreux', nombreux: 'Nombreux' },
+    tc: { aucun: 'Aucune ligne', bus: 'Ligne de bus régulière', busFort: 'Ligne forte de bus (BHNS)', tram: 'Tramway' },
+    yes: 'Oui', no: 'Non'
+  },
+  types: { pad: 'Priorité à droite', clp: 'Cédez-le-passage', stop: 'Stop', mini: 'Mini-giratoire', compact: 'Giratoire compact', moyen: 'Giratoire moyen',
+    grand: 'Grand giratoire', feux: 'Carrefour à feux', feuxIlot: 'Carrefour à feux avec îlot central', psgr: 'Passage souterrain à gabarit réduit (PSGR)' },
+  st: { conseille: 'Conseillé', possible: 'Possible', deconseille: 'Déconseillé', excl: 'Exclu' },
+  cap: { ok: 'Capacité suffisante', tight: 'Capacité juste', insuff: 'Capacité insuffisante', na: 'Sans objet' },
+  hName: { vru: 'voie rapide urbaine', struct: 'voie structurante', quartier: 'voie de quartier' },
+  // résultats
+  resTitle: 'Résultat', recTitle: 'Types à comparer en priorité', recNone: 'Aucun type ne convient sans réserve : revoir les données, les objectifs ou l’emprise, et engager une étude spécifique.',
+  recLead: (a, b) => b ? `À comparer en priorité : ${a}, puis ${b}.` : `À étudier en priorité : ${a}.`,
+  rule: 'Règle de classement de l’outil (le guide ne pondère pas les critères) : 1) écarter les types contre-indiqués ; 2) préférer une capacité suffisante ; 3) préférer un type prévu par le guide pour la rencontre des deux voies (tableau p. 63) ; 4) préférer le type qui sert le plus d’objectifs de la commune ; 5) à égalité, le plus simple.',
+  traffic: (E, P, S, d) => `Trafic entrant total : ${E} uvp/h (voie principale ${P}, voie secondaire ${S}), soit environ ${d} véhicules par jour (pointe ≈ 10 % du trafic journalier, p. 64). Un poids lourd compte pour 2 uvp (p. 93).`,
+  thType: 'Type', thStatus: 'Avis', thCap: 'Capacité', thWhy: 'Principales raisons',
+  more: 'Toutes les raisons', pros: 'Points favorables', cons: 'Points défavorables', exclWhy: 'Contre-indications',
+  spTitle: 'Feux ou pas de feux (graphique p. 68)', spAxisP: 'P : voie principale, uvp/h deux sens', spAxisS: 'S : voie secondaire, uvp/h deux sens',
+  spNo: 'pas de feux', spYes: 'feux tricolores', spGrey: 'zone « ? »', spPoint: 'votre carrefour',
+  assocTitle: 'Aménagements associés au type', chooseTitle: 'Type retenu et note de calcul', chooseLabel: 'Type retenu par la commune',
+  chooseIntro: 'Choisissez le type que la commune retient. La note s’ouvre dans un nouvel onglet, dans la langue de la page : données, analyse critère par critère, comparaison des types, dimensions clés, aménagements associés, signalisation et plan d’action.',
+  btnNote: 'Générer la note du carrefour', recSuffix: ' (en tête du classement)',
+  // raisons : hiérarchie
+  hierFit: (a, b) => `Prévu par le guide pour la rencontre « ${a} × ${b} » (tableau p. 63).`,
+  hierNo: (a, b) => `Non prévu par le guide pour la rencontre « ${a} × ${b} » (tableau p. 63).`,
+  girName: 'giratoire',
+  hierList: (a, b, l) => `Types prévus par le guide pour la rencontre « ${a} × ${b} » : ${l} (tableau p. 63).`,
+  hierVoid: 'Le guide ne propose aucun type pour la rencontre d’une voie rapide urbaine et d’une voie de quartier (tableau p. 63) : raccorder plutôt la voie de quartier à une voie structurante.',
+  // raisons : trafic et capacité
+  totLim: (E, L) => `Trafic entrant ${E} uvp/h pour une limite d’environ ${L} uvp/h (tableau p. 64).`,
+  wait: (T, C, Sa, tc) => `Attente moyenne sur la voie secondaire : ${T} (capacité ${C} uvp/h par approche pour ${Sa} uvp/h, créneau critique ${tc} s, abaque p. 93).`,
+  waitOk: 'moins de 30 s : acceptable (p. 93)', waitMid: 'entre 30 s et 1 min : à l’appréciation du concepteur (p. 93)', waitBad: 'plus de 1 min : envisager un giratoire ou des feux (p. 93)', waitInf: 'la demande dépasse la capacité',
+  offChart: 'Trafic principal au-delà de l’abaque (1 500 uvp/h) : capacité de la voie secondaire très faible.',
+  rbOk: E => `Giratoire courant : ${E} uvp/h entrants, sans difficulté jusqu’à 1 500 uvp/h (p. 66, 124).`,
+  rbMid: E => `${E} uvp/h entrants (entre 1 500 et 2 000) : examiner la répartition ; à chaque entrée, entrant + tournant ≤ 1 000 uvp/h (p. 124).`,
+  rbTest: E => `${E} uvp/h entrants : test de capacité vivement conseillé au-delà de 2 000 uvp/h (logiciel GIRABASE, p. 124).`,
+  rbLanes1: 'Entrées à 1 voie et anneau de 7 m : environ 3 000 uvp/h si les flux sont bien répartis (p. 66).',
+  rbLanes2: 'Il faut des entrées à 2 voies et un anneau de 9 m : environ 4 000 uvp/h (p. 66) ; entrées à 2 voies exceptionnelles en ville (p. 127).',
+  rbLanes3: 'Il faut des entrées à 3 voies et un anneau de 12 m : environ 5 000 uvp/h (p. 66), incompatible avec une forte demande de traversée piétonne (p. 127, 139).',
+  rbOver: E => `${E} uvp/h dépasse la capacité d’un giratoire, même à entrées à 3 voies (environ 5 000 uvp/h, p. 66, 138).`,
+  rbSmall: E => `${E} uvp/h dépasse la limite d’environ 1 500 uvp/h des giratoires compacts et mini-giratoires (tableau p. 64).`,
+  unbal10: 'Le flux principal dépasse 10 fois le flux secondaire : un giratoire n’est vraisemblablement pas la solution (p. 66).',
+  unbal20: 'Trafics déséquilibrés : le flux secondaire fait moins de 20 % du flux principal (p. 66).',
+  spZoneNo: 'Point situé dans la zone « pas de feux » du graphique p. 68 : un carrefour à feux doit se justifier la plus grande partie du temps, pas pour une situation occasionnelle (p. 67).',
+  spZoneGrey: 'Point situé dans la zone intermédiaire « ? » du graphique p. 68 : le guide ne conclut pas, il juge difficile de fixer un seuil de trafic pour les feux.',
+  spZoneYes: 'Point situé dans la zone « feux tricolores » du graphique p. 68.',
+  fxRes: (ph, cy, qt, d, i) => `Feux à ${ph} phases, cycle de ${cy} s : capacité ${qt} uvp/h par voie pour une demande de ${d}, réserve de ${i} % (méthode p. 156-159).`,
+  fxResLow: 'réserve inférieure à 10 % : insuffisante pour passer une heure de pointe (p. 159)', fxResMid: 'réserve entre 10 et 20 % : correcte mais sans marge (p. 159)',
+  fxResOk: 'réserve d’au moins 20 % : pas de saturation (p. 159)', fxResHigh: 'réserve de plus de 40 % à la pointe : l’opportunité des feux est à remettre en cause (p. 159)',
+  fxPh4: 'Quatre phases ou plus : à bannir sauf exception (p. 105).', fxBr5: 'Au-delà de 5 branches : étudier un giratoire ou la scission en deux carrefours à feux (p. 68).',
+  fxBr4: 'Au-delà de 4 entrées, un fonctionnement à 2 phases est en général exclu (p. 104).',
+  // raisons : exclusions et usages
+  padPrio: 'Interdite à l’intersection d’une route classée prioritaire (p. 65 ; IISR art. 43-12).',
+  pad50: 'Non retenue sur une voie à 50 km/h ou plus où l’on recherche la fluidité (p. 64).',
+  padEq: 'Suppose un traitement équivalent des voies et pas de déséquilibre notable des flux (p. 65).',
+  padZ30: 'Régime privilégié en zone 30 et en zone de rencontre ; ne favorise aucune voie, oblige à ralentir (p. 64).',
+  padIsol: 'À implanter sur une zone ou un axe, pas de façon isolée (p. 64).',
+  padTc: 'À éviter en présence d’une ligne de transport collectif (p. 64).',
+  padVis: 'Visibilité réduite : réduire les vitesses (plateau) reste souvent préférable à un changement de régime (p. 56, 97).',
+  clpBase: 'Aménagement de base d’une intersection sans problème particulier ; impose de hiérarchiser les deux voies (p. 64, 92).',
+  clpVis: 'Convient aussi quand des masques de visibilité empêchent de garder la priorité à droite (p. 92).',
+  clpTc: 'Donner si possible la priorité à la rue empruntée par le transport collectif (p. 64).',
+  stopNo: 'Réservé aux rues peu importantes qui posent de réels problèmes de visibilité ; le cédez-le-passage doit rester la règle pour ne pas discréditer le stop (p. 64, 92).',
+  stopYes: 'Visibilité très tardive depuis la voie secondaire : le stop se justifie (p. 64, 92). Sa mise en place exige un arrêté (IISR art. 42-2).',
+  stopCap: 'Le cédez-le-passage permet de meilleurs débits que le stop (IISR art. 43-4).',
+  miniUrb: 'Exclusivement urbain (p. 129).', miniEntree: 'Ne peut pas être le premier carrefour en entrée de ville sans transition (p. 129).',
+  miniBr: 'Seulement 3 ou 4 branches (p. 129).', miniAng: 'Angles entre branches de 80° à 140° seulement (p. 129).', miniLanes: 'Seulement dans des rues à une voie par sens (p. 129).',
+  miniEvent: 'Ne peut pas servir de carrefour-événement entre deux catégories de voies bien distinctes (p. 129).', miniV: 'Adapté aux zones 30 et à l’entrée des zones de rencontre (p. 124, 129).',
+  miniEmp: 'Emprise insuffisante : rayon extérieur de 7,50 m au moins, plus les trottoirs (p. 124, dérivé).', miniBig: 'Emprise de plus de 24 m : un giratoire à îlot infranchissable est réalisable (p. 129).',
+  miniBus: 'Bus : dôme central de 12 cm au plus avec des bus à plancher bas ; les poids lourds chevauchent l’îlot (p. 130).',
+  girEmp: (d) => `Emprise insuffisante : il faut un cercle d’environ ${d} m de diamètre, trottoirs compris (p. 125, dérivé des rayons extérieurs).`,
+  girSlope: 'Pente en long de plus de 6 % : giratoire déconseillé (p. 125).', girSlope3: 'Pente entre 3 et 6 % : réduire les vitesses d’approche, surveiller les poids lourds (p. 125).',
+  girTram: 'Avec un tramway, les giratoires sont plus accidentogènes que les autres types : à éviter absolument (p. 58).',
+  girSite: 'Éviter un giratoire sur un axe à site propre bidirectionnel latéral, sauf à éloigner ou interrompre le site (p. 34).',
+  girBr: (n) => `Au plus ${n} branches pour un giratoire dans ce milieu (p. 122, 125).`,
+  girBrPro: 'Au-delà de 4 branches, le giratoire reste simple alors que le plan de feux se complique (p. 66).',
+  girSpeed: 'Forte réduction de la vitesse à toute heure, rupture visuelle et effet de porte (p. 65-66).',
+  girNoTc: 'Aucune priorité possible pour les transports collectifs dans un giratoire (p. 65, 137).',
+  girBus: 'Bus : rayon extérieur de 15 m souhaitable, 12 m au minimum (p. 137).',
+  girEntree: 'Intéressant en entrée d’agglomération traversée par un axe important (p. 65).',
+  girNoCost: 'Pas de coût d’exploitation, contrairement aux feux (p. 65).',
+  girPeri: 'Déplace les trajectoires vers la périphérie : nouvelles nuisances aux abords (terrasses, logements) (p. 67).',
+  compActive: 'Quand les piétons et les cyclistes sont nombreux, le guide privilégie les giratoires compacts (p. 66) ; le plus sûr pour les cyclistes avec le mini-giratoire (p. 133).',
+  moyenBr: 'Plus de capacité et plus de 4 branches en restant de taille modeste (p. 125).',
+  grandDense: 'Réservé aux axes à forts trafics et aux zones de bâti peu dense (p. 125).',
+  grandUsers: 'Difficile pour les piétons et non favorable aux cyclistes ; effet modérateur plus faible ; coupure (p. 64, 125).',
+  grandBig: 'Un diamètre extérieur de plus de 50 m est très rarement justifié (p. 125).',
+  fxDense: 'Particulièrement adapté au milieu urbain dense et aux axes structurants, où de nombreux conflits se gèrent dans un espace contraint (p. 67).',
+  fxTc: 'À privilégier pour les tramways et les lignes fortes de bus ; priorité aux transports collectifs possible (p. 64, 118).',
+  fxSpeed: 'Pas de maîtrise de la vitesse au vert, surtout en heures creuses et la nuit (p. 68).',
+  fxPed: 'Favorable aux piétons et aux cyclistes sur les axes à fort trafic (tableau p. 64).',
+  fxManage: 'Permet une gestion active : onde verte ou modérante, priorité aux bus, maîtrise des flux (p. 68-69).',
+  fxCost: 'Coût d’exploitation spécifique, contrairement au giratoire (p. 65).',
+  fxIlotNo: 'Réservé aux carrefours en croix dont les tourne-à-gauche sont importants et équilibrés, avec un îlot central de 16 à 25 m (p. 120-121).',
+  fxIlotYes: 'Carrefour en croix à forts tourne-à-gauche : îlot central de 16 à 25 m, 2 phases, environ 8 000 uvp/h avec des entrées à 3 voies (p. 120-121).',
+  psgrNo: 'Réservé aux rencontres entre voie rapide urbaine et voie rapide ou structurante (tableau p. 63).',
+  psgrExc: 'En milieu urbain, la dénivellation doit rester exceptionnelle ; elle ne peut pas être motivée par la seule circulation automobile (p. 69, 142).',
+  psgrUsers: 'Interdit aux piétons et aux cyclistes ; accroît la coupure ; accidents de piétons en sortie de trémie (p. 64, 149).',
+  psgrPeri: 'En périurbain, la sécurité se dégrade après réalisation (accidents de piétons en sortie de trémie, p. 59).',
+  pedHard: 'Piétons : traversée difficile au-delà de 800 uvp/h sur une chaussée (tableau p. 64) ; prévoir un refuge.',
+  bikeLow: 'Favorable aux cyclistes sur les axes à faible trafic (tableau p. 64).',
+  bikeGood: 'À privilégier pour les cyclistes (tableau p. 64).',
+  baseNoProb: 'Aménagement de base tant que le trafic entrant reste modéré (p. 64).',
+  plateau: 'Option : réaliser le carrefour en plateau (surélévation de 10 à 15 cm, rampants de 5 à 10 %) pour faire ralentir tous les usagers ; applicable à tous les régimes (p. 76-77, 96).',
+  plateauCheck: 'Le décret français réserve le passage piéton surélevé aux voies de moins de 3 000 véh/j sans ligne régulière de transport collectif (p. 76) : à vérifier pour ce carrefour.',
+  // aménagements associés
+  refugeInd: 'Îlot refuge indispensable sur la voie principale (carrefour sans feux, 4 voies ou plus ; p. 84), 2 m de large au moins, 2,50 m si possible.',
+  refugeRec: 'Îlot refuge très recommandé sur la voie principale (p. 84), 2 m de large au moins, 2,50 m si possible.',
+  refugeGir: 'Îlots séparateurs d’au moins 2 m au droit des passages piétons, indispensables en agglomération (p. 127, 132).',
+  refugeMini: 'Îlots séparateurs facultatifs ; en dessous de 1,50 m, ils ne servent pas de refuge (p. 130).',
+  refugeFx: 'Refuge obligatoire si la traversée se fait en deux temps ; conseillé au-delà de 12 m ou de 4 voies (p. 84, 114).',
+  pedClp: 'Passages piétons : au débouché de la voie secondaire, en retrait de 1,50 à 2 m de la ligne (1 m minimum) ; marquage indispensable sur la voie structurante (p. 83, 99).',
+  pedPad: 'Passages piétons : ne pas marquer de passages aux carrefours à priorité à droite, sauf lieux fréquentés par des malvoyants ; traiter la zone de traversée et poser des avancées de trottoir (p. 100).',
+  pedGir: 'Passages piétons : un par branche, commençant 2 à 5 m après la ligne de cédez-le-passage (2 m pour les petits giratoires, 5 m pour les grands) (p. 132).',
+  pedFx: 'Feux piétons : vert d’au moins 6 s, dégagement d’au moins 1 s par mètre traversé (0,8 m/s près des écoles et des hôpitaux), attente de 40 s au plus ; passage à 2 à 5 m du carrefour (p. 114-115).',
+  tadFx: 'Tourne-à-droite de plus de 500 uvp/h : traverser les piétons en même temps devient difficile ; voie de tourne-à-droite à feux avec refuge, ou autre phasage (p. 115).',
+  tagFx: (t) => t < 150 ? 'Tourne-à-gauche de moins de 150 uvp/h : compatible avec le carrefour à feux (p. 106).' : t <= 250 ? 'Tourne-à-gauche de 150 à 250 uvp/h : un léger décalage à la fermeture peut suffire ; le décalage à l’ouverture est interdit (p. 106).' : 'Tourne-à-gauche de plus de 250 uvp/h : situation critique, traitement spécifique (phase propre) (p. 106).',
+  tagNo30: 'En zone 30, le tourne-à-gauche justifie rarement un aménagement (p. 94).',
+  tagCfg: (c) => ['Tourne-à-gauche : voie spéciale avec îlot, stockage de 10 à 20 m (p. 94-95).', 'Tourne-à-gauche : élargissement localisé de la chaussée à 7,50-8,50 m en gardant un trottoir d’au moins 1,40 m (p. 94-95).', 'Tourne-à-gauche : pas d’aménagement spécifique nécessaire (tableau p. 95).', 'Tourne-à-gauche : trafic hors du tableau p. 95 ; envisager un autre type de carrefour.'][c],
+  visTri: (l, L) => `Visibilité : dégager le triangle l = ${l}, L = ${L} m, entre 0,60 et 2,30 m de hauteur ; interdire le stationnement 3 à 10 m en amont (p. 73-74, 97).`,
+  girDims: { mini: 'Rayon extérieur 7,50 à 12 m ; anneau 6 à 9,50 m ; îlot central entièrement franchissable de 1,50 à 2,50 m de rayon ; dôme de 10 à 15 cm ; 1 voie d’entrée et 1 de sortie par branche (p. 129-130).',
+    compact: 'Rayon extérieur 12 à 15 m (12 m au minimum pour la giration des bus et poids lourds) ; anneau 6 à 8 m ; bande franchissable de 1,50 à 2 m ; entrées à 1 voie de 3 à 3,50 m ; sorties de 3,50 à 4 m (p. 125, 128).',
+    moyen: 'Rayon extérieur 15 à 22 m ; anneau 6 à 8 m, au moins 20 % plus large que l’entrée la plus large ; entrées de 3 à 4 m (1 voie) ou 6 à 7 m (2 voies) ; rayon de sortie d’au moins 15 m (p. 125-128).',
+    grand: 'Rayon extérieur supérieur à 22 m ; anneau 7 à 9 m ; 1 à 2 voies d’entrée et de sortie, voire 3 sur les branches principales (p. 125-127).' },
+  girCommon: 'Îlot central circulaire ; branches dirigées vers le centre, sans entrée tangentielle ; rayon de déflexion inférieur à 100 m ; quart gauche de l’anneau dégagé à 10 m de l’entrée (p. 122-127).',
+  fxDims: 'Deux phases en règle générale ; cycle de 50 à 70 s ; ligne d’effet des feux reculée de 3 à 5 m ; sas cyclistes de 3 à 5 m ; voies de 3 à 3,50 m avec bus ou poids lourds (p. 77, 105, 113-117).',
+  clpDims: 'Voies de 2,50 à 3 m, 3 à 3,50 m avec bus ou poids lourds ; rayons de bordure de 4 m au minimum, en général 6 à 8 m avec pans coupés ; îlots d’au moins 5 m² (p. 77, 95-96).',
+  psgrDims: 'Gabarit B : 2,60 m (hauteur libre 2,80 m), voies de 3 m ; rayons en plan de 80 m à 50 km/h ; pente de 9 % au plus (p. 142-148).',
+  sign: { pad: 'Aucun panneau : la priorité à droite est la règle en agglomération ; le panneau AB1 y est inutile (IISR art. 43-11).',
+    clp: 'Panneau AB3a et ligne discontinue « cédez le passage » sur la voie secondaire ; panneau AB6 éventuel sur la voie principale (IISR art. 42-2 C).',
+    stop: 'Panneau AB4 et ligne continue ; arrêté obligatoire (IISR art. 42-2 E).',
+    gir: 'Panneau AB25 obligatoire en approche ; ligne « cédez le passage » sur chaque entrée ; panneau AB3a facultatif en agglomération mais fortement recommandé par le guide (IISR art. 42-10 ; guide p. 131).',
+    feux: 'Les feux prévalent sur les panneaux ; pas de panneau STOP sur une branche équipée de feux ; panneaux AB pour le mode dégradé (IISR art. 42-9).',
+    psgr: 'Signalisation de direction et de gabarit en amont ; carrefour plan en surface signalé selon son régime.' },
+  // note
+  n: { title: 'Note de choix du type de carrefour', sub: 'Aide au choix selon le guide Certu « Carrefours urbains » (2010)', objet: 'Choix du type de carrefour',
+    cover: [['commune', 'Commune'], ['lieu', 'Lieu'], ['objet', 'Objet'], ['name', 'Type retenu'], ['date', 'Date'], ['auteur', 'Établie par'], ['outil', 'Outil']],
+    s: { brief: 'En bref', site: 'Le lieu', data: 'Les données', method: 'La démarche', analysis: 'L’analyse critère par critère', compare: 'La comparaison des types', chosen: 'Le type retenu', open: 'Ce que l’outil ne tranche pas', plan: 'Plan d’action', annex: 'Annexe — Formules, hypothèses et sources' },
+    dataCols: ['Donnée', 'Valeur'], cmpCols: ['Type', 'Avis', 'Capacité', 'Raison principale'],
+    method: ['Le guide demande de partir des objectifs et du diagnostic, pas d’une solution fixée d’avance (p. 17).', 'Il liste huit critères de choix, sans pondération : contexte urbain, cohérence sur l’axe, fonctions urbaines, emprises, usagers à privilégier, capacité et typologie du trafic, sécurité, moyens financiers (p. 63).', 'Il demande de comparer plusieurs partis d’aménagement, avec leurs effets négatifs, et d’arrêter le choix en concertation (p. 19-20).'],
+    hAn: { hier: 'Hiérarchie des voies', traf: 'Trafic et capacité', users: 'Usagers', geo: 'Géométrie, emprise et visibilité' },
+    chosenIntro: n => `Type retenu par la commune : ${n}.`, notRec: 'Ce type n’est pas en tête du classement de l’outil : les raisons figurent ci-dessous ; la commune en assume le choix après comparaison.',
+    exclWarn: 'Attention : ce type présente des contre-indications selon le guide.',
+    dims: 'Dimensions clés', assoc: 'Aménagements associés', signs: 'Signalisation (IISR, 3e partie)', vigil: 'Points de vigilance',
+    open: ['Le guide ne fixe pas de seuil unique de trafic pour les feux : la zone « ? » du graphique p. 68 relève du jugement.', 'Une attente de 30 s à 1 min sur la voie secondaire est à l’appréciation du concepteur (p. 93).', 'Le niveau de congestion acceptable relève de la politique locale ; un quart d’heure de saturation par jour peut être admis (p. 13, 38, 52).', 'La prise en compte des piétons ne peut pas reposer sur les seuls comptages (p. 31).', 'Les coûts ne sont pas chiffrés par le guide.'],
+    actions: { count: ['Comptages directionnels sur au moins deux heures de pointe (matin et soir), avec la part de poids lourds, de bus, de vélos et de piétons (p. 38)', 'Commune', 'Avant l’avant-projet'],
+      acc: ['Recueil des accidents corporels des 5 dernières années sur le carrefour et ses branches (p. 42)', 'Commune, police', 'Avant l’avant-projet'],
+      variants: ['Comparer les deux ou trois types en tête, avec leurs effets sur les carrefours voisins, et arrêter le choix en concertation (p. 19-20)', 'Commune, bureau d’études', 'Avant-projet'],
+      capRb: ['Test de capacité du giratoire (GIRABASE) avec la matrice origine-destination (p. 124)', 'Bureau d’études', 'Avant-projet'],
+      capFx: ['Plan de feux détaillé et réserve de capacité calculée sur les comptages (annexe p. 156-159 ; guide « Carrefours à feux »)', 'Bureau d’études', 'Avant-projet'],
+      tc: ['Consulter l’exploitant des transports collectifs (giration, arrêts, priorité) (p. 90-91)', 'Commune, exploitant', 'Avant-projet'],
+      exec: ['Plan d’exécution sur levé topographique, vérification des girations et des triangles de visibilité', 'Bureau d’études', 'Projet'],
+      after: ['Suivi après plusieurs mois de stabilisation : vitesses, files, accidents, confort des piétons (p. 21-22)', 'Commune', 'Après mise en service'] },
+    planCols: ['Priorité', 'Action', 'Qui', 'Quand'],
+    hyp: ['Trafic en uvp/h : véhicules × (1 + part de poids lourds), un poids lourd valant 2 uvp (p. 93).', 'Trafic journalier estimé à 10 fois le trafic de pointe (p. 64 : la pointe représente 8 à 12 % du trafic journalier).', 'Capacité de la voie secondaire : abaque du créneau critique (p. 93), lu graphiquement ; attente T = 3600 / (C − S) (p. 93).', 'Créneau critique : 6 s pour traverser une voie principale à 2 files, 4 s pour 1 file ; insertion à gauche sur une voie à double sens : 5, 6 ou 7 s à 30, 50 ou 70 km/h (p. 92-93).', 'Feux : capacité QTmax = 1 800 × (C − T) / C, réserve (QTmax − demande) / demande (p. 159) ; hypothèses de l’outil : sens le plus chargé = 55 % du trafic deux sens, 20 % de tournants sur la voie principale et 60 % sur la secondaire, coefficient 1,1 par tournant (1,3 face à plus de 250 piétons/h, p. 156), 4 s perdues par phase, cycle de 60, 75 ou 90 s pour 2, 3 ou 4 phases.', 'Emprise : diamètre du giratoire (2 × rayon extérieur) augmenté de 6 m de trottoirs (dérivé des p. 124-125).'],
+    sources: ['Certu (2010). Carrefours urbains. Collection Références, édition mise à jour de 1999.', 'Instruction interministérielle sur la signalisation routière, 3e partie : intersections et régimes de priorité (version consolidée).'],
+    brief: { rec: (a, b) => b ? `Types à comparer en priorité : ${a}, puis ${b}.` : `Type à étudier en priorité : ${a}.`, chosen: n => `Type retenu par la commune : ${n}.`,
+      traffic: (E, d) => `Trafic de pointe : ${E} uvp/h entrants, soit environ ${d} véhicules par jour.`, excl: n => `${n} type(s) écarté(s) par une contre-indication du guide.`,
+      next: 'Prochaine étape : comptages directionnels et comparaison des variantes en concertation.' },
+    figSP: 'Graphique p. 68 : position du carrefour par rapport aux zones « pas de feux », « ? » et « feux tricolores ».', figSketch: 'Schéma de principe du type retenu (sans échelle d’exécution).'
+  }
+} };
+JXT.ar = {
+  modCross: 'عبور المترجّلين', modJx: 'مفترق',
+  jxEyebrow: 'مساعدة على الاختيار · دليل Certu «Carrefours urbains» (2010)',
+  jxH1: 'أيّ نوع من المفترقات؟',
+  jxLede: 'صِف المفترق: السياق، والشكل الهندسي، وحركة المرور في ساعة الذروة، والمستعملين، وأهداف البلدية. تطبّق الأداة قواعد دليل المفترقات الحضرية واحدةً تلو الأخرى، وتستبعد الأنواع التي توجد موانع لاعتمادها، وتتحقّق من طاقة الاستيعاب، وتقترح الأنواع التي تجدر مقارنتها.',
+  title: 'مساعدة على اختيار نوع المفترق',
+  intro: 'تُحدَّث النتائج عند كل تعديل. يُحيل كل معيار إلى صفحة من دليل Certu «Carrefours urbains» (2010). لا يرجّح الدليل بين معاييره، ويطلب مقارنة عدّة حلول تهيئة بالتشاور: تُعِدّ الأداة هذه المقارنة ولا تُغني عنها.',
+  siteHint: 'يظهر الموقع المحدّد على الخريطة في المذكّرة (مخطّط الموقع وصورة جوّية).',
+  g: { ctx: 'السياق', geo: 'الشكل الهندسي والعرض المتاح', traf: 'حركة المرور في ساعة الذروة', users: 'المستعملون', obj: 'أهداف البلدية (تُرتَّب حسب الأهمية)' },
+  f: {
+    ctx: 'الوسط', hMain: 'الطريق الرئيسية', hSec: 'الطريق الثانوية', vMain: 'السرعة القصوى، الطريق الرئيسية', vSec: 'السرعة القصوى، الطريق الثانوية',
+    prio: 'الطريق الرئيسية مصنّفة ذات أولوية (لافتة AB6)', entree: 'مدخل التجمّع العمراني',
+    nBr: 'عدد الفروع', angles: 'الزوايا بين الفروع محصورة بين 80° و140°', lanesMain: 'المسالك في كل اتجاه، الطريق الرئيسية', lanesSec: 'المسالك في كل اتجاه، الطريق الثانوية',
+    widthMain: 'عرض المعبّد، الطريق الرئيسية', emprise: 'قطر الدائرة المتاحة بين الواجهات', slope: 'أقصى انحدار طولي', visib: 'الرؤية من الطريق الثانوية',
+    Pveh: 'الطريق الرئيسية، الاتجاهان', Sveh: 'الطريق الثانوية، الاتجاهان', pPL: 'نسبة العربات الثقيلة والحافلات', tag: 'أكثف حركة انعطاف يسارًا من الطريق الرئيسية', tad: 'أكثف حركة انعطاف يمينًا',
+    ped: 'المترجّلون', velo: 'الدرّاجون', tc: 'النقل الجماعي', siteProp: 'مسلك مخصّص جانبي في الاتجاهين',
+    speed: 'تهدئة السرعة', peds: 'تيسير عبور المترجّلين وسهولة النفاذ', bike: 'تأمين الدرّاجين', tco: 'تفضيل النقل الجماعي',
+    flow: 'تصريف حركة الذروة', gate: 'إبراز المكان (مَعلَم، أثر البوّابة)', cost: 'إمكانيات مالية محدودة'
+  },
+  u: { m: 'م', pct: '%', kmh: 'كم/س', vh: 'عربة/س', uvp: 'uvp/س', br: 'فروع', lanes: 'مسلك (مسالك)' },
+  o: {
+    ctx: { dense: 'وسط مدينة كثيف', urbain: 'حضري', periurbain: 'شبه حضري' },
+    h: { vru: 'طريق حضرية سريعة (70 كم/س)', struct: 'طريق هيكلية (شريان، ربط بين الأحياء)', quartier: 'طريق حيّ (خدمة محلية، منطقة 30)' },
+    visib: { bonne: 'جيّدة', reduite: 'محدودة بحواجز بصرية', tardive: 'متأخّرة جدًّا' },
+    ped: { faible: 'قليلون', important: 'كثيرون (أكثر من 250 في الساعة تقريبًا)', tres: 'كثيرون جدًّا (مدرسة، محطّة، محلّات تجارية)' },
+    velo: { peu: 'قليلون', nombreux: 'كثيرون' },
+    tc: { aucun: 'لا يوجد أيّ خطّ', bus: 'خطّ حافلات منتظم', busFort: 'خطّ حافلات ذو مستوى خدمة عالٍ (BHNS)', tram: 'الترامواي' },
+    yes: 'نعم', no: 'لا'
+  },
+  types: { pad: 'الأولوية لليمين', clp: 'إفساح المجال', stop: 'قف (STOP)', mini: 'مفترق دائري مصغّر', compact: 'مفترق دائري مدمج', moyen: 'مفترق دائري متوسّط',
+    grand: 'مفترق دائري كبير', feux: 'مفترق بالإشارات الضوئية', feuxIlot: 'مفترق بالإشارات الضوئية مع جزيرة وسطية', psgr: 'ممرّ سفلي محدود العلوّ (PSGR)' },
+  st: { conseille: 'موصى به', possible: 'ممكن', deconseille: 'غير مستحسن', excl: 'مستبعد' },
+  cap: { ok: 'طاقة استيعاب كافية', tight: 'طاقة استيعاب بالكاد كافية', insuff: 'طاقة استيعاب غير كافية', na: 'لا ينطبق' },
+  hName: { vru: 'طريق حضرية سريعة', struct: 'طريق هيكلية', quartier: 'طريق حيّ' },
+  // résultats
+  resTitle: 'النتيجة', recTitle: 'الأنواع التي تُقارَن بالأولوية', recNone: 'لا يلائم أيّ نوع دون تحفّظ: يجب مراجعة المعطيات أو الأهداف أو العرض المتاح، وإجراء دراسة خاصّة.',
+  recLead: (a, b) => b ? `تُقارَن بالأولوية: ${a}، ثم ${b}.` : `يُدرَس بالأولوية: ${a}.`,
+  rule: 'قاعدة الترتيب المعتمدة في الأداة (لا يرجّح الدليل بين المعايير): 1) استبعاد الأنواع التي توجد موانع لاعتمادها؛ 2) تفضيل طاقة استيعاب كافية؛ 3) تفضيل نوع ينصّ عليه الدليل لالتقاء الطريقين (الجدول ص 63)؛ 4) تفضيل النوع الذي يخدم أكبر عدد من أهداف البلدية؛ 5) عند التساوي، الأبسط.',
+  traffic: (E, P, S, d) => `مجموع حركة المرور الداخلة: ${E} uvp/س (الطريق الرئيسية ${P}، الطريق الثانوية ${S})، أي حوالي ${d} عربة في اليوم (الذروة ≈ 10 % من الحركة اليومية، ص 64). تُحتسب العربة الثقيلة بـ 2 uvp (ص 93).`,
+  thType: 'النوع', thStatus: 'الرأي', thCap: 'طاقة الاستيعاب', thWhy: 'الأسباب الرئيسية',
+  more: 'كل الأسباب', pros: 'نقاط إيجابية', cons: 'نقاط سلبية', exclWhy: 'موانع الاعتماد',
+  spTitle: 'إشارات ضوئية أم لا (الرسم البياني ص 68)', spAxisP: 'P: الطريق الرئيسية، uvp/س في الاتجاهين', spAxisS: 'S: الطريق الثانوية، uvp/س في الاتجاهين',
+  spNo: 'دون إشارات ضوئية', spYes: 'إشارات ضوئية ثلاثية الألوان', spGrey: 'منطقة «؟»', spPoint: 'مفترقك',
+  assocTitle: 'التهيئات المرافقة للنوع', chooseTitle: 'النوع المعتمد ومذكّرة الحساب', chooseLabel: 'النوع الذي تعتمده البلدية',
+  chooseIntro: 'اختر النوع الذي تعتمده البلدية. تُفتح المذكّرة في علامة تبويب جديدة، بلغة الصفحة: المعطيات، والتحليل معيارًا بمعيار، ومقارنة الأنواع، والأبعاد الأساسية، والتهيئات المرافقة، والإشارات، وخطّة العمل.',
+  btnNote: 'إعداد مذكّرة المفترق', recSuffix: ' (في صدارة الترتيب)',
+  // raisons : hiérarchie
+  hierFit: (a, b) => `ينصّ عليه الدليل لالتقاء «${a} × ${b}» (الجدول ص 63).`,
+  hierNo: (a, b) => `لا ينصّ عليه الدليل لالتقاء «${a} × ${b}» (الجدول ص 63).`,
+  girName: 'مفترق دائري',
+  hierList: (a, b, l) => `الأنواع التي ينصّ عليها الدليل لالتقاء «${a} × ${b}»: ${l} (الجدول ص 63).`,
+  hierVoid: 'لا يقترح الدليل أيّ نوع لالتقاء طريق حضرية سريعة بطريق حيّ (الجدول ص 63): يُفضَّل ربط طريق الحيّ بطريق هيكلية.',
+  // raisons : trafic et capacité
+  totLim: (E, L) => `حركة داخلة ${E} uvp/س مقابل حدّ يناهز ${L} uvp/س (الجدول ص 64).`,
+  wait: (T, C, Sa, tc) => `متوسّط الانتظار على الطريق الثانوية: ${T} (طاقة الاستيعاب ${C} uvp/س لكل مدخل مقابل ${Sa} uvp/س، الفجوة الحرجة ${tc} ث، المخطّط البياني ص 93).`,
+  waitOk: 'أقلّ من 30 ث: مقبول (ص 93)', waitMid: 'بين 30 ث ودقيقة واحدة: متروك لتقدير المصمّم (ص 93)', waitBad: 'أكثر من دقيقة واحدة: يُنظر في مفترق دائري أو في إشارات ضوئية (ص 93)', waitInf: 'الطلب يتجاوز طاقة الاستيعاب',
+  offChart: 'حركة الطريق الرئيسية خارج حدود المخطّط البياني (1500 uvp/س): طاقة استيعاب الطريق الثانوية ضعيفة جدًّا.',
+  rbOk: E => `مفترق دائري عادي: ${E} uvp/س داخلة، دون صعوبة حتى 1500 uvp/س (ص 66، 124).`,
+  rbMid: E => `${E} uvp/س داخلة (بين 1500 و2000): يجب دراسة توزيع الحركة؛ عند كل مدخل، الحركة الداخلة + الحركة الدائرة على الحلقة ≤ 1000 uvp/س (ص 124).`,
+  rbTest: E => `${E} uvp/س داخلة: يُنصح بشدّة بإجراء اختبار لطاقة الاستيعاب فوق 2000 uvp/س (برنامج GIRABASE، ص 124).`,
+  rbLanes1: 'مداخل بمسلك واحد وحلقة بعرض 7 م: حوالي 3000 uvp/س إذا كانت الحركة موزّعة جيّدًا (ص 66).',
+  rbLanes2: 'يلزم مداخل بمسلكين وحلقة بعرض 9 م: حوالي 4000 uvp/س (ص 66)؛ والمداخل بمسلكين استثنائية في المدينة (ص 127).',
+  rbLanes3: 'يلزم مداخل بثلاثة مسالك وحلقة بعرض 12 م: حوالي 5000 uvp/س (ص 66)، وهو ما لا يتلاءم مع طلب قويّ على عبور المترجّلين (ص 127، 139).',
+  rbOver: E => `${E} uvp/س تتجاوز طاقة استيعاب مفترق دائري، حتى بمداخل ذات ثلاثة مسالك (حوالي 5000 uvp/س، ص 66، 138).`,
+  rbSmall: E => `${E} uvp/س تتجاوز الحدّ البالغ حوالي 1500 uvp/س للمفترقات الدائرية المدمجة والمفترقات الدائرية المصغّرة (الجدول ص 64).`,
+  unbal10: 'تفوق الحركة الرئيسية 10 أضعاف الحركة الثانوية: على الأرجح ليس المفترق الدائري هو الحلّ (ص 66).',
+  unbal20: 'حركة غير متوازنة: تقلّ الحركة الثانوية عن 20 % من الحركة الرئيسية (ص 66).',
+  spZoneNo: 'تقع النقطة في منطقة «دون إشارات ضوئية» من الرسم البياني ص 68: يجب أن يكون المفترق بالإشارات الضوئية مبرَّرًا في معظم الأوقات، لا من أجل وضعية عرضية (ص 67).',
+  spZoneGrey: 'تقع النقطة في المنطقة الوسيطة «؟» من الرسم البياني ص 68: لا يحسم الدليل، إذ يرى أنّه يصعب تحديد عتبة لحركة المرور تبرّر الإشارات الضوئية.',
+  spZoneYes: 'تقع النقطة في منطقة «إشارات ضوئية ثلاثية الألوان» من الرسم البياني ص 68.',
+  fxRes: (ph, cy, qt, d, i) => `إشارات ضوئية (عدد المراحل: ${ph}، الدورة: ${cy} ث): طاقة استيعاب ${qt} uvp/س لكل مسلك مقابل طلب قدره ${d}، واحتياطي ${i} % (الطريقة ص 156-159).`,
+  fxResLow: 'احتياطي أقلّ من 10 %: غير كافٍ لاجتياز ساعة الذروة (ص 159)', fxResMid: 'احتياطي بين 10 و20 %: مقبول لكن دون هامش (ص 159)',
+  fxResOk: 'احتياطي لا يقلّ عن 20 %: لا إشباع (ص 159)', fxResHigh: 'احتياطي يفوق 40 % في الذروة: يجب إعادة النظر في جدوى الإشارات الضوئية (ص 159)',
+  fxPh4: 'أربع مراحل أو أكثر: يجب تجنّبها إلّا استثناءً (ص 105).', fxBr5: 'أكثر من 5 فروع: تُدرَس إمكانية مفترق دائري أو تقسيم المفترق إلى مفترقين بالإشارات الضوئية (ص 68).',
+  fxBr4: 'أكثر من 4 مداخل: يُستبعد عمومًا التشغيل بمرحلتين (ص 104).',
+  // raisons : exclusions et usages
+  padPrio: 'ممنوعة عند تقاطع طريق مصنّفة ذات أولوية (ص 65؛ IISR، الفصل 43-12).',
+  pad50: 'غير معتمدة على طريق بسرعة 50 كم/س أو أكثر يُبحث فيها عن انسيابية الحركة (ص 64).',
+  padEq: 'تفترض معاملة متكافئة للطرق وعدم وجود اختلال ملحوظ في توازن الحركة (ص 65).',
+  padZ30: 'النظام المفضّل في منطقة 30 وفي منطقة اللقاء؛ لا يُفضّل أيّ طريق، ويفرض التباطؤ (ص 64).',
+  padIsol: 'تُطبَّق على منطقة أو على محور، لا بصفة معزولة (ص 64).',
+  padTc: 'يجب تجنّبها عند وجود خطّ نقل جماعي (ص 64).',
+  padVis: 'رؤية محدودة: يبقى تخفيض السرعات (منصّة مرتفعة) في الغالب أفضل من تغيير نظام الأولوية (ص 56، 97).',
+  clpBase: 'التهيئة الأساسية لتقاطع لا يطرح مشكلة خاصّة؛ تفرض ترتيب الطريقين حسب الأهمية (ص 64، 92).',
+  clpVis: 'تلائم أيضًا الحالات التي تمنع فيها الحواجز البصرية الإبقاء على الأولوية لليمين (ص 92).',
+  clpTc: 'تُعطى الأولوية، إن أمكن، للشارع الذي يسلكه النقل الجماعي (ص 64).',
+  stopNo: 'يُخصَّص للشوارع قليلة الأهمية التي تطرح مشاكل رؤية حقيقية؛ يجب أن يبقى إفساح المجال هو القاعدة حتى لا تفقد علامة «قف» مصداقيّتها (ص 64، 92).',
+  stopYes: 'رؤية متأخّرة جدًّا من الطريق الثانوية: «قف» مبرَّر (ص 64، 92). ويستوجب وضعه اتّخاذ قرار ترتيبي (IISR، الفصل 42-2).',
+  stopCap: 'يسمح إفساح المجال بتدفّقات أعلى من «قف» (IISR، الفصل 43-4).',
+  miniUrb: 'حضري حصرًا (ص 129).', miniEntree: 'لا يمكن أن يكون المفترق الأوّل عند مدخل المدينة دون انتقال تدريجي (ص 129).',
+  miniBr: '3 أو 4 فروع فقط (ص 129).', miniAng: 'زوايا بين الفروع من 80° إلى 140° فقط (ص 129).', miniLanes: 'فقط في شوارع بمسلك واحد في كل اتجاه (ص 129).',
+  miniEvent: 'لا يمكن أن يُستعمل مفترقًا-حدثًا يُبرز الانتقال بين صنفين من الطرق متمايزين بوضوح (ص 129).', miniV: 'ملائم لمناطق 30 ولمداخل مناطق اللقاء (ص 124، 129).',
+  miniEmp: 'العرض المتاح غير كافٍ: نصف قطر خارجي لا يقلّ عن 7,50 م، تُضاف إليه الأرصفة (ص 124، مُستنتَج).', miniBig: 'عرض متاح يفوق 24 م: يمكن إنجاز مفترق دائري بجزيرة وسطية غير قابلة للاعتلاء (ص 129).',
+  miniBus: 'الحافلات: قبّة وسطية لا يتجاوز ارتفاعها 12 صم مع حافلات ذات أرضية منخفضة؛ تعتلي العربات الثقيلة الجزيرة (ص 130).',
+  girEmp: (d) => `العرض المتاح غير كافٍ: يلزم دائرة قطرها حوالي ${d} م، بما في ذلك الأرصفة (ص 125، مُستنتَج من أنصاف الأقطار الخارجية).`,
+  girSlope: 'انحدار طولي يفوق 6 %: لا يُنصح بالمفترق الدائري (ص 125).', girSlope3: 'انحدار بين 3 و6 %: يجب تخفيض سرعات الاقتراب ومراقبة العربات الثقيلة (ص 125).',
+  girTram: 'مع الترامواي، تكون المفترقات الدائرية أكثر تسبّبًا في الحوادث من الأنواع الأخرى: يجب تجنّبها تمامًا (ص 58).',
+  girSite: 'يُتجنَّب المفترق الدائري على محور ذي مسلك مخصّص جانبي في الاتجاهين، إلّا بإبعاد المسلك المخصّص أو بقطعه (ص 34).',
+  girBr: (n) => `لا يتجاوز عدد الفروع ${n} لمفترق دائري في هذا الوسط (ص 122، 125).`,
+  girBrPro: 'فوق 4 فروع، يبقى المفترق الدائري بسيطًا في حين يتعقّد مخطّط الإشارات الضوئية (ص 66).',
+  girSpeed: 'تخفيض قويّ للسرعة في كل الأوقات، وقطيعة بصرية وأثر البوّابة (ص 65-66).',
+  girNoTc: 'لا يمكن منح أيّ أولوية للنقل الجماعي في مفترق دائري (ص 65، 137).',
+  girBus: 'الحافلات: يُستحسن نصف قطر خارجي بـ 15 م، و12 م كحدّ أدنى (ص 137).',
+  girEntree: 'مفيد عند مدخل تجمّع عمراني يعبره محور هامّ (ص 65).',
+  girNoCost: 'لا كلفة استغلال، خلافًا للإشارات الضوئية (ص 65).',
+  girPeri: 'ينقل المسارات نحو الأطراف: إزعاجات جديدة في المحيط (فضاءات المقاهي الخارجية، مساكن) (ص 67).',
+  compActive: 'عندما يكون المترجّلون والدرّاجون كثيرين، يفضّل الدليل المفترقات الدائرية المدمجة (ص 66)؛ وهي الأكثر أمانًا للدرّاجين إلى جانب المفترق الدائري المصغّر (ص 133).',
+  moyenBr: 'طاقة استيعاب أكبر وأكثر من 4 فروع مع البقاء في حجم متواضع (ص 125).',
+  grandDense: 'يُخصَّص للمحاور ذات الحركة الكثيفة ولمناطق البناء قليل الكثافة (ص 125).',
+  grandUsers: 'صعب على المترجّلين وغير ملائم للدرّاجين؛ أثر تهدئة أضعف؛ قطيعة عمرانية (ص 64، 125).',
+  grandBig: 'نادرًا جدًّا ما يكون قطر خارجي يفوق 50 م مبرَّرًا (ص 125).',
+  fxDense: 'ملائم بشكل خاصّ للوسط الحضري الكثيف وللمحاور الهيكلية، حيث تُدار تعارضات عديدة بين الحركات في فضاء ضيّق (ص 67).',
+  fxTc: 'يُفضَّل للترامواي ولخطوط الحافلات القويّة؛ يمكن منح الأولوية للنقل الجماعي (ص 64، 118).',
+  fxSpeed: 'لا تحكّم في السرعة عند الضوء الأخضر، خاصّة في الساعات الهادئة وليلًا (ص 68).',
+  fxPed: 'ملائم للمترجّلين وللدرّاجين على المحاور ذات الحركة الكثيفة (الجدول ص 64).',
+  fxManage: 'يسمح بإدارة نشطة: موجة خضراء أو موجة مُهدِّئة، وأولوية للحافلات، والتحكّم في التدفّقات (ص 68-69).',
+  fxCost: 'كلفة استغلال خاصّة، خلافًا للمفترق الدائري (ص 65).',
+  fxIlotNo: 'يُخصَّص للمفترقات على شكل صليب ذات حركات انعطاف يسارًا هامّة ومتوازنة، مع جزيرة وسطية من 16 إلى 25 م (ص 120-121).',
+  fxIlotYes: 'مفترق على شكل صليب بحركات انعطاف يسارًا قويّة: جزيرة وسطية من 16 إلى 25 م، مرحلتان، حوالي 8000 uvp/س بمداخل ذات ثلاثة مسالك (ص 120-121).',
+  psgrNo: 'يُخصَّص لالتقاء طريق حضرية سريعة بطريق سريعة أو بطريق هيكلية (الجدول ص 63).',
+  psgrExc: 'في الوسط الحضري، يجب أن يبقى الفصل بين المستويات استثنائيًا؛ ولا يمكن تبريره بحركة السيارات وحدها (ص 69، 142).',
+  psgrUsers: 'ممنوع على المترجّلين وعلى الدرّاجين؛ يزيد من القطيعة العمرانية؛ حوادث مترجّلين عند مخرج النفق (ص 64، 149).',
+  psgrPeri: 'في الوسط شبه الحضري، تتدهور السلامة بعد الإنجاز (حوادث مترجّلين عند مخرج النفق، ص 59).',
+  pedHard: 'المترجّلون: يصعب العبور فوق 800 uvp/س على المعبّد الواحد (الجدول ص 64)؛ يجب توفير ملجأ.',
+  bikeLow: 'ملائم للدرّاجين على المحاور ذات الحركة الضعيفة (الجدول ص 64).',
+  bikeGood: 'يُفضَّل للدرّاجين (الجدول ص 64).',
+  baseNoProb: 'تهيئة أساسية ما دامت الحركة الداخلة معتدلة (ص 64).',
+  plateau: 'خيار: إنجاز المفترق على منصّة مرتفعة (ارتفاع من 10 إلى 15 صم، ومنحدرات من 5 إلى 10 %) لحمل كل المستعملين على التباطؤ؛ قابل للتطبيق مع كل أنظمة الأولوية (ص 76-77، 96).',
+  plateauCheck: 'يخصّص المرسوم الفرنسي ممرّ المترجّلين المرتفع للطرق التي تقلّ حركتها عن 3000 عربة/يوم ودون خطّ نقل جماعي منتظم (ص 76): يجب التثبّت من ذلك بالنسبة إلى هذا المفترق.',
+  // aménagements associés
+  refugeInd: 'جزيرة ملجأ ضرورية على الطريق الرئيسية (مفترق دون إشارات ضوئية، 4 مسالك أو أكثر؛ ص 84)، بعرض لا يقلّ عن 2 م، و2,50 م إن أمكن.',
+  refugeRec: 'يُوصى بشدّة بجزيرة ملجأ على الطريق الرئيسية (ص 84)، بعرض لا يقلّ عن 2 م، و2,50 م إن أمكن.',
+  refugeGir: 'جزر فاصلة لا يقلّ عرضها عن 2 م بمحاذاة ممرّات المترجّلين، ضرورية داخل التجمّعات العمرانية (ص 127، 132).',
+  refugeMini: 'الجزر الفاصلة اختيارية؛ وإذا قلّ عرضها عن 1,50 م فلا تصلح ملجأً (ص 130).',
+  refugeFx: 'الملجأ إجباري إذا تمّ العبور على مرحلتين؛ ويُنصح به فوق 12 م أو 4 مسالك (ص 84، 114).',
+  pedClp: 'ممرّات المترجّلين: عند مخرج الطريق الثانوية، بتراجع من 1,50 إلى 2 م عن الخطّ (1 م كحدّ أدنى)؛ التعليم ضروري على الطريق الهيكلية (ص 83، 99).',
+  pedPad: 'ممرّات المترجّلين: لا تُعلَّم ممرّات في المفترقات ذات الأولوية لليمين، إلّا في الأماكن التي يرتادها ضعاف البصر؛ تُهيّأ منطقة العبور وتُنجز امتدادات للرصيف (ص 100).',
+  pedGir: 'ممرّات المترجّلين: ممرّ لكل فرع، يبدأ على بعد 2 إلى 5 م بعد خطّ إفساح المجال (2 م للمفترقات الدائرية الصغيرة، و5 م للكبيرة) (ص 132).',
+  pedFx: 'إشارات المترجّلين: أخضر لا يقلّ عن 6 ث، وزمن إخلاء لا يقلّ عن 1 ث لكل متر يُقطع (0,8 م/ث قرب المدارس والمستشفيات)، وانتظار لا يتجاوز 40 ث؛ ممرّ على بعد 2 إلى 5 م من المفترق (ص 114-115).',
+  tadFx: 'انعطاف يمينًا يفوق 500 uvp/س: يصعب حينها عبور المترجّلين في نفس الوقت؛ مسلك انعطاف يمينًا بإشارات ضوئية مع ملجأ، أو توزيع آخر للمراحل (ص 115).',
+  tagFx: (t) => t < 150 ? 'انعطاف يسارًا أقلّ من 150 uvp/س: يتلاءم مع المفترق بالإشارات الضوئية (ص 106).' : t <= 250 ? 'انعطاف يسارًا من 150 إلى 250 uvp/س: قد يكفي فارق طفيف في توقيت الإغلاق؛ والفارق في توقيت الفتح ممنوع (ص 106).' : 'انعطاف يسارًا يفوق 250 uvp/س: وضعية حرجة، تستوجب معالجة خاصّة (مرحلة مستقلّة) (ص 106).',
+  tagNo30: 'في منطقة 30، نادرًا ما يبرّر الانعطاف يسارًا تهيئة خاصّة (ص 94).',
+  tagCfg: (c) => ['الانعطاف يسارًا: مسلك خاصّ مع جزيرة، وطول تخزين من 10 إلى 20 م (ص 94-95).', 'الانعطاف يسارًا: توسيع موضعي للمعبّد إلى 7,50-8,50 م مع الحفاظ على رصيف لا يقلّ عرضه عن 1,40 م (ص 94-95).', 'الانعطاف يسارًا: لا حاجة إلى تهيئة خاصّة (الجدول ص 95).', 'الانعطاف يسارًا: حركة خارج نطاق الجدول ص 95؛ يُنظر في نوع آخر من المفترقات.'][c],
+  visTri: (l, L) => `الرؤية: يجب إخلاء المثلّث l = ${l}, L = ${L} م، بين ارتفاع 0,60 و2,30 م؛ ومنع الوقوف على مسافة 3 إلى 10 م قبل المفترق (ص 73-74، 97).`,
+  girDims: { mini: 'نصف قطر خارجي من 7,50 إلى 12 م؛ حلقة بعرض 6 إلى 9,50 م؛ جزيرة وسطية قابلة للاعتلاء كلّيًا بنصف قطر من 1,50 إلى 2,50 م؛ قبّة بارتفاع 10 إلى 15 صم؛ مسلك دخول واحد ومسلك خروج واحد لكل فرع (ص 129-130).',
+    compact: 'نصف قطر خارجي من 12 إلى 15 م (12 م كحدّ أدنى لدوران الحافلات والعربات الثقيلة)؛ حلقة بعرض 6 إلى 8 م؛ شريط قابل للاعتلاء بعرض 1,50 إلى 2 م؛ مداخل بمسلك واحد بعرض 3 إلى 3,50 م؛ مخارج بعرض 3,50 إلى 4 م (ص 125، 128).',
+    moyen: 'نصف قطر خارجي من 15 إلى 22 م؛ حلقة بعرض 6 إلى 8 م، أعرض بـ 20 % على الأقلّ من أعرض مدخل؛ مداخل بعرض 3 إلى 4 م (مسلك واحد) أو 6 إلى 7 م (مسلكان)؛ نصف قطر خروج لا يقلّ عن 15 م (ص 125-128).',
+    grand: 'نصف قطر خارجي يفوق 22 م؛ حلقة بعرض 7 إلى 9 م؛ مسلك إلى مسلكين للدخول وللخروج، بل 3 على الفروع الرئيسية (ص 125-127).' },
+  girCommon: 'جزيرة وسطية دائرية؛ فروع موجّهة نحو المركز، دون دخول مماسي؛ نصف قطر الانحراف أقلّ من 100 م؛ الربع الأيسر من الحلقة مكشوف للرؤية على بعد 10 م من المدخل (ص 122-127).',
+  fxDims: 'مرحلتان كقاعدة عامّة؛ دورة من 50 إلى 70 ث؛ خطّ التوقّف عند الإشارات مُرجَع بـ 3 إلى 5 م؛ منطقة انتظار متقدّمة للدرّاجين بطول 3 إلى 5 م؛ مسالك بعرض 3 إلى 3,50 م مع الحافلات أو العربات الثقيلة (ص 77، 105، 113-117).',
+  clpDims: 'مسالك بعرض 2,50 إلى 3 م، و3 إلى 3,50 م مع الحافلات أو العربات الثقيلة؛ أنصاف أقطار حافّة الرصيف 4 م كحدّ أدنى، وعمومًا 6 إلى 8 م مع زوايا مشطوفة؛ جزر لا تقلّ مساحتها عن 5 م² (ص 77، 95-96).',
+  psgrDims: 'المقاس B: 2,60 م (العلوّ الحرّ 2,80 م)، مسالك بعرض 3 م؛ أنصاف أقطار أفقية بـ 80 م عند 50 كم/س؛ انحدار لا يتجاوز 9 % (ص 142-148).',
+  sign: { pad: 'لا لافتة: الأولوية لليمين هي القاعدة داخل التجمّعات العمرانية؛ ولا فائدة من اللافتة AB1 فيها (IISR، الفصل 43-11).',
+    clp: 'لافتة AB3a وخطّ متقطّع «أفسح المجال» على الطريق الثانوية؛ ولافتة AB6 عند الاقتضاء على الطريق الرئيسية (IISR، الفصل 42-2 C).',
+    stop: 'لافتة AB4 وخطّ متواصل؛ اتّخاذ قرار ترتيبي إجباري (IISR، الفصل 42-2 E).',
+    gir: 'لافتة AB25 إجبارية عند الاقتراب؛ خطّ «أفسح المجال» عند كل مدخل؛ لافتة AB3a اختيارية داخل التجمّعات العمرانية لكن يوصي بها الدليل بشدّة (IISR، الفصل 42-10؛ الدليل ص 131).',
+    feux: 'تتقدّم الإشارات الضوئية على اللافتات؛ لا لافتة «قف» (STOP) على فرع مجهّز بإشارات ضوئية؛ لافتات AB لوضع التشغيل المنقوص (تعطّل الإشارات) (IISR، الفصل 42-9).',
+    psgr: 'إشارات اتجاه وإشارات المقاس قبل الممرّ؛ ويُشار إلى المفترق السطحي حسب نظام الأولوية المعتمد فيه.' },
+  // note
+  n: { title: 'مذكّرة اختيار نوع المفترق', sub: 'مساعدة على الاختيار وفق دليل Certu «Carrefours urbains» (2010)', objet: 'اختيار نوع المفترق',
+    cover: [['commune', 'البلدية'], ['lieu', 'الموقع'], ['objet', 'الموضوع'], ['name', 'النوع المعتمد'], ['date', 'التاريخ'], ['auteur', 'أعدّها'], ['outil', 'الأداة']],
+    s: { brief: 'باختصار', site: 'الموقع', data: 'المعطيات', method: 'المنهجية', analysis: 'التحليل معيارًا بمعيار', compare: 'مقارنة الأنواع', chosen: 'النوع المعتمد', open: 'ما لا تحسمه الأداة', plan: 'خطّة العمل', annex: 'ملحق — المعادلات والفرضيات والمصادر' },
+    dataCols: ['المعطى', 'القيمة'], cmpCols: ['النوع', 'الرأي', 'طاقة الاستيعاب', 'السبب الرئيسي'],
+    method: ['يطلب الدليل الانطلاق من الأهداف ومن التشخيص، لا من حلّ محدّد مسبقًا (ص 17).', 'ويسرد ثمانية معايير للاختيار، دون ترجيح: السياق الحضري، والانسجام على طول المحور، والوظائف الحضرية، والعرض المتاح، والمستعملون الواجب تفضيلهم، وطاقة الاستيعاب ونوعية حركة المرور، والسلامة، والإمكانيات المالية (ص 63).', 'ويطلب مقارنة عدّة حلول تهيئة، مع آثارها السلبية، واتّخاذ القرار بالتشاور (ص 19-20).'],
+    hAn: { hier: 'التسلسل الهرمي للطرق', traf: 'حركة المرور وطاقة الاستيعاب', users: 'المستعملون', geo: 'الشكل الهندسي والعرض المتاح والرؤية' },
+    chosenIntro: n => `النوع الذي اعتمدته البلدية: ${n}.`, notRec: 'لا يتصدّر هذا النوع ترتيب الأداة: الأسباب مبيّنة أدناه؛ وتتحمّل البلدية مسؤولية هذا الاختيار بعد المقارنة.',
+    exclWarn: 'تنبيه: توجد موانع لاعتماد هذا النوع حسب الدليل.',
+    dims: 'الأبعاد الأساسية', assoc: 'التهيئات المرافقة', signs: 'الإشارات (IISR، الجزء الثالث)', vigil: 'نقاط اليقظة',
+    open: ['لا يحدّد الدليل عتبة وحيدة لحركة المرور تبرّر الإشارات الضوئية: المنطقة «؟» من الرسم البياني ص 68 متروكة للتقدير.', 'انتظار من 30 ث إلى دقيقة واحدة على الطريق الثانوية متروك لتقدير المصمّم (ص 93).', 'مستوى الازدحام المقبول من مشمولات السياسة المحلية؛ ويمكن قبول ربع ساعة من الإشباع يوميًا (ص 13، 38، 52).', 'لا يمكن أن تقتصر مراعاة المترجّلين على عمليات العدّ وحدها (ص 31).', 'لا يقدّر الدليل التكاليف.'],
+    actions: { count: ['عمليات عدّ حسب الاتجاهات خلال ساعتي ذروة على الأقلّ (صباحًا ومساءً)، مع نسبة العربات الثقيلة والحافلات والدرّاجات والمترجّلين (ص 38)', 'البلدية', 'قبل الدراسة الأوّلية'],
+      acc: ['جمع حوادث المرور الجسمانية للسنوات الخمس الأخيرة على المفترق وفروعه (ص 42)', 'البلدية، الشرطة', 'قبل الدراسة الأوّلية'],
+      variants: ['مقارنة النوعين أو الأنواع الثلاثة الأولى في الترتيب، مع آثارها على المفترقات المجاورة، واتّخاذ القرار بالتشاور (ص 19-20)', 'البلدية، مكتب الدراسات', 'الدراسة الأوّلية'],
+      capRb: ['اختبار طاقة استيعاب المفترق الدائري (GIRABASE) بمصفوفة المنشأ والمقصد (ص 124)', 'مكتب الدراسات', 'الدراسة الأوّلية'],
+      capFx: ['مخطّط إشارات ضوئية مفصّل واحتياطي طاقة الاستيعاب محسوب على أساس عمليات العدّ (الملحق ص 156-159؛ دليل «Carrefours à feux»)', 'مكتب الدراسات', 'الدراسة الأوّلية'],
+      tc: ['استشارة مستغلّ النقل الجماعي (الدوران، المحطّات، الأولوية) (ص 90-91)', 'البلدية، المستغلّ', 'الدراسة الأوّلية'],
+      exec: ['مخطّط تنفيذ على أساس رفع طوبوغرافي، والتحقّق من مسارات الدوران ومن مثلّثات الرؤية', 'مكتب الدراسات', 'الدراسة التفصيلية'],
+      after: ['متابعة بعد عدّة أشهر من الاستقرار: السرعات، والطوابير، والحوادث، وراحة المترجّلين (ص 21-22)', 'البلدية', 'بعد دخول حيّز الاستغلال'] },
+    planCols: ['الأولوية', 'الإجراء', 'الجهة', 'الموعد'],
+    hyp: ['حركة المرور بـ uvp/س: العربات × (1 + نسبة العربات الثقيلة)، إذ تساوي العربة الثقيلة 2 uvp (ص 93).', 'الحركة اليومية مقدّرة بـ 10 أضعاف حركة الذروة (ص 64: تمثّل الذروة من 8 إلى 12 % من الحركة اليومية).', 'طاقة استيعاب الطريق الثانوية: المخطّط البياني للفجوة الحرجة (ص 93)، مقروء بيانيًا؛ الانتظار T = 3600 / (C − S) (ص 93).', 'الفجوة الحرجة: 6 ث لعبور طريق رئيسية بصفّين، و4 ث لصفّ واحد؛ الاندماج يسارًا في طريق ذات اتجاهين: 5 أو 6 أو 7 ث عند 30 أو 50 أو 70 كم/س (ص 92-93).', 'الإشارات الضوئية: طاقة الاستيعاب QTmax = 1800 × (C − T) / C، والاحتياطي = (QTmax − D) / D حيث D هو الطلب (ص 159)؛ فرضيات الأداة: الاتجاه الأكثر حركة = 55 % من حركة الاتجاهين، و20 % من الحركات المنعطفة على الطريق الرئيسية و60 % على الطريق الثانوية، ومعامل 1,1 لكل حركة منعطفة (1,3 أمام أكثر من 250 مترجّلًا/س، ص 156)، و4 ث ضائعة لكل مرحلة، ودورة بـ 60 أو 75 أو 90 ث لـ 2 أو 3 أو 4 مراحل.', 'العرض المتاح: قطر المفترق الدائري (2 × نصف القطر الخارجي) مضافًا إليه 6 م للأرصفة (مُستنتَج من ص 124-125).'],
+    sources: ['Certu (2010). Carrefours urbains. سلسلة Références، طبعة محيّنة لطبعة 1999.', 'التعليمات الوزارية المشتركة حول الإشارات الطرقية (IISR)، الجزء الثالث: التقاطعات وأنظمة الأولوية (النسخة المجمّعة).'],
+    brief: { rec: (a, b) => b ? `الأنواع التي تُقارَن بالأولوية: ${a}، ثم ${b}.` : `النوع الذي يُدرَس بالأولوية: ${a}.`, chosen: n => `النوع الذي اعتمدته البلدية: ${n}.`,
+      traffic: (E, d) => `حركة الذروة: ${E} uvp/س داخلة، أي حوالي ${d} عربة في اليوم.`, excl: n => `عدد الأنواع المستبعدة بسبب مانع ينصّ عليه الدليل: ${n}.`,
+      next: 'الخطوة التالية: عمليات عدّ حسب الاتجاهات ومقارنة البدائل بالتشاور.' },
+    figSP: 'الرسم البياني ص 68: موقع المفترق بالنسبة إلى المناطق «دون إشارات ضوئية» و«؟» و«إشارات ضوئية ثلاثية الألوان».', figSketch: 'مخطّط مبدئي للنوع المعتمد (دون سلّم تنفيذ).'
+  }
+};
+
+JXT.en = {
+  modCross: 'Pedestrian crossing', modJx: 'Intersection',
+  jxEyebrow: 'Decision aid · Certu guide “Carrefours urbains” (2010)',
+  jxH1: 'Which type of intersection?',
+  jxLede: 'Describe the intersection: context, geometry, peak-hour traffic, users and the municipality’s objectives. The tool applies the rules of the urban intersections guide one by one, rules out contraindicated types, checks capacity and proposes the types to compare.',
+  title: 'Decision aid for choosing the intersection type',
+  intro: 'Results update with every change. Each criterion refers to the relevant page of the Certu guide “Carrefours urbains” (2010). The guide does not weight its criteria and calls for comparing several design options through public consultation: the tool prepares this comparison, it does not replace it.',
+  siteHint: 'The location marked on the map appears in the report (location plan and aerial view).',
+  g: { ctx: 'Context', geo: 'Geometry and available space (right-of-way)', traf: 'Peak-hour traffic', users: 'Users', obj: 'Municipality objectives (to be ranked)' },
+  f: {
+    ctx: 'Setting', hMain: 'Major road', hSec: 'Minor road', vMain: 'Speed limit, major road', vSec: 'Speed limit, minor road',
+    prio: 'Major road designated as a priority road (sign AB6)', entree: 'Entrance to a built-up area',
+    nBr: 'Number of legs', angles: 'Angles between legs between 80° and 140°', lanesMain: 'Lanes per direction, major road', lanesSec: 'Lanes per direction, minor road',
+    widthMain: 'Roadway width, major road', emprise: 'Diameter of the circle available between building fronts', slope: 'Steepest longitudinal grade', visib: 'Visibility from the minor road',
+    Pveh: 'Major road, both directions', Sveh: 'Minor road, both directions', pPL: 'Share of heavy vehicles (trucks and buses)', tag: 'Heaviest left turn from the major road', tad: 'Heaviest right turn',
+    ped: 'Pedestrians', velo: 'Cyclists', tc: 'Public transit', siteProp: 'Side-running two-way dedicated transit lane',
+    speed: 'Moderate speeds', peds: 'Make pedestrian crossings and accessibility easier', bike: 'Improve cyclist safety', tco: 'Favor public transit',
+    flow: 'Handle peak-hour traffic', gate: 'Mark a place (landmark, gateway effect)', cost: 'Limited budget'
+  },
+  u: { m: 'm', pct: '%', kmh: 'km/h', vh: 'veh/h', uvp: 'pcu/h', br: 'legs', lanes: 'lane(s)' },
+  o: {
+    ctx: { dense: 'Dense city center', urbain: 'Urban', periurbain: 'Peri-urban' },
+    h: { vru: 'Urban expressway (70 km/h)', struct: 'Arterial (structuring) road (artery, link between neighborhoods)', quartier: 'Neighborhood street (local access, 30 km/h zone)' },
+    visib: { bonne: 'Good', reduite: 'Reduced by obstructions', tardive: 'Very late' },
+    ped: { faible: 'Few', important: 'Many (more than about 250 per hour)', tres: 'Very many (school, station, shops)' },
+    velo: { peu: 'Few', nombreux: 'Many' },
+    tc: { aucun: 'No line', bus: 'Regular bus line', busFort: 'High-frequency bus line (BRT)', tram: 'Tram' },
+    yes: 'Yes', no: 'No'
+  },
+  types: { pad: 'Priority to the right', clp: 'Yield control', stop: 'Stop control', mini: 'Mini-roundabout', compact: 'Compact roundabout', moyen: 'Medium roundabout',
+    grand: 'Large roundabout', feux: 'Signalized intersection', feuxIlot: 'Signalized intersection with central island', psgr: 'Reduced-clearance underpass (PSGR)' },
+  st: { conseille: 'Recommended', possible: 'Possible', deconseille: 'Not recommended', excl: 'Excluded' },
+  cap: { ok: 'Sufficient capacity', tight: 'Marginal capacity', insuff: 'Insufficient capacity', na: 'Not applicable' },
+  hName: { vru: 'urban expressway', struct: 'arterial road', quartier: 'neighborhood street' },
+  // results
+  resTitle: 'Result', recTitle: 'Types to compare first', recNone: 'No type is suitable without reservation: review the data, the objectives or the available space, and commission a specific study.',
+  recLead: (a, b) => b ? `Compare first: ${a}, then ${b}.` : `Study first: ${a}.`,
+  rule: 'Ranking rule used by the tool (the guide does not weight the criteria): 1) rule out contraindicated types; 2) prefer sufficient capacity; 3) prefer a type the guide provides for the meeting of the two roads (table p. 63); 4) prefer the type that serves the most municipality objectives; 5) if tied, the simplest.',
+  traffic: (E, P, S, d) => `Total entering traffic: ${E} pcu/h (major road ${P}, minor road ${S}), i.e. about ${d} vehicles per day (peak ≈ 10% of daily traffic, p. 64). One heavy vehicle counts as 2 pcu (p. 93).`,
+  thType: 'Type', thStatus: 'Assessment', thCap: 'Capacity', thWhy: 'Main reasons',
+  more: 'All reasons', pros: 'Advantages', cons: 'Disadvantages', exclWhy: 'Contraindications',
+  spTitle: 'Signals or no signals (chart p. 68)', spAxisP: 'P: major road, pcu/h both directions', spAxisS: 'S: minor road, pcu/h both directions',
+  spNo: 'no signals', spYes: 'traffic signals', spGrey: '“?” zone', spPoint: 'your intersection',
+  assocTitle: 'Design features associated with the type', chooseTitle: 'Selected type and calculation report', chooseLabel: 'Type selected by the municipality',
+  chooseIntro: 'Choose the type selected by the municipality. The report opens in a new tab, in the page language: data, criterion-by-criterion analysis, comparison of types, key dimensions, associated design features, signage and action plan.',
+  btnNote: 'Generate the intersection report', recSuffix: ' (top of the ranking)',
+  // reasons: road hierarchy
+  hierFit: (a, b) => `Provided by the guide for the “${a} × ${b}” combination (table p. 63).`,
+  hierNo: (a, b) => `Not provided by the guide for the “${a} × ${b}” combination (table p. 63).`,
+  girName: 'roundabout',
+  hierList: (a, b, l) => `Types provided by the guide for the “${a} × ${b}” combination: ${l} (table p. 63).`,
+  hierVoid: 'The guide proposes no type where an urban expressway meets a neighborhood street (table p. 63): connect the neighborhood street to an arterial road instead.',
+  // reasons: traffic and capacity
+  totLim: (E, L) => `Entering traffic ${E} pcu/h against a limit of about ${L} pcu/h (table p. 64).`,
+  wait: (T, C, Sa, tc) => `Average delay on the minor road: ${T} (capacity ${C} pcu/h per approach for ${Sa} pcu/h, critical gap ${tc} s, chart p. 93).`,
+  waitOk: 'under 30 s: acceptable (p. 93)', waitMid: 'between 30 s and 1 min: at the designer’s discretion (p. 93)', waitBad: 'over 1 min: consider a roundabout or signals (p. 93)', waitInf: 'demand exceeds capacity',
+  offChart: 'Major-road traffic beyond the chart (1,500 pcu/h): very low capacity on the minor road.',
+  rbOk: E => `Standard roundabout: ${E} pcu/h entering, no difficulty up to 1,500 pcu/h (p. 66, 124).`,
+  rbMid: E => `${E} pcu/h entering (between 1,500 and 2,000): examine the distribution; at each entry, entering + circulating ≤ 1,000 pcu/h (p. 124).`,
+  rbTest: E => `${E} pcu/h entering: a capacity test is strongly recommended above 2,000 pcu/h (GIRABASE software, p. 124).`,
+  rbLanes1: 'Single-lane entries and a 7 m circulatory roadway: about 3,000 pcu/h if flows are well balanced (p. 66).',
+  rbLanes2: 'Two-lane entries and a 9 m circulatory roadway are needed: about 4,000 pcu/h (p. 66); two-lane entries are exceptional in urban areas (p. 127).',
+  rbLanes3: 'Three-lane entries and a 12 m circulatory roadway are needed: about 5,000 pcu/h (p. 66), incompatible with heavy pedestrian crossing demand (p. 127, 139).',
+  rbOver: E => `${E} pcu/h exceeds the capacity of a roundabout, even with three-lane entries (about 5,000 pcu/h, p. 66, 138).`,
+  rbSmall: E => `${E} pcu/h exceeds the limit of about 1,500 pcu/h for compact roundabouts and mini-roundabouts (table p. 64).`,
+  unbal10: 'The major flow is more than 10 times the minor flow: a roundabout is probably not the solution (p. 66).',
+  unbal20: 'Unbalanced traffic: the minor flow is less than 20% of the major flow (p. 66).',
+  spZoneNo: 'Point in the “no signals” zone of the chart p. 68: a signalized intersection must be justified most of the time, not by an occasional situation (p. 67).',
+  spZoneGrey: 'Point in the intermediate “?” zone of the chart p. 68: the guide draws no conclusion, as it considers it difficult to set a traffic threshold for signals.',
+  spZoneYes: 'Point in the “traffic signals” zone of the chart p. 68.',
+  fxRes: (ph, cy, qt, d, i) => `Signals with ${ph} phases, ${cy} s cycle: capacity ${qt} pcu/h per lane for a demand of ${d}, reserve capacity of ${i}% (method p. 156-159).`,
+  fxResLow: 'reserve capacity below 10%: not enough to get through a peak hour (p. 159)', fxResMid: 'reserve capacity between 10 and 20%: adequate but with no margin (p. 159)',
+  fxResOk: 'reserve capacity of at least 20%: no saturation (p. 159)', fxResHigh: 'reserve capacity over 40% at peak: the need for signals should be reconsidered (p. 159)',
+  fxPh4: 'Four or more phases: to be avoided except in special cases (p. 105).', fxBr5: 'More than 5 legs: consider a roundabout or splitting into two signalized intersections (p. 68).',
+  fxBr4: 'With more than 4 entries, two-phase operation is generally ruled out (p. 104).',
+  // reasons: exclusions and users
+  padPrio: 'Prohibited at an intersection with a road designated as a priority road (p. 65; IISR art. 43-12).',
+  pad50: 'Not used on a road at 50 km/h or more where smooth traffic flow is the aim (p. 64).',
+  padEq: 'Assumes the roads are treated equally and that there is no significant flow imbalance (p. 65).',
+  padZ30: 'Preferred priority regime in 30 km/h zones and shared zones; it favors no road and forces drivers to slow down (p. 64).',
+  padIsol: 'To be applied across an area or along a corridor, not at an isolated intersection (p. 64).',
+  padTc: 'Avoid where there is a public transit line (p. 64).',
+  padVis: 'Reduced visibility: reducing speeds (raised intersection) is often preferable to changing the priority regime (p. 56, 97).',
+  clpBase: 'Basic layout for an intersection with no particular problem; requires a hierarchy between the two roads (p. 64, 92).',
+  clpVis: 'Also suitable when sight obstructions prevent keeping priority to the right (p. 92).',
+  clpTc: 'If possible, give priority to the street used by public transit (p. 64).',
+  stopNo: 'Reserved for minor streets with real visibility problems; yield control must remain the rule so as not to undermine stop control (p. 64, 92).',
+  stopYes: 'Very late visibility from the minor road: stop control is justified (p. 64, 92). It requires a traffic order (IISR art. 42-2).',
+  stopCap: 'Yield control allows higher flows than stop control (IISR art. 43-4).',
+  miniUrb: 'Urban areas only (p. 129).', miniEntree: 'Cannot be the first intersection at a town entrance without a transition (p. 129).',
+  miniBr: 'Only 3 or 4 legs (p. 129).', miniAng: 'Angles between legs of 80° to 140° only (p. 129).', miniLanes: 'Only on streets with one lane per direction (p. 129).',
+  miniEvent: 'Cannot serve as a landmark intersection between two clearly distinct road categories (p. 129).', miniV: 'Suited to 30 km/h zones and to the entrances of shared zones (p. 124, 129).',
+  miniEmp: 'Insufficient space: outer radius of at least 7.50 m, plus sidewalks (p. 124, derived).', miniBig: 'Available space over 24 m: a roundabout with a non-mountable central island is feasible (p. 129).',
+  miniBus: 'Buses: central dome no higher than 12 cm with low-floor buses; heavy vehicles drive over the island (p. 130).',
+  girEmp: (d) => `Insufficient space: a circle about ${d} m in diameter is needed, sidewalks included (p. 125, derived from the outer radii).`,
+  girSlope: 'Longitudinal grade over 6%: roundabout not recommended (p. 125).', girSlope3: 'Grade between 3 and 6%: reduce approach speeds, watch heavy vehicles (p. 125).',
+  girTram: 'With a tram, roundabouts have more crashes than other types: avoid at all costs (p. 58).',
+  girSite: 'Avoid a roundabout on a corridor with a side-running two-way dedicated transit lane, unless the lane is moved away or interrupted (p. 34).',
+  girBr: (n) => `At most ${n} legs for a roundabout in this setting (p. 122, 125).`,
+  girBrPro: 'Beyond 4 legs, the roundabout stays simple whereas the signal plan becomes complicated (p. 66).',
+  girSpeed: 'Strong speed reduction at all hours, visual break and gateway effect (p. 65-66).',
+  girNoTc: 'No priority possible for public transit in a roundabout (p. 65, 137).',
+  girBus: 'Buses: outer radius of 15 m desirable, 12 m minimum (p. 137).',
+  girEntree: 'Worthwhile at the entrance to a built-up area crossed by a major road (p. 65).',
+  girNoCost: 'No operating cost, unlike signals (p. 65).',
+  girPeri: 'Shifts vehicle paths toward the edges: new nuisances nearby (sidewalk cafés, housing) (p. 67).',
+  compActive: 'Where pedestrians and cyclists are numerous, the guide favors compact roundabouts (p. 66); together with the mini-roundabout, they are the safest for cyclists (p. 133).',
+  moyenBr: 'More capacity and more than 4 legs while remaining modest in size (p. 125).',
+  grandDense: 'Reserved for high-traffic corridors and low-density built-up areas (p. 125).',
+  grandUsers: 'Difficult for pedestrians and unfavorable to cyclists; weaker speed-calming effect; severance effect (p. 64, 125).',
+  grandBig: 'An outer diameter over 50 m is very rarely justified (p. 125).',
+  fxDense: 'Particularly suited to dense urban areas and arterial roads, where many conflicts must be managed in a constrained space (p. 67).',
+  fxTc: 'Preferred for trams and high-frequency bus lines; public transit priority is possible (p. 64, 118).',
+  fxSpeed: 'No speed control on green, especially off-peak and at night (p. 68).',
+  fxPed: 'Favorable to pedestrians and cyclists on high-traffic roads (table p. 64).',
+  fxManage: 'Allows active management: green wave or speed-moderating wave, bus priority, flow control (p. 68-69).',
+  fxCost: 'Specific operating cost, unlike a roundabout (p. 65).',
+  fxIlotNo: 'Reserved for four-leg (cross) intersections with heavy, balanced left turns, with a central island of 16 to 25 m (p. 120-121).',
+  fxIlotYes: 'Four-leg (cross) intersection with heavy left turns: central island of 16 to 25 m, 2 phases, about 8,000 pcu/h with three-lane entries (p. 120-121).',
+  psgrNo: 'Reserved for junctions between an urban expressway and an expressway or arterial road (table p. 63).',
+  psgrExc: 'In urban areas, grade separation must remain exceptional; it cannot be justified by car traffic alone (p. 69, 142).',
+  psgrUsers: 'Closed to pedestrians and cyclists; increases severance; pedestrian crashes at underpass exits (p. 64, 149).',
+  psgrPeri: 'In peri-urban areas, safety deteriorates after construction (pedestrian crashes at underpass exits, p. 59).',
+  pedHard: 'Pedestrians: crossing becomes difficult above 800 pcu/h on a roadway (table p. 64); provide a refuge.',
+  bikeLow: 'Favorable to cyclists on low-traffic roads (table p. 64).',
+  bikeGood: 'Preferred for cyclists (table p. 64).',
+  baseNoProb: 'Basic layout as long as entering traffic remains moderate (p. 64).',
+  plateau: 'Option: build a raised intersection (plateau), raised 10 to 15 cm with 5 to 10% ramps, to slow down all users; applicable under any priority regime (p. 76-77, 96).',
+  plateauCheck: 'The French decree restricts raised pedestrian crossings to roads carrying less than 3,000 veh/day with no regular public transit line (p. 76): to be checked for this intersection.',
+  // associated design features
+  refugeInd: 'Refuge island essential on the major road (unsignalized intersection, 4 or more lanes; p. 84), at least 2 m wide, 2.50 m if possible.',
+  refugeRec: 'Refuge island strongly recommended on the major road (p. 84), at least 2 m wide, 2.50 m if possible.',
+  refugeGir: 'Splitter islands at least 2 m wide at pedestrian crossings, essential in built-up areas (p. 127, 132).',
+  refugeMini: 'Splitter islands optional; below 1.50 m, they do not serve as a refuge (p. 130).',
+  refugeFx: 'Refuge mandatory if pedestrians cross in two stages; recommended beyond 12 m or 4 lanes (p. 84, 114).',
+  pedClp: 'Pedestrian crossings: at the mouth of the minor road, set back 1.50 to 2 m from the line (1 m minimum); marking essential on the arterial road (p. 83, 99).',
+  pedPad: 'Pedestrian crossings: do not mark crosswalks at priority-to-the-right intersections, except at places used by visually impaired people; treat the crossing area and build curb extensions (p. 100).',
+  pedGir: 'Pedestrian crossings: one per leg, set back 2 to 5 m from the yield line (2 m for small roundabouts, 5 m for large ones) (p. 132).',
+  pedFx: 'Pedestrian signals: green of at least 6 s, clearance of at least 1 s per meter crossed (0.8 m/s near schools and hospitals), wait of 40 s at most; crosswalk 2 to 5 m from the intersection (p. 114-115).',
+  tadFx: 'Right turn over 500 pcu/h: letting pedestrians cross at the same time becomes difficult; provide a signalized right-turn lane with a refuge, or a different phasing (p. 115).',
+  tagFx: (t) => t < 150 ? 'Left turn under 150 pcu/h: compatible with a signalized intersection (p. 106).' : t <= 250 ? 'Left turn of 150 to 250 pcu/h: a slight offset at the end of the phase may suffice; an offset at the start of the phase is prohibited (p. 106).' : 'Left turn over 250 pcu/h: critical situation requiring specific treatment (dedicated phase) (p. 106).',
+  tagNo30: 'In a 30 km/h zone, a left turn rarely justifies a specific layout (p. 94).',
+  tagCfg: (c) => ['Left turn: dedicated lane with island, storage of 10 to 20 m (p. 94-95).', 'Left turn: local widening of the roadway to 7.50-8.50 m while keeping a sidewalk at least 1.40 m wide (p. 94-95).', 'Left turn: no specific layout needed (table p. 95).', 'Left turn: traffic outside the range of the table p. 95; consider another intersection type.'][c],
+  visTri: (l, L) => `Visibility: clear the sight triangle l = ${l}, L = ${L} m, between 0.60 and 2.30 m in height; prohibit parking 3 to 10 m upstream (p. 73-74, 97).`,
+  girDims: { mini: 'Outer radius 7.50 to 12 m; circulatory roadway 6 to 9.50 m; fully mountable central island of 1.50 to 2.50 m radius; dome of 10 to 15 cm; 1 entry lane and 1 exit lane per leg (p. 129-130).',
+    compact: 'Outer radius 12 to 15 m (12 m minimum for bus and truck turning); circulatory roadway 6 to 8 m; mountable apron of 1.50 to 2 m; single-lane entries of 3 to 3.50 m; exits of 3.50 to 4 m (p. 125, 128).',
+    moyen: 'Outer radius 15 to 22 m; circulatory roadway 6 to 8 m, at least 20% wider than the widest entry; entries of 3 to 4 m (1 lane) or 6 to 7 m (2 lanes); exit radius of at least 15 m (p. 125-128).',
+    grand: 'Outer radius over 22 m; circulatory roadway 7 to 9 m; 1 to 2 entry and exit lanes, or even 3 on the main legs (p. 125-127).' },
+  girCommon: 'Circular central island; legs aligned toward the center, with no tangential entry; deflection radius under 100 m; clear view of the left quarter of the circulatory roadway from 10 m before the entry (p. 122-127).',
+  fxDims: 'Two phases as a general rule; cycle of 50 to 70 s; signal stop line set back 3 to 5 m; bicycle boxes of 3 to 5 m; lanes of 3 to 3.50 m with buses or heavy vehicles (p. 77, 105, 113-117).',
+  clpDims: 'Lanes of 2.50 to 3 m, 3 to 3.50 m with buses or heavy vehicles; curb radii of at least 4 m, generally 6 to 8 m with corner cut-offs; islands of at least 5 m² (p. 77, 95-96).',
+  psgrDims: 'Clearance gauge B: 2.60 m (free height 2.80 m), 3 m lanes; horizontal radii of 80 m at 50 km/h; grade of 9% at most (p. 142-148).',
+  sign: { pad: 'No sign: priority to the right is the rule in built-up areas; sign AB1 is unnecessary there (IISR art. 43-11).',
+    clp: 'Sign AB3a and broken “yield” line on the minor road; optional sign AB6 on the major road (IISR art. 42-2 C).',
+    stop: 'Sign AB4 and solid line; traffic order mandatory (IISR art. 42-2 E).',
+    gir: 'Sign AB25 mandatory on the approach; “yield” line at each entry; sign AB3a optional in built-up areas but strongly recommended by the guide (IISR art. 42-10; guide p. 131).',
+    feux: 'Signals take precedence over signs; no STOP sign on a signalized leg; AB signs for fallback operation when signals are off (IISR art. 42-9).',
+    psgr: 'Advance direction and clearance signs; the at-grade intersection on the surface is signed according to its priority regime.' },
+  // report
+  n: { title: 'Intersection type selection report', sub: 'Decision aid based on the Certu guide “Carrefours urbains” (2010)', objet: 'Choice of intersection type',
+    cover: [['commune', 'Municipality'], ['lieu', 'Location'], ['objet', 'Subject'], ['name', 'Selected type'], ['date', 'Date'], ['auteur', 'Prepared by'], ['outil', 'Tool']],
+    s: { brief: 'At a glance', site: 'The location', data: 'The data', method: 'The approach', analysis: 'Criterion-by-criterion analysis', compare: 'Comparison of types', chosen: 'The selected type', open: 'What the tool does not decide', plan: 'Action plan', annex: 'Appendix — Formulas, assumptions and sources' },
+    dataCols: ['Item', 'Value'], cmpCols: ['Type', 'Assessment', 'Capacity', 'Main reason'],
+    method: ['The guide calls for starting from the objectives and a diagnosis, not from a solution decided in advance (p. 17).', 'It lists eight selection criteria, without weighting: urban context, consistency along the corridor, urban functions, available space, users to be favored, capacity and traffic patterns, safety, financial resources (p. 63).', 'It calls for comparing several design options, including their negative effects, and making the final choice through public consultation (p. 19-20).'],
+    hAn: { hier: 'Road hierarchy', traf: 'Traffic and capacity', users: 'Users', geo: 'Geometry, available space and visibility' },
+    chosenIntro: n => `Type selected by the municipality: ${n}.`, notRec: 'This type is not at the top of the tool’s ranking: the reasons are given below; the municipality takes responsibility for this choice after comparison.',
+    exclWarn: 'Warning: according to the guide, this type has contraindications.',
+    dims: 'Key dimensions', assoc: 'Associated design features', signs: 'Signage (IISR, Part 3)', vigil: 'Points to watch',
+    open: ['The guide sets no single traffic threshold for signals: the “?” zone of the chart p. 68 is a matter of judgment.', 'A delay of 30 s to 1 min on the minor road is at the designer’s discretion (p. 93).', 'The acceptable level of congestion is a matter of local policy; a quarter of an hour of saturation per day may be accepted (p. 13, 38, 52).', 'Pedestrian needs cannot be assessed from counts alone (p. 31).', 'Costs are not quantified by the guide.'],
+    actions: { count: ['Turning movement counts over at least two peak hours (morning and evening), with the share of heavy vehicles, buses, bicycles and pedestrians (p. 38)', 'Municipality', 'Before preliminary design'],
+      acc: ['Collection of injury crash data for the last 5 years at the intersection and on its legs (p. 42)', 'Municipality, police', 'Before preliminary design'],
+      variants: ['Compare the top two or three types, including their effects on neighboring intersections, and make the final choice through public consultation (p. 19-20)', 'Municipality, design consultant', 'Preliminary design'],
+      capRb: ['Roundabout capacity test (GIRABASE) with the origin-destination matrix (p. 124)', 'Design consultant', 'Preliminary design'],
+      capFx: ['Detailed signal plan and reserve capacity calculated from the counts (appendix p. 156-159; Certu guide “Carrefours à feux”)', 'Design consultant', 'Preliminary design'],
+      tc: ['Consult the public transit operator (turning paths, stops, priority) (p. 90-91)', 'Municipality, operator', 'Preliminary design'],
+      exec: ['Construction drawings based on a topographic survey, checking turning paths and sight triangles', 'Design consultant', 'Final design'],
+      after: ['Follow-up after several months of settling in: speeds, queues, crashes, pedestrian comfort (p. 21-22)', 'Municipality', 'After opening'] },
+    planCols: ['Priority', 'Action', 'Who', 'When'],
+    hyp: ['Traffic in pcu/h: vehicles × (1 + share of heavy vehicles), one heavy vehicle counting as 2 pcu (p. 93).', 'Daily traffic estimated at 10 times peak-hour traffic (p. 64: the peak hour represents 8 to 12% of daily traffic).', 'Minor-road capacity: critical-gap chart (p. 93), read graphically; delay T = 3600 / (C − S) (p. 93).', 'Critical gap: 6 s to cross a two-lane major road, 4 s for a single lane; left-turn entry onto a two-way road: 5, 6 or 7 s at 30, 50 or 70 km/h (p. 92-93).', 'Signals: capacity QTmax = 1,800 × (C − T) / C, reserve (QTmax − demand) / demand (p. 159); tool assumptions: heaviest direction = 55% of two-way traffic, 20% turning traffic on the major road and 60% on the minor road, factor of 1.1 per turning vehicle (1.3 when conflicting with more than 250 pedestrians/h, p. 156), 4 s lost per phase, cycle of 60, 75 or 90 s for 2, 3 or 4 phases.', 'Available space: roundabout diameter (2 × outer radius) plus 6 m for sidewalks (derived from p. 124-125).'],
+    sources: ['Certu (2010). Carrefours urbains. Collection Références, updated edition of the 1999 guide.', 'Instruction interministérielle sur la signalisation routière (IISR, French interministerial instruction on road signage), Part 3: intersections and priority regimes (consolidated version).'],
+    brief: { rec: (a, b) => b ? `Types to compare first: ${a}, then ${b}.` : `Type to study first: ${a}.`, chosen: n => `Type selected by the municipality: ${n}.`,
+      traffic: (E, d) => `Peak-hour traffic: ${E} pcu/h entering, i.e. about ${d} vehicles per day.`, excl: n => `${n} type(s) ruled out by a contraindication in the guide.`,
+      next: 'Next step: turning movement counts and comparison of the options through public consultation.' },
+    figSP: 'Chart p. 68: position of the intersection relative to the “no signals”, “?” and “traffic signals” zones.', figSketch: 'Schematic diagram of the selected type (not to construction scale).'
+  }
+};
+
+// mode d'emploi propre au module carrefour (remplace celui de la traversée quand le module est ouvert)
+Object.assign(JXT.fr, { guideBody: `<p><strong>Objectif.</strong> Aider une commune à choisir le type de carrefour le mieux adapté (priorité à droite, cédez-le-passage, stop, mini-giratoire, giratoire compact, moyen ou grand, carrefour à feux avec ou sans îlot central, passage souterrain) en appliquant une à une les règles du guide Certu « Carrefours urbains » (2010), puis produire la note qui justifie ce choix. Le bouton « Traversée piétonne », sous le titre, ramène au comparateur des aménagements de traversée.</p>
+    <h3>Les étapes</h3>
+    <ol>
+      <li><strong>Situer le carrefour</strong> sur la carte (facultatif) : il figurera dans la note, avec un plan de situation et une vue aérienne.</li>
+      <li><strong>Décrire le contexte</strong> : milieu (centre dense, urbain, périurbain), place de chaque voie dans la hiérarchie du réseau, vitesses limites, route prioritaire, entrée d’agglomération.</li>
+      <li><strong>Décrire la géométrie</strong> : nombre de branches et leurs angles, voies par sens, largeur de la chaussée principale, diamètre du cercle disponible entre façades, pente, visibilité depuis la voie secondaire.</li>
+      <li><strong>Saisir le trafic de l’heure de pointe</strong> sur chaque voie (deux sens), la part de poids lourds et de bus, les tourne-à-gauche et tourne-à-droite les plus chargés.</li>
+      <li><strong>Décrire les usagers</strong> (piétons, cyclistes, transports collectifs) et cocher les <strong>objectifs</strong> de la commune.</li>
+      <li><strong>Lire le résultat</strong> : types à comparer en priorité, graphique « feux ou pas de feux », tableau de tous les types avec leur avis et leurs raisons, aménagements associés. Tout se met à jour à chaque modification.</li>
+      <li><strong>Choisir le type retenu et produire la note</strong>, à imprimer ou à enregistrer en PDF.</li>
+    </ol>
+    <h3>Les données nécessaires</h3>
+    <div class="table-wrap"><table><thead><tr><th>Donnée</th><th>Comment l’obtenir</th><th>Indispensable ?</th></tr></thead><tbody>
+      <tr><td>Trafic de pointe de chaque voie, deux sens</td><td>Comptage d’une heure à la pointe, sur chaque branche</td><td>Oui</td></tr>
+      <tr><td>Part de poids lourds et de bus</td><td>Même comptage</td><td>Oui</td></tr>
+      <tr><td>Tourne-à-gauche et tourne-à-droite</td><td>Comptage directionnel (le guide demande deux heures de pointe)</td><td>Conseillé</td></tr>
+      <tr><td>Hiérarchie des voies et vitesses limites</td><td>Plan de circulation, panneaux en place</td><td>Oui</td></tr>
+      <tr><td>Emprise disponible (diamètre entre façades)</td><td>Plan, image satellite ou décamètre</td><td>Oui</td></tr>
+      <tr><td>Pente et visibilité</td><td>Visite sur place</td><td>Oui</td></tr>
+      <tr><td>Piétons, cyclistes, lignes de bus ou de tramway</td><td>Observation sur place, exploitant des transports</td><td>Conseillé</td></tr>
+      <tr><td>Emplacement du carrefour</td><td>Clic sur la carte</td><td>Facultatif</td></tr>
+    </tbody></table></div>
+    <h3>Où trouver les résultats</h3>
+    <ul>
+      <li><strong>Dans « Résultat »</strong> : les types à comparer en priorité, le trafic converti en uvp, le graphique « feux ou pas de feux » et un schéma de principe.</li>
+      <li><strong>Dans le tableau</strong> : l’avis sur chaque type (conseillé, possible, déconseillé, exclu), sa capacité et toutes ses raisons, avec la page du guide (clic sur une ligne).</li>
+      <li><strong>Dans la note</strong> (bouton « Générer la note du carrefour ») : les données, l’analyse critère par critère, la comparaison des types, le type retenu avec ses dimensions, ses aménagements associés et sa signalisation, et le plan d’action.</li>
+      <li><strong>Enregistrer le projet</strong>, en haut de la page, conserve aussi les données du carrefour.</li>
+    </ul>
+    <p class="note">Le guide ne pondère pas ses critères et demande de comparer plusieurs partis d’aménagement en concertation : l’outil prépare cette comparaison ; il ne remplace ni les comptages directionnels, ni le test de capacité, ni le plan d’exécution.</p>` });
+Object.assign(JXT.ar, { guideBody: `<p><strong>الهدف.</strong> مساعدة البلدية على اختيار نوع المفترق الأنسب (الأولوية لليمين، أفسح المجال، قف، مفترق دائري مصغّر أو مدمج أو متوسّط أو كبير، مفترق بالإشارات الضوئية مع جزيرة وسطية أو دونها، ممرّ سفلي) بتطبيق قواعد دليل Certu «Carrefours urbains» (2010) واحدة تلو الأخرى، ثم إعداد المذكّرة التي تبرّر هذا الاختيار. ويعيد زرّ «عبور المترجّلين»، تحت العنوان، إلى أداة مقارنة تهيئات العبور.</p>
+    <h3>المراحل</h3>
+    <ol>
+      <li><strong>تحديد موقع المفترق</strong> على الخريطة (اختياري): يظهر في المذكّرة مع مخطّط الموقع وصورة جوية.</li>
+      <li><strong>وصف السياق</strong>: الوسط (مركز كثيف، حضري، شبه حضري)، ومكانة كل طريق في تسلسل الشبكة، والسرعات القصوى، والطريق ذات الأولوية، ومدخل التجمّع العمراني.</li>
+      <li><strong>وصف الهندسة</strong>: عدد الفروع وزواياها، والمسالك في كل اتجاه، وعرض المعبّد الرئيسي، وقطر الدائرة المتاحة بين الواجهات، والانحدار، والرؤية من الطريق الثانوية.</li>
+      <li><strong>إدخال حركة ساعة الذروة</strong> على كل طريق (في الاتجاهين)، ونسبة العربات الثقيلة والحافلات، وأكثر حركات الانعطاف يسارًا ويمينًا كثافة.</li>
+      <li><strong>وصف المستعملين</strong> (المترجّلون، والدرّاجون، والنقل الجماعي) واختيار <strong>أهداف</strong> البلدية.</li>
+      <li><strong>قراءة النتيجة</strong>: الأنواع الواجب مقارنتها أوّلًا، ومنحنى «إشارات ضوئية أم لا»، وجدول كل الأنواع مع الرأي والأسباب، والتهيئات المصاحبة. ويتحدّث كل شيء عند كل تعديل.</li>
+      <li><strong>اختيار النوع المعتمد وإعداد المذكّرة</strong>، للطباعة أو الحفظ بصيغة PDF.</li>
+    </ol>
+    <h3>المعطيات اللازمة</h3>
+    <div class="table-wrap"><table><thead><tr><th>المعطى</th><th>كيفية الحصول عليه</th><th>ضروري؟</th></tr></thead><tbody>
+      <tr><td>حركة الذروة على كل طريق، في الاتجاهين</td><td>عدّ لمدّة ساعة في الذروة على كل فرع</td><td>نعم</td></tr>
+      <tr><td>نسبة العربات الثقيلة والحافلات</td><td>نفس العدّ</td><td>نعم</td></tr>
+      <tr><td>الانعطاف يسارًا ويمينًا</td><td>عدّ حسب الاتجاهات (يطلب الدليل ساعتي ذروة)</td><td>يُنصح به</td></tr>
+      <tr><td>تسلسل الطرق والسرعات القصوى</td><td>مخطّط الجولان، اللافتات الموجودة</td><td>نعم</td></tr>
+      <tr><td>العرض المتاح (القطر بين الواجهات)</td><td>مخطّط، صورة جوية أو ديكامتر</td><td>نعم</td></tr>
+      <tr><td>الانحدار والرؤية</td><td>زيارة ميدانية</td><td>نعم</td></tr>
+      <tr><td>المترجّلون والدرّاجون وخطوط الحافلات أو الترامواي</td><td>ملاحظة ميدانية، مستغلّ النقل</td><td>يُنصح به</td></tr>
+      <tr><td>موقع المفترق</td><td>ضغطة على الخريطة</td><td>اختياري</td></tr>
+    </tbody></table></div>
+    <h3>أين توجد النتائج</h3>
+    <ul>
+      <li><strong>في «النتيجة»</strong>: الأنواع الواجب مقارنتها أوّلًا، والحركة محوّلة إلى uvp، ومنحنى «إشارات ضوئية أم لا»، ورسم مبدئي.</li>
+      <li><strong>في الجدول</strong>: الرأي في كل نوع (موصى به، ممكن، غير مستحسن، مستبعد)، وطاقة استيعابه، وكل أسبابه مع صفحة الدليل (بالضغط على السطر).</li>
+      <li><strong>في المذكّرة</strong> (زرّ «إعداد مذكّرة المفترق»): المعطيات، والتحليل معيارًا بمعيار، ومقارنة الأنواع، والنوع المعتمد بأبعاده وتهيئاته المصاحبة وإشاراته، وخطّة العمل.</li>
+      <li><strong>حفظ المشروع</strong>، أعلى الصفحة، يحفظ أيضًا معطيات المفترق.</li>
+    </ul>
+    <p class="note">لا يرجّح الدليل بين معاييره ويطلب مقارنة عدّة حلول بالتشاور: تُعدّ الأداة هذه المقارنة، ولا تعوّض العدّ حسب الاتجاهات ولا اختبار طاقة الاستيعاب ولا مخطّط التنفيذ.</p>` });
+Object.assign(JXT.en, { guideBody: `<p><strong>Purpose.</strong> Help a municipality choose the most suitable type of intersection (priority to the right, yield control, stop control, mini, compact, medium or large roundabout, signalized intersection with or without a central island, underpass) by applying the rules of the Certu guide “Carrefours urbains” (2010) one by one, then produce the report that justifies the choice. The “Pedestrian crossing” button, below the title, returns to the crossing-measure comparison.</p>
+    <h3>The steps</h3>
+    <ol>
+      <li><strong>Locate the intersection</strong> on the map (optional): it will appear in the report, with a location map and an aerial view.</li>
+      <li><strong>Describe the context</strong>: setting (dense center, urban, peri-urban), place of each road in the network hierarchy, speed limits, priority road, town entrance.</li>
+      <li><strong>Describe the geometry</strong>: number of legs and their angles, lanes per direction, width of the major road, diameter of the circle available between building lines, gradient, visibility from the minor road.</li>
+      <li><strong>Enter the peak-hour traffic</strong> on each road (both directions), the share of trucks and buses, and the busiest left and right turns.</li>
+      <li><strong>Describe the users</strong> (pedestrians, cyclists, public transit) and tick the municipality’s <strong>objectives</strong>.</li>
+      <li><strong>Read the result</strong>: types to compare first, the “signals or no signals” chart, the table of all types with their rating and reasons, and the associated features. Everything updates with each change.</li>
+      <li><strong>Choose the selected type and produce the report</strong>, to print or save as a PDF.</li>
+    </ol>
+    <h3>Data needed</h3>
+    <div class="table-wrap"><table><thead><tr><th>Data</th><th>How to obtain it</th><th>Required?</th></tr></thead><tbody>
+      <tr><td>Peak traffic on each road, both directions</td><td>One-hour count at the peak, on each leg</td><td>Yes</td></tr>
+      <tr><td>Share of trucks and buses</td><td>Same count</td><td>Yes</td></tr>
+      <tr><td>Left and right turns</td><td>Turning-movement count (the guide asks for two peak hours)</td><td>Recommended</td></tr>
+      <tr><td>Road hierarchy and speed limits</td><td>Traffic plan, existing signs</td><td>Yes</td></tr>
+      <tr><td>Available space (diameter between building lines)</td><td>Plan, satellite image or measuring tape</td><td>Yes</td></tr>
+      <tr><td>Gradient and visibility</td><td>Site visit</td><td>Yes</td></tr>
+      <tr><td>Pedestrians, cyclists, bus or tram lines</td><td>On-site observation, transit operator</td><td>Recommended</td></tr>
+      <tr><td>Location of the intersection</td><td>Click on the map</td><td>Optional</td></tr>
+    </tbody></table></div>
+    <h3>Where to find the results</h3>
+    <ul>
+      <li><strong>In “Result”</strong>: the types to compare first, traffic converted to pcu, the “signals or no signals” chart and an outline sketch.</li>
+      <li><strong>In the table</strong>: the rating of each type (recommended, possible, not recommended, ruled out), its capacity and all its reasons, with the guide page (click a row).</li>
+      <li><strong>In the report</strong> (“Generate the intersection report” button): the data, the criterion-by-criterion analysis, the comparison of types, the selected type with its dimensions, associated features and signage, and the action plan.</li>
+      <li><strong>Save the project</strong>, at the top of the page, also keeps the intersection data.</li>
+    </ul>
+    <p class="note">The guide does not weight its criteria and asks for several design options to be compared through consultation: the tool prepares that comparison; it does not replace turning-movement counts, the capacity test or the construction plan.</p>` });
+const jt = (k, ...a) => { const d = JXT[lang] || JXT.fr, v = k in d ? d[k] : JXT.fr[k]; return typeof v === 'function' ? v(...a) : v; };
+
+/* ---------- données du carrefour (enregistrées dans le navigateur) ---------- */
+const JX_DEF = { ctx: 'urbain', hMain: 'struct', hSec: 'quartier', vMain: 50, vSec: 30, prio: false, entree: false,
+  nBr: 4, angles: true, lanesMain: 1, lanesSec: 1, widthMain: 7, emprise: 30, slope: 2, visib: 'bonne',
+  Pveh: 800, Sveh: 300, pPL: 6, tag: 100, tad: 100, ped: 'important', velo: 'peu', tc: 'aucun', siteProp: false,
+  speed: true, peds: true, bike: false, tco: false, flow: false, gate: false, cost: false };
+const JX = { ...JX_DEF };
+try { const s = JSON.parse(localStorage.getItem('mv-jx') || 'null'); if (s) for (const k of Object.keys(JX_DEF)) if (k in s && typeof s[k] === typeof JX_DEF[k]) JX[k] = s[k]; } catch (e) { /* stockage indisponible */ }
+const saveJx = () => { try { localStorage.setItem('mv-jx', JSON.stringify(JX)); } catch (e) { /* stockage indisponible */ } };
+let jxPicked = null;   // type retenu par la commune (null : le premier du classement)
+
+// champs du formulaire : [clé, nature, options ou bornes, unité]
+const JXF = {
+  ctx: [['ctx', 'sel', ['dense', 'urbain', 'periurbain'], 'ctx'], ['hMain', 'sel', ['vru', 'struct', 'quartier'], 'h'], ['hSec', 'sel', ['vru', 'struct', 'quartier'], 'h'],
+    ['vMain', 'sel', [30, 50, 70]], ['vSec', 'sel', [30, 50]], ['prio', 'chk'], ['entree', 'chk']],
+  geo: [['nBr', 'num', [3, 8, 1], 'br'], ['angles', 'chk'], ['lanesMain', 'num', [1, 3, 1], 'lanes'], ['lanesSec', 'num', [1, 2, 1], 'lanes'],
+    ['widthMain', 'num', [5, 30, 0.5], 'm'], ['emprise', 'num', [10, 120, 1], 'm'], ['slope', 'num', [0, 12, 0.5], 'pct'], ['visib', 'sel', ['bonne', 'reduite', 'tardive'], 'visib']],
+  traf: [['Pveh', 'num', [0, 6000, 50], 'vh'], ['Sveh', 'num', [0, 4000, 50], 'vh'], ['pPL', 'num', [0, 50, 1], 'pct'], ['tag', 'num', [0, 1500, 10], 'uvp'], ['tad', 'num', [0, 1500, 10], 'uvp']],
+  users: [['ped', 'sel', ['faible', 'important', 'tres'], 'ped'], ['velo', 'sel', ['peu', 'nombreux'], 'velo'], ['tc', 'sel', ['aucun', 'bus', 'busFort', 'tram'], 'tc'], ['siteProp', 'chk']],
+  obj: [['speed', 'chk'], ['peds', 'chk'], ['bike', 'chk'], ['tco', 'chk'], ['flow', 'chk'], ['gate', 'chk'], ['cost', 'chk']]
+};
+
+/* ---------- règles du guide ---------- */
+// capacité limite de la voie secondaire C (uvp/h) selon le trafic principal P et le créneau critique (abaque p. 93, lecture graphique)
+const ABQ_P = [200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500];
+const ABQ = { 4: [860, 805, 750, 695, 655, 610, 570, 530, 490, 460, 430, 400, 375, 350], 5: [780, 720, 655, 600, 550, 500, 455, 410, 370, 335, 310, 280, 255, 230],
+  6: [700, 635, 570, 510, 460, 410, 365, 320, 280, 250, 225, 200, 175, 150], 7: [625, 555, 485, 425, 375, 325, 285, 240, 205, 180, 155, 135, 115, 100] };
+function abaque(P, tc) {
+  const row = ABQ[tc], p = Math.min(1500, Math.max(200, P)), k = Math.min(ABQ_P.length - 2, Math.floor((p - 200) / 100)), f = (p - ABQ_P[k]) / 100;
+  return row[k] + (row[k + 1] - row[k]) * f;
+}
+const JX_HIER = { 'vru|vru': ['psgr', 'gir', 'feux'], 'struct|vru': ['psgr', 'gir', 'feux'], 'quartier|vru': [], 'struct|struct': ['gir', 'feux'],
+  'quartier|struct': ['gir', 'feux', 'clp', 'stop'], 'quartier|quartier': ['pad', 'mini', 'compact'] };
+const H_RANK = { vru: 0, struct: 1, quartier: 2 };
+const JX_TYPES = ['pad', 'clp', 'stop', 'mini', 'compact', 'moyen', 'grand', 'feux', 'feuxIlot', 'psgr'];
+const JX_SIMPLE = { pad: 1, clp: 2, stop: 3, mini: 4, compact: 5, feux: 6, moyen: 7, feuxIlot: 8, grand: 9, psgr: 10 };
+const GIR = ['mini', 'compact', 'moyen', 'grand'];
+const GIR_EMP = { mini: 18, compact: 30, moyen: 36, grand: 50 };   // diamètre disponible nécessaire : 2 × rayon extérieur minimal + 6 m de trottoirs (dérivé p. 124-125)
+
+function jxDerive(J) {
+  const k = 1 + J.pPL / 100, P = Math.round(J.Pveh * k), S = Math.round(J.Sveh * k), E = P + S;
+  const lo = H_RANK[J.hMain] <= H_RANK[J.hSec] ? J.hMain : J.hSec, hi = lo === J.hMain ? J.hSec : J.hMain;
+  const hierKey = hi + '|' + lo, hierList = JX_HIER[hierKey] || [];
+  // créneau critique : traversée de la voie principale (4 s à 1 file, 6 s à 2 files) et insertion à gauche sur double sens (5/6/7 s)
+  const files = 2 * J.lanesMain, tcCross = files >= 2 ? 6 : 4, tcTag = J.vMain <= 30 ? 5 : J.vMain <= 50 ? 6 : 7, tc = Math.max(tcCross, tcTag);
+  const nSec = Math.max(1, J.nBr - 2), Sa = Math.round(S / nSec), C = Math.round(abaque(P, tc));
+  const T = C > Sa ? 3600 / (C - Sa) : Infinity;
+  const sp = P / 1200 + S / 700 < 1 ? 'no' : P / 2000 + S / 1300 > 1 ? 'yes' : 'grey';
+  // feux : phases, capacité QTmax = 1800 (C − T) / C, demande par voie, réserve (p. 105, 156-159)
+  let ph = 2; if (J.nBr > 4) ph = 3; if (J.tag > 250) ph = Math.max(ph, J.nBr > 4 ? 4 : 3); if (J.nBr > 5) ph = 4;
+  const cy = ph === 2 ? 60 : ph === 3 ? 75 : 90, QT = 1800 * (cy - 4 * ph) / cy, kp = J.ped === 'faible' ? 0.1 : 0.3;
+  let D = 0.55 * P / J.lanesMain * (1 + 0.2 * kp) + 0.55 * S / J.lanesSec * (1 + 0.6 * kp);
+  if (J.tag > 250) D += J.tag * 1.1;
+  if (J.nBr > 4) D += 0.55 * S / J.lanesSec * (1 + 0.6 * kp) / 2;
+  const res = (QT - D) / D;
+  return { P, S, E, daily: E * 10, hierKey, hierList, tc, Sa, C, T, sp, ph, cy, QT: Math.round(QT), D: Math.round(D), res, files };
+}
+
+function jxEval(J) {
+  const d = jxDerive(J), out = {};
+  const hn = h => jt('hName')[h], hA = hn(d.hierKey.split('|')[0]), hB = hn(d.hierKey.split('|')[1]);
+  const inHier = id => d.hierList.includes(id) || (GIR.includes(id) && id !== 'mini' && d.hierList.includes('gir')) || (id === 'feuxIlot' && d.hierList.includes('feux'));
+  const fmtT = T => Number.isFinite(T) ? `${f0(T)} s` : '∞';
+  for (const id of JX_TYPES) {
+    const r = { id, excl: [], pros: [], cons: [], cap: { lvl: 'na', txt: [] }, hier: inHier(id) };
+    const pro = k => r.pros.push(k), con = k => r.cons.push(k), ex = k => r.excl.push(k), capT = (lvl, s) => { r.cap.txt.push(s); r.cap.lvl = worse(r.cap.lvl, lvl); };
+    if (d.hierList.length) (r.hier ? pro : con)(r.hier ? jt('hierFit', hA, hB) : jt('hierNo', hA, hB));
+    // carrefours sans feux : priorité à droite, cédez-le-passage, stop
+    if (['pad', 'clp', 'stop'].includes(id)) {
+      const lim = id === 'pad' ? 900 : 1200;
+      capT(d.E <= lim ? 'ok' : 'insuff', jt('totLim', f0(d.E), f0(lim)));
+      if (id !== 'pad') {
+        const lv = !Number.isFinite(d.T) ? 'insuff' : d.T < 30 ? 'ok' : d.T <= 60 ? 'tight' : 'insuff';
+        capT(lv, jt('wait', fmtT(d.T), f0(d.C), f0(d.Sa), d.tc) + ' ' + (!Number.isFinite(d.T) ? jt('waitInf') : d.T < 30 ? jt('waitOk') : d.T <= 60 ? jt('waitMid') : jt('waitBad')));
+        if (d.P > 1500) con(jt('offChart'));
+      }
+      if (d.P > 800) con(jt('pedHard'));
+      if (J.velo === 'nombreux' && d.E <= 1200) pro(jt('bikeLow'));
+      if (J.cost) pro(jt('baseNoProb'));
+    }
+    if (id === 'pad') {
+      if (J.prio) ex(jt('padPrio'));
+      if (J.vMain >= 50) con(jt('pad50'));
+      if (J.hMain !== J.hSec) con(jt('padEq'));
+      if (J.vMain <= 30 && J.vSec <= 30) pro(jt('padZ30')); else con(jt('padIsol'));
+      if (J.tc !== 'aucun') con(jt('padTc'));
+      if (J.visib !== 'bonne') con(jt('padVis'));
+      if (J.speed) pro(jt('padZ30'));
+    }
+    if (id === 'clp') {
+      pro(jt('clpBase'));
+      if (J.visib === 'reduite') pro(jt('clpVis'));
+      if (J.tc !== 'aucun') pro(jt('clpTc'));
+    }
+    if (id === 'stop') {
+      if (J.visib === 'tardive') pro(jt('stopYes')); else con(jt('stopNo'));
+      con(jt('stopCap'));
+    }
+    // giratoires
+    if (GIR.includes(id)) {
+      if (J.slope > 6) ex(jt('girSlope')); else if (J.slope >= 3) con(jt('girSlope3'));
+      if (J.tc === 'tram') ex(jt('girTram'));
+      if (J.siteProp) ex(jt('girSite'));
+      if (d.P > 10 * d.S) ex(jt('unbal10')); else if (d.S < 0.2 * d.P) con(jt('unbal20'));
+      const maxBr = J.ctx === 'periurbain' ? 6 : 8;
+      if (J.nBr > maxBr) ex(jt('girBr', maxBr));
+      if (J.emprise < GIR_EMP[id]) ex(id === 'mini' ? jt('miniEmp') : jt('girEmp', GIR_EMP[id]));
+      if (J.speed || J.gate) pro(jt('girSpeed'));
+      if (J.entree && id !== 'mini') pro(jt('girEntree'));
+      if (J.nBr > 4 && id !== 'mini') pro(jt('girBrPro'));
+      if (J.tc === 'busFort' || J.tco) con(jt('girNoTc'));
+      if (J.cost) pro(jt('girNoCost'));
+      if (d.P > 800) con(jt('pedHard'));
+      // capacité selon la taille (tableau p. 64, ordres de grandeur p. 66 et 124)
+      if (id === 'mini' || id === 'compact') {
+        if (d.E > 1500) capT('insuff', jt('rbSmall', f0(d.E)));
+        else capT('ok', jt('rbOk', f0(d.E)));
+      } else {
+        if (d.E <= 1500) capT('ok', jt('rbOk', f0(d.E)));
+        else if (d.E <= 2000) capT('tight', jt('rbMid', f0(d.E)));
+        else if (d.E <= 3000) { capT('tight', jt('rbTest', f0(d.E))); capT('tight', jt('rbLanes1')); }
+        else if (d.E <= 4000) { capT('tight', jt('rbTest', f0(d.E))); capT(id === 'moyen' || id === 'grand' ? 'tight' : 'insuff', jt('rbLanes2')); }
+        else if (d.E <= 5000) { capT(id === 'grand' ? 'tight' : 'insuff', jt('rbLanes3')); if (J.ped !== 'faible') con(jt('rbLanes3')); }
+        else capT('insuff', jt('rbOver', f0(d.E)));
+      }
+    }
+    if (id === 'mini') {
+      if (J.ctx === 'periurbain') ex(jt('miniUrb'));
+      if (J.entree) ex(jt('miniEntree'));
+      if (J.nBr > 4) ex(jt('miniBr'));
+      if (!J.angles) ex(jt('miniAng'));
+      if (J.lanesMain > 1 || J.lanesSec > 1) ex(jt('miniLanes'));
+      if (Math.abs(H_RANK[J.hMain] - H_RANK[J.hSec]) >= 2 || J.hMain === 'vru') ex(jt('miniEvent'));
+      else if (J.hMain !== J.hSec) con(jt('miniEvent'));
+      if (J.vMain >= 70) ex(jt('miniV')); else if (J.vMain <= 30) pro(jt('miniV'));
+      if (J.emprise >= 24) con(jt('miniBig'));
+      if (J.velo === 'nombreux' || J.bike) pro(jt('bikeGood'));
+      if (J.tc !== 'aucun') con(jt('miniBus'));
+    }
+    if (id === 'compact') {
+      if (J.ped !== 'faible' || J.velo === 'nombreux' || J.bike || J.peds) pro(jt('compActive'));
+      if (J.tc !== 'aucun') con(jt('girBus'));
+      con(jt('girPeri'));
+    }
+    if (id === 'moyen') {
+      if (J.nBr > 4 || d.E > 1500) pro(jt('moyenBr'));
+      if (J.tc !== 'aucun') con(jt('girBus'));
+      if (J.ped === 'tres') con(jt('grandUsers'));
+    }
+    if (id === 'grand') {
+      if (J.ctx !== 'periurbain') con(jt('grandDense'));
+      con(jt('grandUsers'));
+      if (J.emprise > 50) con(jt('grandBig'));
+      if (J.flow) pro(jt('moyenBr'));
+    }
+    // carrefour à feux
+    if (id === 'feux' || id === 'feuxIlot') {
+      const spTxt = { no: 'spZoneNo', grey: 'spZoneGrey', yes: 'spZoneYes' }[d.sp];
+      if (d.sp === 'no' && !(d.P > 800 && J.ped !== 'faible') && J.tc !== 'tram' && J.tc !== 'busFort') con(jt(spTxt)); else if (d.sp === 'yes') pro(jt(spTxt)); else r.cons.push(jt(spTxt));
+      if (J.ctx === 'dense' || J.hMain === 'struct') pro(jt('fxDense'));
+      if (J.tc === 'tram' || J.tc === 'busFort' || J.tco) pro(jt('fxTc'));
+      if (d.P > 800 || J.ped === 'tres') pro(jt('fxPed'));
+      if (J.flow) pro(jt('fxManage'));
+      if (J.speed) con(jt('fxSpeed'));
+      if (J.cost) con(jt('fxCost'));
+      if (J.nBr > 5) con(jt('fxBr5')); else if (J.nBr > 4) con(jt('fxBr4'));
+    }
+    if (id === 'feux') {
+      if (d.ph >= 4) con(jt('fxPh4'));
+      const i = d.res, lv = i < 0.10 ? 'insuff' : i < 0.20 ? 'tight' : 'ok';
+      capT(lv, jt('fxRes', d.ph, d.cy, f0(d.QT), f0(d.D), f0(i * 100)) + ' ' + (i < 0.10 ? jt('fxResLow') : i < 0.20 ? jt('fxResMid') : i > 0.40 ? jt('fxResHigh') : jt('fxResOk')));
+      if (i > 0.40 && d.sp === 'no') con(jt('fxResHigh'));
+    }
+    if (id === 'feuxIlot') {
+      if (J.nBr !== 4 || J.tag <= 250 || J.emprise < 50) ex(jt('fxIlotNo')); else pro(jt('fxIlotYes'));
+      capT(d.E <= 8000 ? 'ok' : 'insuff', jt('totLim', f0(d.E), f0(8000)));
+    }
+    // dénivellation
+    if (id === 'psgr') {
+      if (!(J.hMain === 'vru' && J.hSec !== 'quartier') && !(J.hSec === 'vru' && J.hMain !== 'quartier')) ex(jt('psgrNo'));
+      con(jt('psgrExc')); con(jt('psgrUsers'));
+      if (J.ctx === 'periurbain') con(jt('psgrPeri'));
+      capT('ok', jt('totLim', f0(d.E), f0(1800 * 2 * J.lanesMain + 1500)));
+    }
+    if (!d.hierList.length && id === 'pad') r.cons.unshift(jt('hierVoid'));
+    // avis
+    const strong = (id === 'stop' && J.visib !== 'tardive') || (id === 'pad' && J.vMain >= 50) || ((id === 'feux' || id === 'feuxIlot') && d.sp === 'no' && !r.pros.some(p => p === jt('fxTc') || p === jt('fxPed'))) || (id === 'feux' && d.ph >= 4) || (id === 'grand' && J.ctx !== 'periurbain');
+    r.status = r.excl.length ? 'excl' : (r.cap.lvl === 'insuff' || strong) ? 'deconseille' : (r.hier && r.cap.lvl !== 'tight' && r.cons.length <= r.pros.length) ? 'conseille' : 'possible';
+    r.score = r.pros.length - r.cons.length;
+    out[id] = r;
+  }
+  // PSGR : exceptionnel ; seulement « possible » quand aucun carrefour à niveau non exclu n'écoule le trafic (p. 69, 142)
+  const ps = out.psgr; if (ps.status !== 'excl' && JX_TYPES.some(x => x !== 'psgr' && out[x].status !== 'excl' && out[x].cap.lvl !== 'insuff')) ps.status = 'deconseille';
+  // classement : avis, capacité, hiérarchie, objectifs servis, simplicité
+  const SR = { conseille: 0, possible: 1, deconseille: 2, excl: 3 }, CR = { ok: 0, na: 0, tight: 1, insuff: 2 };
+  const order = JX_TYPES.slice().sort((a, b) => { const A = out[a], B = out[b]; return SR[A.status] - SR[B.status] || CR[A.cap.lvl] - CR[B.cap.lvl] || (B.hier - A.hier) || (B.score - A.score) || JX_SIMPLE[a] - JX_SIMPLE[b]; });
+  const top = order.filter(id => out[id].status === 'conseille' || out[id].status === 'possible');
+  return { d, r: out, order, top };
+}
+function worse(a, b) { const R = { na: 0, ok: 1, tight: 2, insuff: 3 }; return R[b] > R[a] ? b : a; }
+
+// aménagements associés au type (refuge, passages piétons, tourne-à-gauche, visibilité, dimensions, signalisation)
+function jxAssoc(id, J, d) {
+  const L = [], lanes = 2 * J.lanesMain;
+  const sansFeux = ['pad', 'clp', 'stop'].includes(id), gir = GIR.includes(id), fx = id === 'feux' || id === 'feuxIlot';
+  if (sansFeux) { if (lanes >= 4) L.push(jt('refugeInd')); else if (lanes >= 3 || J.widthMain > 8) L.push(jt('refugeRec')); }
+  if (fx) L.push(jt('refugeFx'));
+  if (gir) L.push(id === 'mini' ? jt('refugeMini') : jt('refugeGir'));
+  L.push(id === 'pad' ? jt('pedPad') : sansFeux ? jt('pedClp') : gir ? jt('pedGir') : fx ? jt('pedFx') : '');
+  if (fx) { L.push(jt('tagFx', J.tag)); if (J.tad > 500) L.push(jt('tadFx')); }
+  if (sansFeux && id !== 'pad') {
+    if (J.vMain <= 30) L.push(jt('tagNo30'));
+    else {
+      const m = J.Pveh * (1 + J.pPL / 100) / 2, t = J.tag, v70 = J.vMain >= 70;
+      const rows = v70 ? [[400, [2, 1, 0]], [600, [1, 1, 0]], [800, [1, 0, 3]], [900, [0, 3, 3]]] : [[500, [2, 2, 1]], [700, [2, 1, 0]], [1000, [1, 0, 3]], [1200, [0, 3, 3]]];
+      const cols = v70 ? [200, 300, 400] : [200, 300, 500], ri = rows.findIndex(r => m < r[0]), ci = cols.findIndex(c => t < c);
+      L.push(jt('tagCfg', ri < 0 || ci < 0 ? 3 : rows[ri][1][ci]));
+    }
+  }
+  if (sansFeux) {
+    const tri = id === 'pad' ? (J.vMain <= 30 ? [9, 13] : J.ctx === 'dense' ? [15, 20] : [20, 30]) : J.vMain <= 30 ? [id === 'stop' ? 'd1 + 4' : 'd1 + 7', 20] : J.vMain <= 50 ? [id === 'stop' ? 'd1 + 4' : 'd1 + 7', 45] : [id === 'stop' ? 'd1 + 4' : 'd1 + 10', 70];
+    L.push(jt('visTri', tri[0], tri[1]));
+  }
+  const dims = gir ? [jt('girDims')[id], jt('girCommon')] : fx ? [jt('fxDims')] : id === 'psgr' ? [jt('psgrDims')] : [jt('clpDims')];
+  if (gir && J.tc !== 'aucun') dims.push(id === 'mini' ? jt('miniBus') : jt('girBus'));
+  const sign = jt('sign')[gir ? 'gir' : fx ? 'feux' : id];
+  const plateau = ['pad', 'clp', 'stop', 'feux', 'mini', 'compact'].includes(id) && J.ctx !== 'periurbain' && (J.speed || J.hMain === 'quartier' || J.hSec === 'quartier');
+  if (plateau) { L.push(jt('plateau')); if (d.daily >= 3000 || J.tc !== 'aucun') L.push(jt('plateauCheck')); }
+  return { assoc: L.filter(Boolean), dims, sign };
+}
+
+/* ---------- graphique « feux ou pas de feux » (p. 68) ---------- */
+function jxSPChart(P, S) {
+  const W = 420, H = 300, x0 = 54, y0 = 250, sx = 340 / 2500, sy = 220 / 1600, X = p => x0 + p * sx, Y = s => y0 - s * sy, o = [];
+  const T = (x, y, s, a = 'middle', extra = '') => o.push(`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="11" text-anchor="${a}" fill="#222"${extra}>${esc(s)}</text>`);
+  o.push(`<rect width="${W}" height="${H}" fill="#fff"/>`);
+  o.push(`<polygon points="${X(0)},${Y(0)} ${X(1200)},${Y(0)} ${X(0)},${Y(700)}" fill="#cfe9d6"/>`);
+  o.push(`<polygon points="${X(1200)},${Y(0)} ${X(2000)},${Y(0)} ${X(0)},${Y(1300)} ${X(0)},${Y(700)}" fill="#e6e6e6"/>`);
+  o.push(`<polygon points="${X(2000)},${Y(0)} ${X(2500)},${Y(0)} ${X(2500)},${Y(1600)} ${X(0)},${Y(1600)} ${X(0)},${Y(1300)}" fill="#f2c8c8"/>`);
+  for (let p = 0; p <= 2500; p += 500) { o.push(`<line x1="${X(p)}" y1="${Y(0)}" x2="${X(p)}" y2="${Y(1600)}" stroke="#fff" stroke-width="0.8"/>`); T(X(p), y0 + 15, f0(p)); }
+  for (let s = 0; s <= 1600; s += 400) { o.push(`<line x1="${X(0)}" y1="${Y(s)}" x2="${X(2500)}" y2="${Y(s)}" stroke="#fff" stroke-width="0.8"/>`); T(x0 - 6, Y(s) + 4, f0(s), 'end'); }
+  o.push(`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(2500)}" y2="${Y(0)}" stroke="#222"/><line x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(1600)}" stroke="#222"/>`);
+  T(X(320), Y(160), jt('spNo')); T(X(1480), Y(110), jt('spGrey')); T(X(1900), Y(1150), jt('spYes'));
+  T(X(1250), y0 + 32, jt('spAxisP')); T(14, Y(800), jt('spAxisS'), 'middle', ` transform="rotate(-90 14 ${Y(800).toFixed(1)})"`);
+  const px = X(Math.min(2500, P)), py = Y(Math.min(1600, S));
+  o.push(`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="6" fill="#1b5ea8" stroke="#fff" stroke-width="2"/>`); T(px + 9, py - 8, jt('spPoint'), 'start', ' font-weight="600"');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Arial, Tahoma, sans-serif" role="img">${o.join('')}</svg>`;
+}
+
+/* ---------- schéma de principe du type (vue en plan, mètres) ---------- */
+function jxSketch(id, J) {
+  const S = 6, Wd = 520, Hd = 380, cx = Wd / 2, cy = Hd / 2, o = [], wm = J.widthMain, ws = 3 * 2 * J.lanesSec, fx = v => v.toFixed(1);
+  const n = J.nBr, angs = n === 3 ? [0, 90, 180] : Array.from({ length: n }, (_, i) => i * 360 / n);
+  o.push(`<rect width="${Wd}" height="${Hd}" fill="#eef1ea"/>`);
+  // chaussées des branches : trottoirs d'abord, puis chaussées, pour que le carrefour reste dégagé
+  const bw = i => (i % 2 === 0 && (n === 4 || n === 3 && i !== 1)) || n > 4 ? wm : ws;
+  angs.forEach((a, i) => { const w = bw(i); o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><rect x="${cx}" y="${fx(cy - w * S / 2 - 3 * S)}" width="${Wd}" height="${fx((w + 6) * S)}" fill="#d9d2c3"/></g>`); });
+  angs.forEach((a, i) => { const w = bw(i); o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><rect x="${fx(cx - w * S / 2)}" y="${fx(cy - w * S / 2)}" width="${Wd}" height="${fx(w * S)}" fill="#5b6169"/></g>`); });
+  if (n > 4) o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(Math.max(wm, ws) * S * 0.75)}" fill="#5b6169"/>`);
+  // passages piétons
+  const zebra = (a, dist, w) => { let s = ''; for (let k = -w / 2 + 0.25; k < w / 2; k += 1) s += `<rect x="${fx(cx + dist * S)}" y="${fx(cy + k * S)}" width="${4 * S}" height="${0.5 * S}" fill="#fff"/>`; return `<g transform="rotate(${-a} ${cx} ${cy})">${s}</g>`; };
+  const gir = GIR.includes(id), Rext = { mini: 10, compact: 13.5, moyen: 18, grand: 25 }[id] || 0;
+  angs.forEach((a, i) => { const w = (i % 2 === 0 && (n === 4 || n === 3 && i !== 1)) || n > 4 ? wm : ws; o.push(zebra(a, gir ? Rext + 3 : Math.max(wm, ws) / 2 + 3, w)); });
+  if (gir) {
+    const ann = id === 'mini' ? 6 : id === 'grand' ? 8 : 7, Ri = Rext - ann;
+    o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(Rext * S)}" fill="#5b6169"/>`);
+    o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(Ri * S)}" fill="${id === 'mini' ? '#c9c2b5' : '#9fbf86'}" stroke="#fff" stroke-width="2"${id === 'mini' ? ' stroke-dasharray="6 4"' : ''}/>`);
+    if (id !== 'mini') angs.forEach(a => o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><polygon points="${fx(cx + (Rext + 1) * S)},${cy} ${fx(cx + (Rext + 9) * S)},${fx(cy - 0.9 * S)} ${fx(cx + (Rext + 9) * S)},${fx(cy + 0.9 * S)}" fill="#c4d3ae" stroke="#fff"/></g>`));
+    o.push(`<line x1="${cx}" y1="${cy}" x2="${fx(cx + Rext * S * 0.707)}" y2="${fx(cy - Rext * S * 0.707)}" stroke="#fff" stroke-width="1.5"/><text x="${fx(cx + Rext * S * 0.4)}" y="${fx(cy - Rext * S * 0.4 - 4)}" font-size="12" fill="#fff">R = ${fm(Rext)} m</text>`);
+  }
+  if (id === 'feux' || id === 'feuxIlot') {
+    if (id === 'feuxIlot') o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(10 * S)}" fill="#9fbf86" stroke="#fff" stroke-width="2"/>`);
+    angs.forEach(a => o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><line x1="${fx(cx + (Math.max(wm, ws) / 2 + 8) * S)}" y1="${cy}" x2="${fx(cx + (Math.max(wm, ws) / 2 + 8) * S)}" y2="${fx(cy + wm * S / 2)}" stroke="#fff" stroke-width="3"/><rect x="${fx(cx + (Math.max(wm, ws) / 2 + 8.5) * S)}" y="${fx(cy + wm * S / 2 + 3)}" width="8" height="20" rx="2" fill="#222"/><circle cx="${fx(cx + (Math.max(wm, ws) / 2 + 8.5) * S + 4)}" cy="${fx(cy + wm * S / 2 + 8)}" r="2.5" fill="#e33"/><circle cx="${fx(cx + (Math.max(wm, ws) / 2 + 8.5) * S + 4)}" cy="${fx(cy + wm * S / 2 + 17)}" r="2.5" fill="#3c3"/></g>`));
+  }
+  if (id === 'clp' || id === 'stop') angs.forEach((a, i) => {
+    const sec = n === 4 ? i % 2 === 1 : n === 3 ? i === 1 : false; if (!sec) return;
+    const dx = Math.max(wm, ws) / 2 + 1;
+    o.push(`<g transform="rotate(${-a} ${cx} ${cy})"><line x1="${fx(cx + dx * S)}" y1="${cy}" x2="${fx(cx + dx * S)}" y2="${fx(cy + ws * S / 2)}" stroke="#fff" stroke-width="3"${id === 'clp' ? ' stroke-dasharray="6 5"' : ''}/>${id === 'clp' ? `<polygon points="${fx(cx + (dx + 3) * S)},${fx(cy + ws * S / 4)} ${fx(cx + (dx + 6) * S)},${fx(cy + ws * S / 4 - 6)} ${fx(cx + (dx + 6) * S)},${fx(cy + ws * S / 4 + 6)}" fill="#fff"/>` : `<text x="${fx(cx + (dx + 4) * S)}" y="${fx(cy + ws * S / 4 + 4)}" font-size="12" font-weight="700" fill="#fff" transform="rotate(90 ${fx(cx + (dx + 4) * S)} ${fx(cy + ws * S / 4)})">STOP</text>`}</g>`);
+  });
+  if (id === 'psgr') o.push(`<rect x="0" y="${fx(cy - 3.5 * S)}" width="${Wd}" height="${7 * S}" fill="none" stroke="#1b5ea8" stroke-width="3" stroke-dasharray="10 6"/><text x="12" y="${fx(cy - 4 * S)}" font-size="12" fill="#1b5ea8">PSGR</text>`);
+  if (['pad', 'clp', 'stop', 'feux', 'mini', 'compact'].includes(id) && J.ctx !== 'periurbain' && (J.speed || J.hMain === 'quartier' || J.hSec === 'quartier')) o.push(`<circle cx="${cx}" cy="${cy}" r="${fx(Math.max(wm, ws) * S * 0.75 + (gir ? (Rext - 7) * S : 0))}" fill="none" stroke="#a5503d" stroke-width="2" stroke-dasharray="4 4" opacity=".7"/>`);
+  o.push(`<line x1="16" y1="${Hd - 16}" x2="${16 + 10 * S}" y2="${Hd - 16}" stroke="#222" stroke-width="2"/><text x="16" y="${Hd - 22}" font-size="11" fill="#222">0</text><text x="${16 + 10 * S}" y="${Hd - 22}" font-size="11" text-anchor="middle" fill="#222">10 m</text>`);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wd} ${Hd}" font-family="Arial, Tahoma, sans-serif" role="img">${o.join('')}</svg>`;
+}
+
+/* ---------- interface du module carrefour ---------- */
+let JXR = null;   // dernier résultat
+function buildJxForm() {
+  const F = jt('f'), O = jt('o'), U = jt('u'), G = jt('g');
+  const field = ([k, kind, opt, unit]) => {
+    if (kind === 'chk') return `<label class="jx-chk"><input type="checkbox" data-jx="${k}"${JX[k] ? ' checked' : ''}> <span>${esc(F[k])}</span></label>`;
+    if (kind === 'sel') {
+      const lab = v => unit ? O[unit][v] : `${v} ${U.kmh}`;
+      return `<label class="jx-f"><span>${esc(F[k])}</span><select data-jx="${k}">${opt.map(v => `<option value="${v}"${String(JX[k]) === String(v) ? ' selected' : ''}>${esc(lab(v))}</option>`).join('')}</select></label>`;
+    }
+    return `<label class="jx-f"><span>${esc(F[k])}</span><span class="jx-num"><input type="number" data-jx="${k}" min="${opt[0]}" max="${opt[1]}" step="${opt[2]}" value="${JX[k]}" inputmode="decimal"><small>${esc(U[unit] || '')}</small></span></label>`;
+  };
+  $('#jx-form').innerHTML = Object.keys(JXF).map(g => `<fieldset class="jx-g jx-${g}"><legend>${esc(G[g])}</legend>${JXF[g].map(field).join('')}</fieldset>`).join('');
+}
+function renderJx() {
+  if (!$('#jx-res')) return;
+  const R = JXR = jxEval(JX), d = R.d, T = jt('types'), ST = jt('st'), CP = jt('cap');
+  const pill = st => `<span class="pill ${{ conseille: 'ok', possible: 'warn', deconseille: 'bad', excl: 'bad' }[st]}${st === 'excl' ? ' excl' : ''}">${esc(ST[st])}</span>`;
+  const a = R.top[0], b = R.top[1];
+  let h = `<h3>${esc(jt('resTitle'))}</h3><div class="verdict jx-verdict">`;
+  h += a ? `<p class="eyebrow">${esc(jt('recTitle'))}</p><h4>${esc(jt('recLead', T[a], b ? T[b] : ''))}</h4>` : `<p>${esc(jt('recNone'))}</p>`;
+  h += `<p class="note">${esc(jt('traffic', f0(d.E), f0(d.P), f0(d.S), f0(d.daily)))}</p><p class="note small">${esc(jt('rule'))}</p></div>`;
+  h += `<div class="jx-cols"><figure class="jx-sp"><figcaption>${esc(jt('spTitle'))}</figcaption>${jxSPChart(d.P, d.S)}</figure>`;
+  h += `<figure class="jx-sk"><figcaption>${esc(a ? T[a] : '')}</figcaption>${a ? jxSketch(a, JX) : ''}</figure></div>`;
+  h += `<div class="table-wrap"><table class="jx-tab"><thead><tr><th>${esc(jt('thType'))}</th><th>${esc(jt('thStatus'))}</th><th>${esc(jt('thCap'))}</th><th>${esc(jt('thWhy'))}</th></tr></thead><tbody>`;
+  for (const id of R.order) {
+    const r = R.r[id], keyPro = r.pros.find(p => p !== r.pros[0] || !r.hier) || r.pros[0];
+    const main = r.excl[0] || r.cap.txt.find(() => r.cap.lvl === 'insuff') || (r.status === 'conseille' ? keyPro : r.cons[0] || keyPro) || '';
+    const list = (ttl, arr, cls) => arr.length ? `<p class="jx-l ${cls}"><strong>${esc(ttl)}</strong></p><ul class="${cls}">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+    h += `<tr class="${R.top[0] === id ? 'best' : ''} st-${r.status}"><td class="name">${esc(T[id])}</td><td>${pill(r.status)}</td><td class="jx-cap ${r.status === 'excl' ? 'na' : r.cap.lvl}">${r.status === 'excl' ? '–' : esc(CP[r.cap.lvl])}</td>`
+      + `<td class="jx-why"><details><summary>${esc(main)}</summary>${list(jt('exclWhy'), r.excl, 'bad')}${list(jt('cons'), r.cons, 'warn')}${list(jt('pros'), r.pros, 'ok')}${r.cap.txt.length ? `<ul class="info">${r.cap.txt.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</details></td></tr>`;
+  }
+  h += '</tbody></table></div>';
+  const pick = jxPicked && R.r[jxPicked] ? jxPicked : a;
+  if (pick) {
+    const A = jxAssoc(pick, JX, d);
+    h += `<h3>${esc(jt('assocTitle'))} — ${esc(T[pick])}</h3><ul class="jx-assoc">${A.assoc.concat(A.dims, [A.sign]).map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+  }
+  $('#jx-res').innerHTML = h;
+  // choix du type et note
+  const opts = R.order.map(id => `<option value="${id}"${id === pick ? ' selected' : ''}>${esc(T[id])}${id === a ? esc(jt('recSuffix')) : ''} — ${esc(ST[R.r[id].status])}</option>`).join('');
+  $('#jx-note').innerHTML = `<h3>${esc(jt('chooseTitle'))}</h3><p class="note">${esc(jt('chooseIntro'))}</p>
+    <div class="note-grid"><label class="nf"><span>${esc(jt('chooseLabel'))}</span><select id="jx-pick">${opts}</select></label>
+    <label class="nf"><span>${t('mCommune')}</span><input id="jx-commune" type="text" value="${esc(META.commune)}" autocomplete="off"></label>
+    <label class="nf"><span>${t('mLieu')}</span><input id="jx-lieu" type="text" value="${esc(META.lieu)}" autocomplete="off"></label>
+    <label class="nf"><span>${t('mAuteur')}</span><input id="jx-auteur" type="text" value="${esc(META.auteur)}" autocomplete="off"></label></div>
+    <div class="form-actions"><button class="btn primary" type="button" id="jx-btn-note">${esc(jt('btnNote'))}</button><span class="msg" id="jx-note-msg"></span></div>`;
+}
+$('#jx-form').addEventListener('input', e => {
+  const el = e.target, k = el.dataset.jx; if (!k) return;
+  if (el.type === 'checkbox') JX[k] = el.checked;
+  else if (el.tagName === 'SELECT') JX[k] = typeof JX_DEF[k] === 'number' ? +el.value : el.value;
+  else { const v = parseFloat(el.value); if (!Number.isFinite(v)) return; JX[k] = Math.min(+el.max, Math.max(+el.min, v)); }
+  saveJx(); renderJx();
+});
+$('#jx-res').addEventListener('click', e => { const tr = e.target.closest('tr[class*="st-"]'); if (tr && !e.target.closest('summary, details')) tr.querySelector('details').open ^= true; });
+$('#jx-note').addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'jx-pick') { jxPicked = el.value; renderJx(); return; }
+  if (/^jx-(commune|lieu|auteur)$/.test(el.id)) { META[el.id.slice(3)] = el.value; try { localStorage.setItem('mv-meta', JSON.stringify(META)); } catch (err) { /* stockage indisponible */ } }
+});
+let jxNoteUrl = null;
+$('#jx-note').addEventListener('click', e => {
+  if (e.target.id !== 'jx-btn-note') return;
+  const id = $('#jx-pick').value, html = buildJxNote(id);
+  if (jxNoteUrl) URL.revokeObjectURL(jxNoteUrl);
+  jxNoteUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+  const w = window.open(jxNoteUrl, '_blank'), msg = $('#jx-note-msg');
+  if (w) msg.textContent = t('noteOpened'); else msg.innerHTML = `${esc(t('noteBlocked'))} <a href="${jxNoteUrl}" target="_blank" rel="noopener">${esc(t('noteLink'))}</a>`;
+});
+
+/* ---------- note de choix du carrefour ---------- */
+function buildJxNote(id) {
+  const R = JXR || jxEval(JX), d = R.d, r = R.r[id], N = jt('n'), T = jt('types'), ST = jt('st'), CP = jt('cap'), F = jt('f'), O = jt('o'), U = jt('u');
+  const NN = NOTE[lang] || NOTE.fr, A = jxAssoc(id, JX, d);
+  const meta = { commune: META.commune || NN.unknown, lieu: META.lieu || NN.unknown, auteur: META.auteur || NN.unknown, objet: N.objet, name: T[id], outil: NN.outil,
+    date: new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR', lang === 'en' ? { day: 'numeric', month: 'long', year: 'numeric' } : undefined) };
+  const li = arr => '<ul>' + arr.map(s => `<li>${esc(s)}</li>`).join('') + '</ul>';
+  const tbl = (cols, rows) => `<table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  let sn = 0; const H2 = k => `<h2>${++sn}. ${esc(N.s[k])}</h2>`;
+  const genLine = esc(NN.genBy).replace('urbain.ksr-infra.org', '<a href="https://urbain.ksr-infra.org" class="num">urbain.ksr-infra.org</a>');
+  let h = `<h1>${esc(N.title)}</h1><p class="sub">${esc(N.sub)}</p><p class="small gen">${genLine}</p>`;
+  h += `<table class="cover"><tbody>${N.cover.map(([k, l]) => `<tr><td>${esc(l)}</td><td>${esc(meta[k])}</td></tr>`).join('')}</tbody></table>`;
+  // en bref
+  const a = R.top[0], b = R.top[1], nEx = R.order.filter(x => R.r[x].status === 'excl').length;
+  h += `${H2('brief')}<ul class="brief">${[a ? N.brief.rec(T[a], b ? T[b] : '') : jt('recNone'), N.brief.chosen(T[id]), N.brief.traffic(f0(d.E), f0(d.daily)), N.brief.excl(nEx), N.brief.next].map(s => `<li>${esc(s)}</li>`).join('')}</ul>`;
+  // le lieu
+  if (SITE.lat !== null) {
+    const la = SITE.lat, lo = SITE.lon, gm = `https://www.google.com/maps/search/?api=1&query=${la.toFixed(5)},${lo.toFixed(5)}`, osm = `https://www.openstreetmap.org/?mlat=${la.toFixed(5)}&mlon=${lo.toFixed(5)}#map=18/${la.toFixed(5)}/${lo.toFixed(5)}`;
+    h += `${H2('site')}<p>${esc(NN.siteCoords(la, lo))} <a href="${osm}">${esc(NN.osmLink)}</a> · <a href="${gm}">${esc(NN.gmLink)}</a></p>`;
+    h += `<figure class="map-fig">${tileMapSVG(la, lo, 17, 'osm', 700, 470, SITE.data)}<figcaption class="small">${esc(SITE.data ? NN.siteFig : NN.siteFig0)} ${esc(NN.osmAttr)}</figcaption></figure>`;
+    h += `<figure class="map-fig">${tileMapSVG(la, lo, 18, 'sat', 700, 400, null)}<figcaption class="small">${esc(NN.satFig)} ${esc(NN.satAttr)}</figcaption></figure>`;
+  }
+  // les données
+  const val = ([k, kind, opt, unit]) => kind === 'chk' ? (JX[k] ? O.yes : O.no) : kind === 'sel' ? (unit ? O[unit][JX[k]] : `${JX[k]} ${U.kmh}`) : `${fm2(JX[k])} ${U[unit] || ''}`;
+  const rows = [];
+  for (const g of ['ctx', 'geo', 'traf', 'users']) { rows.push(`<tr><th colspan="2">${esc(jt('g')[g])}</th></tr>`); for (const f of JXF[g]) rows.push(`<tr><td>${esc(F[f[0]])}</td><td>${esc(val(f))}</td></tr>`); }
+  const objs = JXF.obj.filter(f => JX[f[0]]).map(f => F[f[0]]);
+  rows.push(`<tr><th colspan="2">${esc(jt('g').obj)}</th></tr><tr><td colspan="2">${esc(objs.join(' ; ') || '–')}</td></tr>`);
+  h += `${H2('data')}${tbl(N.dataCols, rows)}<p class="small">${esc(jt('traffic', f0(d.E), f0(d.P), f0(d.S), f0(d.daily)))}</p>`;
+  // la démarche
+  h += `${H2('method')}${li(N.method)}<p>${esc(jt('rule'))}</p>`;
+  // l'analyse critère par critère
+  const hn = x => jt('hName')[x], hk = d.hierKey.split('|');
+  const hl = d.hierList.map(x => x === 'gir' ? jt('girName') : T[x]).join(', ');
+  h += `${H2('analysis')}<h3>${esc(N.hAn.hier)}</h3><p>${esc(d.hierList.length ? jt('hierList', hn(hk[0]), hn(hk[1]), hl) : jt('hierVoid'))}</p>`;
+  h += `<h3>${esc(N.hAn.traf)}</h3>${li([jt('traffic', f0(d.E), f0(d.P), f0(d.S), f0(d.daily))].concat(R.r.clp.cap.txt.slice(1), R.r.feux.cap.txt, R.r.compact.cap.txt, R.r.moyen.cap.txt))}`;
+  h += `<figure class="pf-fig" style="max-width:120mm">${jxSPChart(d.P, d.S)}<figcaption class="small">${esc(N.figSP)}</figcaption></figure>`;
+  const usersL = [...new Set(JX_TYPES.flatMap(x => R.r[x].pros.concat(R.r[x].cons)).filter(s => /piéton|cycl|transport|bus|tram|pedestrian|cyclist|transit|مترجّل|درّاج|نقل|حافل|ترامواي/i.test(s)))];
+  h += `<h3>${esc(N.hAn.users)}</h3>${li(usersL.slice(0, 10))}`;
+  const geoL = [...new Set(JX_TYPES.flatMap(x => R.r[x].excl.concat(R.r[x].cons)).filter(s => /emprise|branche|pente|angle|voie par sens|footprint|branch|slope|gradient|lane per direction|عرض|فرع|انحدار|زاوي/i.test(s)))];
+  h += `<h3>${esc(N.hAn.geo)}</h3>${li(geoL.length ? geoL : ['–'])}`;
+  // la comparaison
+  h += `${H2('compare')}${tbl(N.cmpCols, R.order.map(x => { const q = R.r[x]; return `<tr${x === id ? ' style="font-weight:600"' : ''}><td>${esc(T[x])}</td><td>${esc(ST[q.status])}</td><td>${esc(CP[q.cap.lvl])}</td><td>${esc(q.excl[0] || q.cons[0] || q.pros[0] || '')}</td></tr>`; }))}`;
+  // le type retenu
+  h += `${H2('chosen')}<p><strong>${esc(N.chosenIntro(T[id]))}</strong></p>`;
+  if (id !== a) h += `<p>${esc(N.notRec)}</p>`;
+  if (r.excl.length) h += `<p class="ck-bad"><strong>${esc(N.exclWarn)}</strong></p>${li(r.excl)}`;
+  h += `<figure class="pf-fig" style="max-width:140mm">${jxSketch(id, JX)}<figcaption class="small">${esc(N.figSketch)}</figcaption></figure>`;
+  h += `<h3>${esc(N.dims)}</h3>${li(A.dims)}<h3>${esc(N.assoc)}</h3>${li(A.assoc)}<h3>${esc(N.signs)}</h3><p>${esc(A.sign)}</p>`;
+  if (r.cons.length) h += `<h3>${esc(N.vigil)}</h3>${li(r.cons)}`;
+  // ce que l'outil ne tranche pas
+  h += `${H2('open')}${li(N.open)}`;
+  // plan d'action
+  const ac = N.actions, acts = [[1, ac.count], [1, ac.acc], [1, ac.variants]];
+  if (GIR.includes(id) && d.E > 1500) acts.push([1, ac.capRb]);
+  if (id === 'feux' || id === 'feuxIlot') acts.push([1, ac.capFx]);
+  if (JX.tc !== 'aucun') acts.push([2, ac.tc]);
+  acts.push([2, ac.exec], [3, ac.after]);
+  h += `${H2('plan')}${tbl(N.planCols, acts.map(([p, [x, w, q]]) => `<tr><td class="prio p${p}">P${p}</td><td>${esc(x)}</td><td>${esc(w)}</td><td>${esc(q)}</td></tr>`))}`;
+  // annexe
+  h += `<section class="annex"><h2>${esc(N.s.annex)}</h2>${li(N.hyp)}<ol dir="ltr">${N.sources.map(s => `<li>${esc(s)}</li>`).join('')}</ol></section>`;
+  h += `<p class="small gen gen-end">${genLine} · ${esc(meta.date)}</p>`;
+  const dir = lang === 'ar' ? 'rtl' : 'ltr';
+  return `<!doctype html><html lang="${lang}" dir="${dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(N.title)} — ${esc(T[id])}</title><style>${NOTE_CSS}</style></head><body>
+<div class="toolbar"><button type="button" onclick="window.print()">${esc(NN.print)}</button><span>${esc(N.title)} — ${esc(T[id])}</span></div>
+<div class="sheet">${h}</div></body></html>`;
+}
+const fm2 = v => (Number.isInteger(v) ? nf0 : nfa).format(v);
+
+/* ---------- navigation entre modules ---------- */
+let MOD = 'cross', modWasPlaying = false;
+function setModule(m) {
+  MOD = m === 'jx' ? 'jx' : 'cross';
+  document.body.classList.toggle('mod-jx', MOD === 'jx');
+  document.querySelectorAll('[data-mod]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mod === MOD)));
+  // la carte du lieu est commune aux deux modules : on la déplace dans le module affiché
+  const map = $('#site-map');
+  if (MOD === 'jx') { if (isCompact()) setCompact(false); modWasPlaying = playing; setPlaying(false); $('#jx-site-slot').appendChild(map); }
+  else { $('#donnees').insertBefore(map, $('#profil')); if (modWasPlaying) setPlaying(true); }
+  if (MAP) setTimeout(() => MAP.invalidateSize(), 0);
+  setHeaderTexts(); setHash();
+}
+function setHeaderTexts() {
+  $('#guide-body').innerHTML = MOD === 'jx' ? jt('guideBody') : t('guideBody');
+  if (MOD === 'jx') { $('#eyebrow').textContent = jt('jxEyebrow'); $('h1[data-i18n="h1"]').textContent = jt('jxH1'); $('#lede').textContent = jt('jxLede'); }
+  else { $('#eyebrow').textContent = t('eyebrow', P); $('h1[data-i18n="h1"]').textContent = t('h1'); $('#lede').textContent = t('lede', P); }
+}
+function buildJxUI() {
+  $('#mod-switch').innerHTML = `<button class="btn" type="button" data-mod="cross">${esc(jt('modCross'))}</button><button class="btn" type="button" data-mod="jx">${esc(jt('modJx'))}</button>`;
+  document.querySelectorAll('[data-mod]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mod === MOD)));
+  $('#jx-title').textContent = jt('title'); $('#jx-intro').textContent = jt('intro'); $('#jx-site-hint').textContent = jt('siteHint');
+  buildJxForm(); renderJx(); setHeaderTexts();
+}
+$('#mod-switch').addEventListener('click', e => { const b = e.target.closest('[data-mod]'); if (b && b.dataset.mod !== MOD) setModule(b.dataset.mod); });
+
+
+/* =====================================================================================================
+   PROJET : enregistrer (fichier sur le poste + copie archivée par l'administrateur, avec l'adresse IP)
+   et ouvrir un projet. Le fichier contient tout l'état utile : lieu, données, profils, journée, carrefour.
+   ===================================================================================================== */
+Object.assign(I18N.fr, {
+  projSave: 'Enregistrer le projet', projOpen: 'Ouvrir un projet',
+  projNotice: 'À chaque enregistrement, le projet est téléchargé sur votre poste ; une copie et l’adresse IP de l’ordinateur sont aussi transmises à l’administrateur de l’application, pour le suivi des usages.',
+  projSaved: f => `Projet enregistré sur votre poste : ${f}.`, projArchived: 'Copie transmise à l’administrateur.',
+  projArchFail: 'La copie n’a pas pu être transmise à l’administrateur ; le fichier est bien enregistré sur votre poste.',
+  projOpened: f => `Projet ouvert : ${f}.`, projBad: 'Ce fichier n’est pas un projet de cette application.', projFile: 'projet'
+});
+Object.assign(I18N.ar, {
+  projSave: 'حفظ المشروع', projOpen: 'فتح مشروع',
+  projNotice: 'عند كل حفظ، يُنزَّل المشروع على حاسوبك، وتُرسَل نسخة منه وعنوان IP للحاسوب أيضًا إلى مشرف التطبيق لمتابعة الاستعمال.',
+  projSaved: f => `حُفظ المشروع على حاسوبك: ${f}.`, projArchived: 'أُرسلت نسخة إلى المشرف.',
+  projArchFail: 'تعذّر إرسال النسخة إلى المشرف؛ أمّا الملف فقد حُفظ على حاسوبك.',
+  projOpened: f => `فُتح المشروع: ${f}.`, projBad: 'هذا الملف ليس مشروعًا من هذا التطبيق.', projFile: 'مشروع'
+});
+Object.assign(I18N.en, {
+  projSave: 'Save the project', projOpen: 'Open a project',
+  projNotice: 'Each time you save, the project is downloaded to your computer; a copy and the computer’s IP address are also sent to the application administrator to monitor usage.',
+  projSaved: f => `Project saved on your computer: ${f}.`, projArchived: 'Copy sent to the administrator.',
+  projArchFail: 'The copy could not be sent to the administrator; the file is saved on your computer.',
+  projOpened: f => `Project opened: ${f}.`, projBad: 'This file is not a project from this application.', projFile: 'project'
+});
+
+function projSnapshot() {
+  const params = {}; for (const g of FIELDS) for (const f of g.items) params[f.k] = P[f.k];
+  return { app: 'urbain.ksr-infra.org', kind: 'urb-projet', version: 1, savedAt: new Date().toISOString(), lang, module: MOD,
+    meta: { ...META }, site: SITE.lat === null ? null : { lat: SITE.lat, lon: SITE.lon, data: SITE.data, pop: SITE.pop, popState: SITE.popState === 'run' ? '' : SITE.popState },
+    params, calibModified, profile: { total: PROF.total, segs: PROF.segs, proj: PROJ, cross: CROSS }, day: { mode: DAY.mode, counts: DAY.counts },
+    variant: pickedVariant, prices: { ...PRICES }, rate: RATE, jx: { ...JX }, jxPicked };
+}
+function projApply(s) {
+  if (!s || s.kind !== 'urb-projet' || !s.params) throw new Error('bad');
+  Object.assign(META, { commune: '', lieu: '', auteur: '' }, s.meta || {});
+  try { localStorage.setItem('mv-meta', JSON.stringify(META)); } catch (e) { /* stockage indisponible */ }
+  // paramètres : seules les clés connues, ramenées dans leurs bornes
+  const next = { ...DEFAULTS };
+  for (const g of FIELDS) for (const f of g.items) { const v = +s.params[f.k]; if (Number.isFinite(v)) next[f.k] = f.min !== undefined ? Math.min(f.max, Math.max(f.min, v)) : v; }
+  P = derive(next); calibModified = fingerprint(P) !== FP_REF;
+  if (s.profile && okSegs(s.profile.segs)) {
+    PROF = { total: +s.profile.total || 12, segs: readSegs(s.profile.segs) };
+    PROJ = okSegs(s.profile.proj) ? readSegs(s.profile.proj) : null;
+    for (const k of Object.keys(CROSS)) delete CROSS[k];
+    if (s.profile.cross) for (const k of Object.keys(s.profile.cross)) if (okSegs(s.profile.cross[k])) CROSS[k] = readSegs(s.profile.cross[k]);
+    saveProf();
+  }
+  if (s.day) { DAY.mode = s.day.mode === 'counts' ? 'counts' : 'profile'; if (Array.isArray(s.day.counts)) DAY.counts = s.day.counts.slice(0, 24).concat(Array(24).fill('')).slice(0, 24); saveDay(); }
+  if (s.prices) for (const k of Object.keys(PRICES)) if (Number.isFinite(+s.prices[k])) PRICES[k] = +s.prices[k];
+  if (Number.isFinite(+s.rate) && +s.rate > 0) RATE = +s.rate;
+  pickedVariant = scenariosIds().includes(s.variant) ? s.variant : null;
+  if (s.jx) { for (const k of Object.keys(JX_DEF)) if (k in s.jx && typeof s.jx[k] === typeof JX_DEF[k]) JX[k] = s.jx[k]; saveJx(); }
+  jxPicked = JX_TYPES.includes(s.jxPicked) ? s.jxPicked : null;
+  if (s.site && Number.isFinite(s.site.lat) && Number.isFinite(s.site.lon)) {
+    if (MAP) { MAP.setView([s.site.lat, s.site.lon], 17); setPoint(s.site.lat, s.site.lon); } else Object.assign(SITE, { lat: s.site.lat, lon: s.site.lon });
+    Object.assign(SITE, { data: s.site.data || null, pop: s.site.pop || null, popState: s.site.popState || '' });
+    if (MAP && SITE.data) drawSiteLayers();
+  }
+  restart(true);
+  setLang(LANGS.includes(s.lang) ? s.lang : lang);
+  setModule(s.module === 'jx' ? 'jx' : 'cross');
+}
+const scenariosIds = () => scenarios.map(sc => sc.id);
+async function projSave() {
+  const snap = projSnapshot(), txt = JSON.stringify(snap, null, 1);
+  const slug = (META.commune || t('projFile')).normalize('NFKD').replace(/[^\w؀-ۿ-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'projet';
+  const fname = `urb-${slug}-${snap.savedAt.slice(0, 16).replace(/[-:T]/g, '')}.json`;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'application/json' })); a.download = fname;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  const msg = $('#proj-msg'); msg.textContent = t('projSaved', fname);
+  // copie archivée par l'administrateur (fonction serveur api/projets), seulement en ligne
+  if (!/^https?:$/.test(location.protocol)) return;
+  try {
+    const r = await fetch('api/projets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: txt });
+    const j = await r.json().catch(() => ({}));
+    msg.textContent = t('projSaved', fname) + ' ' + (r.ok && j.stored ? t('projArchived') : t('projArchFail'));
+  } catch (e) { msg.textContent = t('projSaved', fname) + ' ' + t('projArchFail'); }
+}
+function buildProjBar() {
+  $('#proj-bar').innerHTML = `<button class="btn" type="button" id="proj-save">${esc(t('projSave'))}</button><button class="btn" type="button" id="proj-open">${esc(t('projOpen'))}</button><input type="file" id="proj-file" accept=".json,application/json" hidden>`;
+  $('#proj-notice').textContent = t('projNotice');
+}
+$('#proj-bar').addEventListener('click', e => {
+  if (e.target.id === 'proj-save') projSave();
+  else if (e.target.id === 'proj-open') $('#proj-file').click();
+});
+$('#proj-bar').addEventListener('change', e => {
+  if (e.target.id !== 'proj-file' || !e.target.files[0]) return;
+  const file = e.target.files[0], rd = new FileReader();
+  rd.onload = () => {
+    try { projApply(JSON.parse(rd.result)); $('#proj-msg').textContent = t('projOpened', file.name); }
+    catch (err) { $('#proj-msg').textContent = t('projBad'); }
+    e.target.value = '';
+  };
+  rd.readAsText(file);
+});
+
 /* filet de sécurité de l'anglais : une clé ou une fiche non traduite reprend le français au lieu de provoquer une erreur */
 function fillMissing(dst, src) {
   const obj = v => v && typeof v === 'object' && !Array.isArray(v);
   for (const k of Object.keys(src)) { if (!(k in dst)) dst[k] = src[k]; else if (obj(src[k]) && obj(dst[k])) fillMissing(dst[k], src[k]); }
 }
-fillMissing(I18N.en, I18N.fr); fillMissing(NOTE.en, NOTE.fr);
+fillMissing(I18N.en, I18N.fr); fillMissing(NOTE.en, NOTE.fr); fillMissing(JXT.ar, JXT.fr); fillMissing(JXT.en, JXT.fr);
 for (const p of PRICE_DEF) { if (!p.en) p.en = p.fr; if (p.u[2] === undefined) p.u[2] = p.u[0]; }
 for (const k of Object.keys(COND)) if (!COND[k].en) COND[k].en = COND[k].fr;
 for (const k of Object.keys(VDOC)) if (!VDOC[k].en) VDOC[k].en = VDOC[k].fr;
@@ -4748,6 +6022,7 @@ for (let i = 0; i < PRERUN / DT; i++) for (const s of sims) s.step();   // dix m
 setLang(lang);
 setView(viewMode);
 if (hashTok.includes('presentation')) setCompact(true);
+if (hashTok.includes('carrefour')) setModule('jx');
 updateKpis(); clock();
 startEvaluation();
 requestAnimationFrame(frame);
@@ -4760,7 +6035,7 @@ const onLibs = () => {
 if (document.readyState === 'complete') onLibs(); else window.addEventListener('load', onLibs);
 
 // accès console pour vérification
-window.__mv = { prof: { get: () => PROF, proj: () => PROJ, cross: () => CROSS, PRESETS, presetProfile, crossProfile, crossOf, profChecks, crossStages, profileSVG }, stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P,
+window.__mv = { proj: { snap: () => projSnapshot(), apply: s => projApply(s) }, jx: () => JXR, prof: { get: () => PROF, proj: () => PROJ, cross: () => CROSS, PRESETS, presetProfile, crossProfile, crossOf, profChecks, crossStages, profileSVG }, stats: () => sims.map(s => ({ id: s.sc.id, ...stats(s) })), sims: () => sims, evalRes: () => evalRes, rec: () => evalRes && recommend(evalRes, scenarios), P: () => P,
   note: id => buildNote(id), setLang: l => setLang(l),
   site: (la, lo) => { if (MAP) MAP.setView([la, lo], 17); setPoint(la, lo); return analyseSite(); }, siteData: () => SITE, day: () => DAY };
 })();

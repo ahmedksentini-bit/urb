@@ -28,6 +28,8 @@ Toute la page tient dans `index.html` : aucun serveur, aucune compilation. La bi
 - **Trafic sur la journée.** Profil horaire type ou comptages de la commune ; la journée est simulée de 5 h à 23 h pour chaque variante : heures de saturation, longueur des files, recommandations.
 - **Note de calcul.** La commune choisit la variante retenue ; la page produit une note imprimable (français ou arabe) : résumé pour les élus, résultats expliqués, conditions d'utilisation vérifiées, plan de principe coté au format A4 paysage, implantation, visibilité, signalisation, éclairage, trottoirs, entretien, coût sommaire en dinars et en euros, plan d'action P1/P2/P3 et annexes techniques. Les prix unitaires et le taux de change sont modifiables.
 - **Trois langues.** Français, arabe (mise en page de droite à gauche) et anglais, au choix en haut de la page ; la note de calcul suit la langue choisie, avec les nombres au format de la langue (virgule ou point décimal).
+- **Module « Carrefour ».** Le bouton « Carrefour », sous le titre, ouvre une aide au choix du type de carrefour urbain selon le guide Certu « Carrefours urbains » (2010) et l'IISR, 3e partie. La commune décrit le contexte (hiérarchie des voies, vitesses), la géométrie (branches, emprise, pente, visibilité), le trafic de pointe, les usagers et ses objectifs. Pour chacun des dix types (priorité à droite, cédez-le-passage, stop, mini-giratoire, giratoire compact, moyen ou grand, carrefour à feux, avec îlot central, PSGR), l'outil donne un avis (conseillé, possible, déconseillé, exclu), la capacité et toutes ses raisons, chacune rattachée à une page du guide : tableau hiérarchie × types (p. 63), limites de trafic (p. 64), créneau critique et attente sur la voie secondaire (p. 93), graphique « feux ou pas de feux » (p. 68), réserve de capacité des feux (p. 159), ordres de grandeur et équilibre des flux des giratoires (p. 66, 124), contre-indications. Le guide ne pondère pas ses critères : l'outil classe les types par une règle publiée sur la page et invite à comparer les deux ou trois premiers en concertation. Schéma de principe, aménagements associés (refuge, tourne-à-gauche, triangles de visibilité, dimensions, signalisation) et note de choix imprimable dans les trois langues. Le mode d'emploi en tête de page change avec le module.
+- **Enregistrer et ouvrir un projet.** « Enregistrer le projet » télécharge un fichier `.json` qui contient tout l'état utile (lieu et analyse, données, profils, journée, variante, prix, carrefour) ; « Ouvrir un projet » le recharge. À chaque enregistrement, une copie est aussi envoyée à la fonction `functions/api/projets.js`, qui la conserve avec l'adresse IP, le pays, la ville, la date et le navigateur ; la page en informe l'utilisateur sous les boutons.
 - **Mode présentation.** Toutes les bandes tiennent sur un seul écran, pour le partage d'écran ou l'enregistrement vidéo.
 
 Adresses directes :
@@ -36,10 +38,11 @@ Adresses directes :
 - `…/#ar` : arabe ;
 - `…/#en` : anglais ;
 - `…/#presentation-ar`, `…/#presentation-en` : mode présentation dans la langue choisie.
+- `…/#carrefour`, `…/#carrefour-ar`, `…/#carrefour-en` : module carrefour.
 
 ## Mode d'emploi à tenir à jour
 
-Le mode d'emploi affiché en tête de page vit dans `I18N.fr.guideBody`, `I18N.ar.guideBody` et `I18N.en.guideBody`. Tout nouveau module doit l'y compléter, dans les trois langues et dans la même livraison : une étape, les données qu'il demande, l'endroit où il affiche ses résultats (page et note de calcul).
+Le mode d’emploi affiché en tête de page vit dans `I18N.fr/ar/en.guideBody` (traversée piétonne) et `JXT.fr/ar/en.guideBody` (module carrefour). Tout nouveau module doit l'y compléter, dans les trois langues et dans la même livraison : une étape, les données qu'il demande, l'endroit où il affiche ses résultats (page et note de calcul).
 
 ## Ce que la commune peut modifier, et ce qui est verrouillé
 
@@ -90,3 +93,18 @@ La page est servie telle quelle.
 - Décret n° 94-447 du 27 mai 1994 ; norme NF P 98-300.
 - CERTU (2010). *Guide des coussins et plateaux*.
 - Bertulis T., Dulaski D. M. (2014). Driver approach speed and its impact on driver yielding to pedestrian behavior. *Transportation Research Record* 2464.
+
+## Archive des projets enregistrés (administrateur)
+
+La fonction `functions/api/projets.js` garde une copie de chaque projet enregistré, avec l'adresse IP, le pays et la ville (données de Cloudflare), la date et le navigateur. La page `admin.html` les liste et permet de télécharger chaque copie.
+
+Mise en place, une seule fois, dans le tableau de bord Cloudflare :
+
+1. **Workers et Pages → KV** : créer un espace de noms, par exemple `urb-projets`.
+2. **Projet Pages → Paramètres → Liaisons** : ajouter une liaison KV nommée **`URB_PROJETS`** vers cet espace.
+3. **Projet Pages → Paramètres → Variables et secrets** : ajouter un secret **`ADMIN_KEY`** (une phrase longue et difficile à deviner).
+4. Redéployer (un nouveau push suffit).
+
+Ensuite, `https://urbain.ksr-infra.org/admin.html` demande la clé et affiche les enregistrements. Sans liaison KV, la page enregistre toujours le fichier sur le poste de l'utilisateur et signale que la copie n'a pas pu être transmise.
+
+L'adresse IP est une donnée personnelle (loi organique tunisienne n° 2004-63 ; RGPD pour les visiteurs européens) : la page l'annonce sous le bouton « Enregistrer le projet ». Conserver ces données le temps nécessaire au suivi des usages, puis les supprimer (les entrées KV peuvent être effacées depuis le tableau de bord). Une adresse IP désigne un accès réseau (parfois partagé par un opérateur mobile), pas une personne.

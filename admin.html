@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Projets enregistrés</title>
+<style>
+:root { --bg: #eceff0; --surface: #f7f9f9; --ink: #17212b; --muted: #5b6770; --line: #ccd4d8; --accent: #1b5ea8; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #101418; --surface: #171c21; --ink: #e4e9ec; --muted: #98a4ad; --line: #2b333a; --accent: #72aaea; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #101418; --surface: #171c21; --ink: #e4e9ec; --muted: #98a4ad; --line: #2b333a; --accent: #72aaea; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, Arial, sans-serif; }
+.wrap { max-width: 1300px; margin: 0 auto; padding: 24px 16px; }
+h1 { margin: 0 0 6px; font-size: 26px; }
+.note { color: var(--muted); font-size: 13.5px; margin: 0 0 14px; }
+form { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+input { font: inherit; padding: 7px 9px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink); min-width: 0; flex: 1 1 240px; }
+button { font: 600 14px/1 inherit; padding: 9px 14px; border-radius: 5px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 980px; font-size: 13.5px; }
+th, td { padding: 7px 9px; text-align: start; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+td.ip { font-family: Consolas, monospace; white-space: nowrap; }
+td.ua { color: var(--muted); font-size: 12px; max-width: 280px; }
+a { color: var(--accent); }
+#msg { min-height: 1.4em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Projets enregistrés</h1>
+  <p class="note">Copies archivées à chaque « Enregistrer le projet » de urbain.ksr-infra.org, avec l’adresse IP et le pays de l’ordinateur. Page réservée à l’administrateur : la clé est demandée à chaque session et n’est pas conservée.</p>
+  <form id="f"><input id="key" type="password" placeholder="Clé d’administration" autocomplete="current-password"><button type="submit">Afficher</button></form>
+  <p class="note" id="msg" role="status"></p>
+  <div class="table-wrap"><table><thead><tr><th>Date</th><th>Adresse IP</th><th>Pays, ville</th><th>Commune</th><th>Lieu</th><th>Établie par</th><th>Module</th><th>Taille</th><th>Navigateur</th><th>Copie</th></tr></thead><tbody id="rows"></tbody></table></div>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let KEY = '';
+try { KEY = sessionStorage.getItem('urb-admin') || ''; } catch (e) { /* stockage indisponible */ }
+async function load() {
+  $('#msg').textContent = 'Chargement…';
+  try {
+    const r = await fetch('api/projets', { headers: { Authorization: 'Bearer ' + KEY } });
+    const j = await r.json();
+    if (!r.ok) { $('#msg').textContent = j.error || ('Erreur ' + r.status); $('#rows').innerHTML = ''; return; }
+    try { sessionStorage.setItem('urb-admin', KEY); } catch (e) { /* stockage indisponible */ }
+    $('#msg').textContent = j.count + ' enregistrement(s).';
+    $('#rows').innerHTML = j.items.map(x => `<tr><td>${esc(new Date(x.date).toLocaleString('fr-FR'))}</td><td class="ip">${esc(x.ip)}</td><td>${esc([x.pays, x.ville].filter(Boolean).join(', '))}</td><td>${esc(x.commune)}</td><td>${esc(x.lieu)}</td><td>${esc(x.auteur)}</td><td>${esc(x.module)}</td><td>${esc(Math.round((x.taille || 0) / 1024))} Ko</td><td class="ua">${esc(x.navigateur)}</td><td><a href="#" data-id="${esc(x.id)}">Télécharger</a></td></tr>`).join('');
+  } catch (e) { $('#msg').textContent = 'Erreur réseau.'; }
+}
+$('#f').addEventListener('submit', e => { e.preventDefault(); KEY = $('#key').value.trim(); load(); });
+$('#rows').addEventListener('click', async e => {
+  const a = e.target.closest('a[data-id]'); if (!a) return;
+  e.preventDefault();
+  const r = await fetch('api/projets?id=' + encodeURIComponent(a.dataset.id), { headers: { Authorization: 'Bearer ' + KEY } });
+  if (!r.ok) { $('#msg').textContent = 'Téléchargement refusé (' + r.status + ').'; return; }
+  const url = URL.createObjectURL(await r.blob()), l = document.createElement('a');
+  l.href = url; l.download = 'urb-archive-' + a.dataset.id.replace(/[^\w-]/g, '') + '.json'; document.body.appendChild(l); l.click(); l.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+});
+if (KEY) load();
+</script>
+</body>
+</html>

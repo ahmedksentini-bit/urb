@@ -231,6 +231,9 @@ body.pf-dragging, body.pf-dragging * { cursor: grabbing !important; user-select:
 .pf-ghost-pic svg { display: block; height: 120px; width: auto; min-width: 24px; }
 .pf-ghost-lbl { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font: 600 12px/1.2 var(--font-display); color: var(--ink); }
 .pseg .nm { font: 600 12.5px/1.2 var(--font-display); display: flex; align-items: center; gap: 6px; min-height: 30px; }
+.pseg .fixw { font-weight: 600; color: var(--muted); }
+.prof-irap { margin-top: 12px; } .prof-irap h4 { margin: 0 0 6px; } .pf-irap-v { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; margin-bottom: 6px; font-size: 13px; }
+.pf-irap-v input { width: 70px; } .pf-irap-t td.n, .pf-irap-t th:not(:first-child) { text-align: center; } .pf-irap-t { max-width: 520px; }
 .pseg .wrow { display: flex; align-items: center; gap: 3px; }
 .pseg input { width: 58px; font: 500 13px/1.2 var(--font-display); padding: 3px 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface); color: var(--ink); text-align: right; }
 .pseg .mini { padding: 3px 7px; font-size: 12px; line-height: 1.2; }
@@ -1635,9 +1638,9 @@ const IRAP = {
   // flux extérieur des piétons (fiche 5, figure 5) selon la saturation des voies 0 ; 0,1… 1 (voie saturée à 18 000 véh/j)
   ef: [0, 0.0150, 0.0300, 0.0420, 0.0520, 0.0620, 0.0700, 0.0780, 0.0860, 0.0930, 0.1000],
   // installations de traversée : facteur de probabilité hors école (gravité 90 dans tous les cas)
-  fac: { marked: 4.8, markedRefuge: 3.8, raised: 3.2, raisedRefuge: 2.5, signal: 1.25, signalRefuge: 1.0 },
+  fac: { marked: 4.8, markedRefuge: 3.8, raised: 3.2, raisedRefuge: 2.5, signal: 1.25, signalRefuge: 1.0, none: 6.7 },
   // trottoirs : probabilité (marche le long)
-  walk: { none: 20, informal: 6, adj: 0.1, sep1: 0.09, sep3: 0.075 },
+  walk: { none: 20, informal: 6, adj: 0.1, sep1: 0.09, sep3: 0.075, barrier: 0 },
   bandsTotal: [5, 15, 40, 90], bandsCross: [4.8, 14, 32.5, 75], bandsAlong: [0.2, 1, 7.5, 15],
   // estimation pour les autres usagers (même modèle, mêmes fiches) : vitesse occupants et motos (v/150)³ et cyclistes,
   // flux des chocs frontaux en dépassement (fiche 5, figure 3), paliers occupants-motos et cyclistes (fiche 7)
@@ -1650,84 +1653,128 @@ const IRAP = {
   efOt: [0, 0.0100, 0.0201, 0.0301, 0.0420, 0.0600, 0.0860, 0.1161, 0.1481, 0.1801, 0.2000],
   bandsMot: [2.5, 5, 12.5, 22.5], bandsBc: [5, 10, 30, 60]
 };
-// abords d'un côté (segments de la façade vers la chaussée) : premier obstacle rigide en partant de la voie
-// (poteau d'éclairage, arbre, sinon la façade) et sa distance au bord de voie
+// éléments du profil en travers vus par iRAP : dispositifs de retenue, terre-pleins, éclairage
+const IRAP_BARRIER = { dba: 'concrete', gs2: 'metal' };
+const MEDIAN_SEGS = ['median', 'medPave', 'medPaveLamp', 'medGreenLamp'];
+const LIT_SEGS = ['lamp', 'medPaveLamp', 'medGreenLamp'];
+const isTraffic = s => s.t === 'lane' || s.t === 'bus';
+// gravité de l'obstacle latéral pour l'occupant, le motocycliste et le cycliste (fiche « Roadside severity – object »)
+const IRAP_OBJ = { concrete: [15, 25, 25], metal: [12, 30, 30], pole: [60, 60, 60], tree: [60, 60, 60], building: [60, 60, 60] };
+const irapDistF = (d, bc) => d < 1 ? 1 : d < 5 ? (bc ? 0.6 : 0.8) : d < 10 ? (bc ? 0.1 : 0.35) : (bc ? 0.01 : 0.1);
+const irapInterp = (tab, x0, dx, x) => { const u = Math.max(0, Math.min(tab.length - 1, (x - x0) / dx)), k = Math.min(tab.length - 2, Math.floor(u)); return tab[k] + (tab[k + 1] - tab[k]) * (u - k); };
+const irapStars = (s, b) => s < b[0] ? 5 : s < b[1] ? 4 : s < b[2] ? 3 : s < b[3] ? 2 : 1;
+// abords d'un côté (segments de la façade vers la chaussée) : premier obstacle en partant de la voie (dispositif de
+// retenue, poteau d'éclairage ou garde-corps, arbre, sinon la façade) et sa distance au bord de voie
 function irapRoadside(side) {
   let d = 0;
   for (let j = side.length - 1; j >= 0; j--) {
     const s = side[j];
-    if (s.t === 'lamp') return { obj: 'pole', d };
+    if (IRAP_BARRIER[s.t]) return { obj: IRAP_BARRIER[s.t], d };
+    if (s.t === 'lamp' || s.t === 's8') return { obj: 'pole', d };
     if (s.t === 'trees') return { obj: 'tree', d };
     d += s.w;
   }
   return { obj: 'building', d };
 }
-const irapDistF = (d, bc) => d < 1 ? 1 : d < 5 ? (bc ? 0.6 : 0.8) : d < 10 ? (bc ? 0.1 : 0.35) : (bc ? 0.01 : 0.1);
-const irapInterp = (tab, x0, dx, x) => { const u = Math.max(0, Math.min(tab.length - 1, (x - x0) / dx)), k = Math.min(tab.length - 2, Math.floor(u)); return tab[k] + (tab[k + 1] - tab[k]) * (u - k); };
-const irapStars = (s, b) => s < b[0] ? 5 : s < b[1] ? 4 : s < b[2] ? 3 : s < b[3] ? 2 : 1;
-// trottoir d'un côté (segments de la façade vers la chaussée) : le plus large, et sa séparation de la première voie
+// trottoir d'un côté : le plus large ; protégé si un garde-corps ou un dispositif de retenue le sépare de la chaussée,
+// sinon séparé de plus de 1 m ou de 3 m, ou contre la chaussée
 function irapSide(side) {
   let k = -1;
   side.forEach((s, j) => { if ((s.t === 'walk' || s.t === 'ext') && (k < 0 || s.w > side[k].w)) k = j; });
   if (k < 0) return { cat: 'none', sep: 0 };
   if (side[k].w < 1) return { cat: 'informal', sep: 0 };
-  const sep = side.slice(k + 1).reduce((a, s) => a + s.w, 0);
+  const between = side.slice(k + 1);
+  if (between.some(s => s.t === 's8' || IRAP_BARRIER[s.t])) return { cat: 'barrier', sep: 0 };
+  const sep = between.reduce((a, s) => a + s.w, 0);
   return { cat: sep >= 3 ? 'sep3' : sep > 1 ? 'sep1' : 'adj', sep };
 }
-// attributs codés et scores d'un aménagement ; e : ses résultats (V85 au passage)
-function irapPed(sc, e) {
-  if (!e || !Number.isFinite(e.v85)) return null;
-  const ref = sc.id === 'ref', segs = (ref ? PROF : projProfile()).segs;
-  const tr = segs.map((s, j) => s.t === 'lane' || s.t === 'bus' ? j : -1).filter(j => j >= 0);
+// lecture d'un profil : côtés, terre-plein entre les deux sens, éclairage, garde-corps des deux côtés, stationnement, vélos
+function irapProfile(segs) {
+  const tr = segs.map((s, j) => isTraffic(s) ? j : -1).filter(j => j >= 0);
   const sides = tr.length ? [segs.slice(0, tr[0]), segs.slice(tr[tr.length - 1] + 1).reverse()] : [segs, []];
-  const cs = ref ? segs : crossOf(sc.id).segs;
-  const isl = Math.max(sc.geom(XC).wi, 0, ...cs.filter(s => s.t === 'median' || s.t === 'island').map(s => s.w));
-  const refuge = isl >= ISLAND_MIN, calm = !['ref', 'sig'].includes(sc.id);
-  const lit = !ref || segs.some(s => s.t === 'lamp');   // chaque variante comprend l'éclairage dédié du passage (E1, E2)
-  const fac = sc.id === 'sig' ? (refuge ? 'signalRefuge' : 'signal') : sc.id === 'trap' || sc.id === 'plat' ? (refuge ? 'raisedRefuge' : 'raised') : refuge ? 'markedRefuge' : 'marked';
-  const median = isl >= 1 ? 'island' : isl > 0 ? 'narrow' : 'line', medianF = { island: 1, narrow: 1.6, line: 3 }[median];
-  const nl = P.nl || 1, lanesF = nl > 1 ? 2.8 : 1;
-  const lanes = segs.filter(s => s.t === 'lane'), lw = ref || !lanes.length ? P.laneW : lanes.reduce((a, s) => a + s.w, 0) / lanes.length;
-  const lwF = lw >= 3.25 ? 1 : lw >= 2.75 ? 1.05 : 1.1;   // valeurs urbaines
+  let mid = [];
+  for (let k = 0; k + 1 < tr.length; k++) if (segs[tr[k]].d !== segs[tr[k + 1]].d) mid = segs.slice(tr[k] + 1, tr[k + 1]);
+  const bar = mid.find(s => IRAP_BARRIER[s.t]);
+  const medW = mid.filter(s => MEDIAN_SEGS.includes(s.t) || s.t === 'island' || IRAP_BARRIER[s.t]).reduce((a, s) => a + s.w, 0);
+  const lanes = segs.filter(s => s.t === 'lane'), n1 = lanes.filter(s => s.d > 0).length;
+  return {
+    sides, medW, median: bar ? IRAP_BARRIER[bar.t] : medW > 0 ? 'phys' : 'line',
+    lit: segs.some(s => LIT_SEGS.includes(s.t)),
+    fence: sides[1].length > 0 && sides.every(sd => sd.some(s => s.t === 's8')),
+    walks: sides.map(irapSide), roadside: sides.map(irapRoadside),
+    parks: sides.filter(sd => sd.some(s => s.t === 'park')).length,
+    bikeSeg: segs.find(s => s.t === 'track') ? 'track' : segs.find(s => s.t === 'bike') ? 'bike' : 'none',
+    nl: Math.max(1, n1, lanes.length - n1),
+    lw: lanes.length ? lanes.reduce((a, s) => a + s.w, 0) / lanes.length : P.laneW
+  };
+}
+// terre-plein : gravité du choc frontal (perte de contrôle, dépassement), facteur de la traversée piétonne, chaussée divisée
+function irapMedian(pr) {
+  if (pr.median === 'concrete' || pr.median === 'metal') return { loc: 0, ot: 0, ped: 1, divided: true };
+  if (pr.median === 'phys') { const w = pr.medW; return { loc: w >= 20 ? 2 : w >= 10 ? 10 : w >= 5 ? 35 : w >= 1 ? 80 : 90, ot: 0, ped: w >= 1 ? 1 : 1.6, divided: true }; }
+  return { loc: 100, ot: 100, ped: 3, divided: false };
+}
+// calcul commun aux variantes (avec leur passage) et aux sections courantes (existante, projetée)
+// o = { pr, v (vitesse retenue), nl, lw, calm, lit, cross: { fac, medF, fenceF } }
+function irapScore(o) {
+  const { pr, v, nl, cross: c } = o, med = irapMedian(pr);
+  const lwF = o.lw >= 3.25 ? 1 : o.lw >= 2.75 ? 1.05 : 1.1;   // valeurs urbaines
   const aadt = 2 * P.q * 10, sat = Math.min(1, aadt / (2 * nl) / 18000), ef = irapInterp(IRAP.ef, 0, 0.1, sat);
-  const vF = irapInterp(IRAP.vPed, 30, 5, e.v85), calmF = calm ? 1 : 1.25, litF = lit ? 1 : 1.25;
-  // traversée : voies × terre-plein × installation × qualité (bonne) × pas de barrière (1,25) × éclairage × modération ;
-  // intersection, adhérence, visibilité et stationnement (installation présente) à 1
-  const crossL = lanesF * medianF * IRAP.fac[fac] * 1.25 * litF * calmF, cross = crossL * 90 * ef * vF;
+  const vF = irapInterp(IRAP.vPed, 30, 5, v), calmF = o.calm ? 1 : 1.25, litF = o.lit ? 1 : 1.25, parkF = [1, 1.2, 1.33][pr.parks];
+  const lanesF = nl <= 1 ? 1 : nl === 2 ? 2.8 : nl === 3 ? 5.2 : 8;
+  // traversée : voies × terre-plein × installation × qualité (bonne) × garde-corps × éclairage × modération
+  // × stationnement (sans installation) ; carrefour, adhérence et visibilité à 1
+  const crossL = lanesF * c.medF * IRAP.fac[c.fac] * c.fenceF * litF * calmF * (c.fac === 'none' ? parkF : 1);
+  const cross = crossL * 90 * ef * vF;
   // marche le long : trottoir × largeur de voie × modération × stationnement (sans trottoir) × pas de bande rugueuse
   // d'accotement (1,25) × éclairage ; courbure, visibilité, balisage, pente, état et adhérence à 1
-  const parks = sides.filter(sd => sd.some(s => s.t === 'park')).length, parkF = [1, 1.2, 1.33][parks];
-  const walks = sides.map(irapSide);
-  const along = walks.map(w => IRAP.walk[w.cat] * lwF * calmF * (w.cat === 'none' ? parkF : 1) * 1.25 * litF * 90 * ef * vF);
+  const along = pr.walks.map(w => IRAP.walk[w.cat] * lwF * calmF * (w.cat === 'none' ? parkF : 1) * 1.25 * litF * 90 * ef * vF);
   const alongAvg = (along[0] + along[1]) / 2, total = alongAvg + cross;
   // ── estimation pour les occupants, les motocyclistes et les cyclistes (approximation à valider par un expert iRAP) ──
-  // rue droite et plate, chaussée et adhérence bonnes, balisage correct, pas de bande rugueuse (rive 1,25, axe 1,2),
-  // abords lus dans le profil (poteau, arbre ou façade et sa distance), gravité 60 ; carrefours et accès non comptés
-  const rs = sides.map(irapRoadside);
-  const sevVo = rs.reduce((a, r) => a + irapDistF(r.d, false) * 60, 0) / 2, sevBc = rs.reduce((a, r) => a + irapDistF(r.d, true) * 60, 0) / 2;
-  const medW = Math.max(0, ...segs.filter(s => s.t === 'median').map(s => s.w)), divided = medW > 0;
-  const medLoc = medW >= 20 ? 2 : medW >= 10 ? 10 : medW >= 5 ? 35 : medW >= 1 ? 80 : medW > 0 ? 90 : 100, medOt = divided ? 0 : 100;
-  const ho = 0.5 * (1 - Math.pow(1 - sat, nl)), efRoD = !divided && nl === 1 ? 0.5 - ho : 0.5;
-  const vG = irapInterp(IRAP.vGen, 30, 5, e.v85), vHo = irapInterp(divided ? IRAP.vUrbDiv : IRAP.vGen, 30, 5, e.v85);
-  const vB = irapInterp(IRAP.vBc, 30, 5, e.v85), efOt = irapInterp(IRAP.efOt, 0, 0.1, sat);
-  const lRo = lwF * 1.25, lHo = lwF * 1.2, lOt = nl > 1 ? 0.02 : 1;
-  const part = (k, v) => [k, v];
+  // rue droite et plate, chaussée et adhérence bonnes, balisage correct, pas de bande rugueuse (rive 1,25, axe 1,2) ;
+  // abords lus dans le profil ; carrefours et accès non comptés
+  const sev = u => pr.roadside.reduce((a, r) => a + irapDistF(r.d, u === 2) * IRAP_OBJ[r.obj][u], 0) / 2;
+  const divided = med.divided, ho = 0.5 * (1 - Math.pow(1 - sat, nl)), efRoD = !divided && nl === 1 ? 0.5 - ho : 0.5;
+  const vG = irapInterp(IRAP.vGen, 30, 5, v), vHo = irapInterp(divided ? IRAP.vUrbDiv : IRAP.vGen, 30, 5, v);
+  const vB = irapInterp(IRAP.vBc, 30, 5, v), efOt = irapInterp(IRAP.efOt, 0, 0.1, sat);
+  const lRo = lwF * 1.25, lHo = lwF * 1.2, lOt = nl > 1 ? (nl === 2 ? 0.02 : 0.01) : 1;
   const motor = mc => {
-    const parts = [part('roD', lRo * sevVo * vG * efRoD), part('roP', lRo * sevVo * vG * 0.5), part('ho', lHo * medLoc * vHo * ho)];
-    if (!divided) parts.push(part('ot', lOt * medOt * vG * efOt));
-    if (mc) parts.push(part('mcAlong', 2 * 50 * vG * Math.min(0.1, 0.5 * sat)));
+    const u = mc ? 1 : 0, s = sev(u);
+    const parts = [['roD', lRo * s * vG * efRoD], ['roP', lRo * s * vG * 0.5], ['ho', lHo * med.loc * vHo * ho]];
+    if (!divided) parts.push(['ot', lOt * med.ot * vG * efOt]);
+    if (mc) parts.push(['mcAlong', 2 * 50 * vG * Math.min(0.1, 0.5 * sat)]);
     const score = parts.reduce((a, p) => a + p[1], 0);
     return { score, stars: irapStars(score, IRAP.bandsMot), parts };
   };
-  const bikeSeg = segs.find(s => s.t === 'track') ? 'track' : segs.find(s => s.t === 'bike') ? 'bike' : 'none';
-  const bikeF = { track: 0.1, bike: 12, none: 20 }[bikeSeg];
-  const bcParts = [part('bcAlong', bikeF * lwF * calmF * 1.25 * (bikeSeg === 'none' ? parkF : 1) * litF * 90 * ef * vB),
-    part('bcRo', lwF * litF * sevBc * ef * 0.011)];
+  const bikeF = { track: 0.1, bike: 12, none: 20 }[pr.bikeSeg];
+  const bcParts = [['bcAlong', bikeF * lwF * calmF * 1.25 * (pr.bikeSeg === 'none' ? parkF : 1) * litF * 90 * ef * vB],
+    ['bcRo', lwF * litF * sev(2) * ef * 0.011]];
   const bcScore = bcParts[0][1] + bcParts[1][1];
-  const vo = motor(false), mc = motor(true), bc = { score: bcScore, stars: irapStars(bcScore, IRAP.bandsBc), parts: bcParts };
-  return { fac, median, refuge, calm, lit, nl, walks, lw, aadt, sat, ef, v: e.v85, vF, cross, along, alongAvg, total,
+  return { pr, aadt, sat, ef, v, vF, cross, along, alongAvg, total,
     stars: irapStars(total, IRAP.bandsTotal), crossStars: irapStars(cross, IRAP.bandsCross), alongStars: irapStars(alongAvg, IRAP.bandsAlong),
-    vo, mc, bc, roadside: rs, bikeSeg, medW };
+    vo: motor(false), mc: motor(true), bc: { score: bcScore, stars: irapStars(bcScore, IRAP.bandsBc), parts: bcParts },
+    walks: pr.walks, roadside: pr.roadside, bikeSeg: pr.bikeSeg, medW: pr.medW };
+}
+// un aménagement et son passage ; e : ses résultats (V85 au passage)
+function irapPed(sc, e) {
+  if (!e || !Number.isFinite(e.v85)) return null;
+  const ref = sc.id === 'ref', segs = (ref ? PROF : projProfile()).segs, pr = irapProfile(segs);
+  const cs = ref ? segs : crossOf(sc.id).segs;
+  const isl = Math.max(sc.geom(XC).wi, 0, ...cs.filter(s => MEDIAN_SEGS.includes(s.t) || s.t === 'island').map(s => s.w));
+  const refuge = isl >= ISLAND_MIN, calm = !['ref', 'sig'].includes(sc.id);
+  const lit = !ref || pr.lit;   // chaque variante comprend l'éclairage dédié du passage (E1, E2)
+  const fac = sc.id === 'sig' ? (refuge ? 'signalRefuge' : 'signal') : sc.id === 'trap' || sc.id === 'plat' ? (refuge ? 'raisedRefuge' : 'raised') : refuge ? 'markedRefuge' : 'marked';
+  const median = isl >= 1 ? 'island' : isl > 0 ? 'narrow' : 'line', medF = { island: 1, narrow: 1.6, line: 3 }[median];
+  const nl = P.nl || 1, lw = ref || !segs.some(s => s.t === 'lane') ? P.laneW : pr.lw;
+  // garde-corps des deux côtés : ils conduisent les piétons au passage (iRAP « au droit du passage », 1,0 au lieu de 1,25)
+  const r = irapScore({ pr, v: e.v85, nl, lw, calm, lit, cross: { fac, medF, fenceF: pr.fence ? 1 : 1.25 } });
+  return Object.assign(r, { fac, median, refuge, calm, lit, nl, lw });
+}
+// section courante d'un profil (existant ou projeté), à la vitesse v : traversée sans aménagement, nulle si des
+// garde-corps bordent les deux trottoirs (les piétons ne traversent qu'aux passages)
+function irapSection(segs, v) {
+  const pr = irapProfile(segs), med = irapMedian(pr);
+  return irapScore({ pr, v, nl: pr.nl, lw: pr.lw, calm: false, lit: pr.lit, cross: { fac: 'none', medF: med.ped, fenceF: pr.fence ? 0 : 1.25 } });
 }
 const starTxt = n => '★'.repeat(n) + '☆'.repeat(5 - n);
 const starHtml = n => `<span class="irs s${n}">${starTxt(n)}</span>`;
@@ -2654,7 +2701,7 @@ fr: {
     a: { fac: 'Type de traversée', lanes: 'Voies à traverser', median: 'Terre-plein ou îlot au passage', calm: 'Modération de la vitesse', lit: 'Éclairage', walkA: 'Trottoir, côté 1', walkB: 'Trottoir, côté 2', speed: 'Vitesse retenue (V85 au passage)', flow: 'Trafic journalier estimé et saturation des voies' },
     fac: { marked: 'passage marqué sans refuge', markedRefuge: 'passage marqué avec refuge', raised: 'passage surélevé sans refuge', raisedRefuge: 'passage surélevé avec refuge', signal: 'feux, sans refuge', signalRefuge: 'feux, avec refuge' },
     median: { line: 'ligne axiale', narrow: 'îlot de moins de 1 m', island: 'îlot ou terre-plein d’au moins 1 m' },
-    walk: { none: 'aucun', informal: 'moins de 1 m de large', adj: 'contre la chaussée', sep1: 'séparé de plus de 1 m', sep3: 'séparé d’au moins 3 m' },
+    walk: { none: 'aucun', informal: 'moins de 1 m de large', adj: 'contre la chaussée', sep1: 'séparé de plus de 1 m', sep3: 'séparé d’au moins 3 m', barrier: 'protégé par un garde-corps ou un dispositif de retenue' },
     yes: 'oui', no: 'non',
     flow: (a, s) => `${f0(a)} véh/j ; saturation ${nf2.format(s)}`,
     caveat: 'Scores : produit des facteurs de probabilité × gravité (90) × flux extérieur × facteur de vitesse (fiches iRAP 5, 6, 7 et 9 et « Road Attribute Risk Factors », 2013-2014). Paliers des étoiles pour les piétons : 5 étoiles sous 5, 4 de 5 à 15, 3 de 15 à 40, 2 de 40 à 90, 1 à partir de 90. Vitesse : V85 simulée seule (option du modèle 3.10) ; avec la règle du modèle 3.02 (la plus forte de la limitation et de la V85), les dispositifs qui ne changent pas la limitation gagneraient moins. Hypothèses : pas de barrière piétonne, chaussée en bon état, bonne visibilité, rue droite et plate ; trafic journalier = 10 fois l’heure de pointe ; l’éclairage dédié du passage est compris dans chaque variante.'
@@ -2667,7 +2714,7 @@ fr: {
     parts: { roD: 'sortie de route côté conducteur', roP: 'sortie de route côté passager', ho: 'choc frontal (perte de contrôle)', ot: 'choc frontal (dépassement)', mcAlong: 'moto le long de la rue', bcAlong: 'cycliste le long de la rue', bcRo: 'sortie de route du cycliste' },
     attrTitle: 'Caractéristiques retenues pour cette estimation',
     a: { side1: 'Abords, côté 1', side2: 'Abords, côté 2', median: 'Terre-plein central', bike: 'Aménagement cyclable' },
-    obj: { pole: 'poteau d’éclairage', tree: 'arbre', building: 'façade' },
+    obj: { pole: 'poteau d’éclairage ou garde-corps', tree: 'arbre', building: 'façade', concrete: 'séparateur béton DBA', metal: 'glissière GS2' },
     at: d => `à ${fm(d)} m de la voie`,
     medNone: 'aucun (ligne axiale)', medW: w => `${fm(w)} m`,
     bike: { none: 'aucun', bike: 'bande cyclable', track: 'piste cyclable' },
@@ -2774,7 +2821,7 @@ ar: {
     a: { fac: 'نوع ممرّ العبور', lanes: 'المسالك التي يجب عبورها', median: 'فاصل أو جزيرة عند الممرّ', calm: 'تهدئة السرعة', lit: 'الإنارة', walkA: 'الرصيف، الجانب 1', walkB: 'الرصيف، الجانب 2', speed: 'السرعة المعتمدة (V85 عند الممرّ)', flow: 'الحركة اليومية المقدّرة وتشبّع المسالك' },
     fac: { marked: 'ممرّ مُعلَّم دون جزيرة ملجأ', markedRefuge: 'ممرّ مُعلَّم بجزيرة ملجأ', raised: 'ممرّ مرتفع دون جزيرة ملجأ', raisedRefuge: 'ممرّ مرتفع بجزيرة ملجأ', signal: 'بإشارات ضوئية، دون جزيرة ملجأ', signalRefuge: 'بإشارات ضوئية، بجزيرة ملجأ' },
     median: { line: 'خطّ محوري', narrow: 'جزيرة يقلّ عرضها عن 1 م', island: 'جزيرة أو فاصل عرضه 1 م على الأقلّ' },
-    walk: { none: 'لا يوجد', informal: 'عرضه أقلّ من 1 م', adj: 'ملاصق للمعبّد', sep1: 'مفصول بأكثر من 1 م', sep3: 'مفصول بـ 3 م على الأقلّ' },
+    walk: { none: 'لا يوجد', informal: 'عرضه أقلّ من 1 م', adj: 'ملاصق للمعبّد', sep1: 'مفصول بأكثر من 1 م', sep3: 'مفصول بـ 3 م على الأقلّ', barrier: 'محميّ بحاجز' },
     yes: 'نعم', no: 'لا',
     flow: (a, s) => `${f0(a)} عربة/يوم؛ التشبّع ${nf2.format(s)}`,
     caveat: 'النقاط: جداء عوامل الاحتمال × الخطورة (90) × التدفّق الخارجي × عامل السرعة (بطاقات iRAP 5 و6 و7 و9 و«Road Attribute Risk Factors»، 2013-2014). عتبات النجوم للمترجّلين: 5 نجوم تحت 5 نقاط، و4 من 5 إلى 15، و3 من 15 إلى 40، و2 من 40 إلى 90، ونجمة واحدة ابتداءً من 90. السرعة: V85 المُحاكاة وحدها (خيار في النموذج 3.10)؛ ووفق قاعدة النموذج 3.02 (الأعلى بين السرعة القصوى المسموح بها وV85)، تكسب التهيئات التي لا تغيّر السرعة القصوى أقلّ. الفرضيات: لا حواجز للمترجّلين، والمعبّد في حالة جيّدة، والرؤية جيّدة، والنهج مستقيم ومستوٍ؛ الحركة اليومية = 10 أضعاف ساعة الذروة؛ والإنارة المخصّصة للممرّ مُدرجة في كل تهيئة.'
@@ -2787,7 +2834,7 @@ ar: {
     parts: { roD: 'الخروج عن الطريق من جهة السائق', roP: 'الخروج عن الطريق من جهة الراكب', ho: 'اصطدام أمامي (فقدان السيطرة)', ot: 'اصطدام أمامي (تجاوز)', mcAlong: 'درّاجة نارية على طول النهج', bcAlong: 'درّاجة هوائية على طول النهج', bcRo: 'خروج الدرّاجة الهوائية عن الطريق' },
     attrTitle: 'الخصائص المعتمدة في هذا التقدير',
     a: { side1: 'جانب الطريق 1', side2: 'جانب الطريق 2', median: 'الفاصل الوسطي', bike: 'تهيئة الدرّاجات' },
-    obj: { pole: 'عمود إنارة', tree: 'شجرة', building: 'واجهة' },
+    obj: { pole: 'عمود إنارة أو حاجز مترجّلين', tree: 'شجرة', building: 'واجهة', concrete: 'فاصل خرساني DBA', metal: 'حاجز معدني GS2' },
     at: d => `على بعد ${fm(d)} م من المسلك`,
     medNone: 'لا يوجد (خطّ محوري)', medW: w => `${fm(w)} م`,
     bike: { none: 'لا توجد', bike: 'شريط للدرّاجات', track: 'مسلك للدرّاجات' },
@@ -2894,7 +2941,7 @@ en: {
     a: { fac: 'Crossing type', lanes: 'Lanes to cross', median: 'Median or island at the crossing', calm: 'Traffic calming', lit: 'Lighting', walkA: 'Sidewalk, side 1', walkB: 'Sidewalk, side 2', speed: 'Speed used (V85 at the crossing)', flow: 'Estimated daily traffic and lane saturation' },
     fac: { marked: 'marked crossing without refuge', markedRefuge: 'marked crossing with refuge', raised: 'raised crossing without refuge', raisedRefuge: 'raised crossing with refuge', signal: 'signal-controlled, without refuge', signalRefuge: 'signal-controlled, with refuge' },
     median: { line: 'centre line', narrow: 'island narrower than 1 m', island: 'island or median at least 1 m wide' },
-    walk: { none: 'none', informal: 'narrower than 1 m', adj: 'next to the roadway', sep1: 'set back more than 1 m', sep3: 'set back at least 3 m' },
+    walk: { none: 'none', informal: 'narrower than 1 m', adj: 'next to the roadway', sep1: 'set back more than 1 m', sep3: 'set back at least 3 m', barrier: 'protected by a railing or barrier' },
     yes: 'yes', no: 'no',
     flow: (a, s) => `${f0(a)} veh/day; saturation ${nf2.format(s)}`,
     caveat: 'Scores: product of the likelihood factors × severity (90) × external flow × speed factor (iRAP fact sheets 5, 6, 7 and 9 and “Road Attribute Risk Factors”, 2013–2014). Pedestrian star bands: 5 stars below 5, 4 from 5 to 15, 3 from 15 to 40, 2 from 40 to 90, 1 from 90. Speed: simulated V85 only (an option of model 3.10); under the model 3.02 rule (the higher of the speed limit and V85), measures that do not change the speed limit would gain less. Assumptions: no pedestrian fencing, road in good condition, good sight distance, straight and flat street; daily traffic = 10 times the peak hour; the dedicated crossing lighting is included in every option.'
@@ -2907,7 +2954,7 @@ en: {
     parts: { roD: 'run-off, driver side', roP: 'run-off, passenger side', ho: 'head-on (loss of control)', ot: 'head-on (overtaking)', mcAlong: 'motorcyclist along the street', bcAlong: 'bicyclist along the street', bcRo: 'bicyclist run-off' },
     attrTitle: 'Features used for this estimate',
     a: { side1: 'Roadside, side 1', side2: 'Roadside, side 2', median: 'Central median', bike: 'Bicycle facility' },
-    obj: { pole: 'lighting pole', tree: 'tree', building: 'façade' },
+    obj: { pole: 'lighting pole or railing', tree: 'tree', building: 'façade', concrete: 'DBA concrete barrier', metal: 'GS2 guardrail' },
     at: d => `${fm(d)} m from the lane`,
     medNone: 'none (centre line)', medW: w => `${fm(w)} m`,
     bike: { none: 'none', bike: 'bicycle lane', track: 'cycle track' },
@@ -3329,7 +3376,7 @@ function buildNote(id) {
     // autres usagers : estimation, à faire valider par un expert iRAP
     const IO = N.irapO, uCell = r => `${esc(f1(r.score))} ${starHtml(r.stars)}<br><span class="small">${r.parts.filter(p => p[1] >= 0.005).map(p => esc(IO.parts[p[0]] + ' ' + f1(p[1]))).join(' · ')}</span>`;
     const rowsO = ['vo', 'mc', 'bc'].map(k => `<tr><td>${esc(IO.users[k])}</td><td>${uCell(a[k])}</td><td>${uCell(b[k])}</td></tr>`);
-    const side = r => `${IO.obj[r.obj]} ${IO.at(r.d)}`, med = x => x.medW > 0 ? IO.medW(x.medW) : IO.medNone;
+    const side = r => `${IO.obj[r.obj]} ${IO.at(r.d)}`, med = x => x.pr.median === 'concrete' || x.pr.median === 'metal' ? IO.obj[x.pr.median] : x.medW > 0 ? IO.medW(x.medW) : IO.medNone;
     const rowsOA = [aRow(IO.a.side1, side(a.roadside[0]), side(b.roadside[0])), aRow(IO.a.side2, side(a.roadside[1]), side(b.roadside[1])),
       aRow(IO.a.median, med(a), med(b)), aRow(IO.a.bike, IO.bike[a.bikeSeg], IO.bike[b.bikeSeg])];
     h1 += `<h3>${esc(IO.title)}</h3><div class="box">${esc(IO.intro)}</div>${tbl(IO.cols, rowsO)}<h3>${esc(IO.attrTitle)}</h3>${tbl(IT.colsA, rowsOA)}<p class="small">${esc(IO.bands)}</p>`;
@@ -3354,6 +3401,7 @@ function buildNote(id) {
   h1 += `<h3>${esc(t('pfProjected'))}</h3>`;
   if (!PROJ || sameSegs(PROJ, PROF.segs)) h1 += `<p>${esc(t('pfProjSame'))}</p>`;
   else h1 += `<figure class="pf-fig">${profileSVG(PROJ, PROF.total, { flags: profFlags(profChecks({ total: PROF.total, segs: PROJ })) })}</figure>` + tbl(N.profCols, PROJ.map(segRow).concat(totRow)) + ckl(profChecks({ total: PROF.total, segs: PROJ }));
+  h1 += `<h3>${esc(t('pfIrapTitle'))}</h3>${irapSectionTable(true)}`;
   h1 += `<h3>${esc(t('pfCrossTitle', name))}</h3><figure class="pf-fig">${profileSVG(PC.segs, PROF.total, { stages: PC.stages, flags: profFlags(PC.notes) })}</figure>`;
   h1 += tbl(N.profCols, PC.segs.map(segRow).concat(totRow)) + ckl(PC.notes);
   // 5-12
@@ -4357,7 +4405,7 @@ Object.assign(I18N.fr, {
     <h3>Les étapes</h3>
     <ol>
       <li><strong>Situer le lieu</strong> sur la carte, puis « Analyser le lieu » : rue, écoles et établissements de santé proches, arrêts de bus, densité de population.</li>
-      <li><strong>Décrire la rue</strong> dans le profil en travers, d’une façade à l’autre (trottoirs, voies, stationnement, voies bus, aménagements cyclables, terre-plein, îlot, poteaux d’éclairage) et en trois temps : l’existant, le projeté en section courante (la rue après travaux, hors du passage) et le profil au droit du passage. Ce dernier est calculé pour la variante choisie ; vous pouvez le modifier.</li>
+      <li><strong>Décrire la rue</strong> dans le profil en travers, d’une façade à l’autre (trottoirs, voies, stationnement, voies bus, aménagements cyclables, terre-pleins végétalisés ou en pavés, avec ou sans candélabre, îlot, poteaux d’éclairage, et à leurs dimensions réelles : séparateur béton DBA, glissière GS2, garde-corps piétons S8, bordures T2 et T3, caniveaux CS2 et CC2) et en trois temps : l’existant, le projeté en section courante (la rue après travaux, hors du passage) et le profil au droit du passage. Ce dernier est calculé pour la variante choisie ; vous pouvez le modifier.</li>
       <li><strong>Saisir le trafic</strong> : nombre de voies par sens (une ou deux), débit de pointe par sens, part de poids lourds et de bus, vitesse mesurée, piétons, limitation de vitesse ; et, si possible, vos comptages heure par heure. Au-delà d’environ 1 800 véh/h par sens, une voie ne suffit plus : indiquez deux voies par sens (jusqu’à 3 600 véh/h par sens).</li>
       <li><strong>Régler les aménagements</strong> : dimensions du rétrécissement et de la chicane, durée du feu. Puis « Appliquer et relancer ».</li>
       <li><strong>Regarder les simulations</strong> : une bande animée par aménagement, avec ses chiffres clés et une vue 3D (clic sur la vignette). Le mode présentation les affiche toutes sur un écran.</li>
@@ -4384,7 +4432,7 @@ Object.assign(I18N.fr, {
     </tbody></table></div>
     <h3>Où trouver les résultats</h3>
     <ul>
-      <li><strong>Dans le profil en travers</strong> : largeurs à corriger, et profil au droit du passage avec la longueur de traversée.</li>
+      <li><strong>Dans le profil en travers</strong> : largeurs à corriger, profil au droit du passage avec la longueur de traversée, et classement iRAP indicatif de la section existante et projetée pour les piétons, les voitures, les motos et les vélos (approximation à valider par un expert iRAP).</li>
       <li><strong>Dans chaque bande</strong> : vitesse au passage, temps de parcours, file d’attente, attente des piétons, risque pour un piéton heurté, et le classement par étoiles iRAP des piétons (indicatif, de 1 à 5 étoiles ; objectif : 3 au moins), avec une estimation pour les voitures, les motos et les vélos (approximation à faire valider par un expert iRAP), aussi détaillés dans la note de calcul.</li>
       <li><strong>Dans « Résultats »</strong> : la solution la plus adéquate et pourquoi, le tableau comparatif, le trafic heure par heure.</li>
       <li><strong>Dans la note de calcul</strong> (bouton « Générer la note de calcul ») : tout ce qui précède expliqué simplement, l’emplacement sur un plan de situation et une vue aérienne, le profil en travers, le plan coté, la signalisation, l’éclairage, les trottoirs, le coût et le plan d’action.</li>
@@ -4404,11 +4452,23 @@ Object.assign(I18N.fr, {
   pfCustomNote: 'Profil modifié à la main par la commune.',
   pfProjected: 'Profil projeté (section courante)', pfProjSame: 'Le profil projeté en section courante est identique à l’existant.',
   ckIslandWarn: w => `Îlot de ${fm(w)} m : 1,50 m au minimum pour qu’il serve de refuge, 2,00 m avec une poussette ou un vélo.`,
+  pfBarrierCut: 'Dispositifs de retenue et garde-corps interrompus au droit du passage : entre les deux sens, l’ouverture devient un îlot ; en rive, leur emprise rejoint le trottoir.',
+  ckBlockCross: () => 'Dispositif de retenue ou garde-corps en travers du passage : à interrompre pour laisser passer les piétons.',
+  ckGs2: () => 'Glissière GS2 : poteaux C100 tous les 2 m, lisse profil A dont l’arête haute est à 0,75 m ; dégager la largeur de fonctionnement (W4, environ 1,3 m) derrière la lisse ; traiter les extrémités (ancrage, abaissement).',
+  ckDba: () => 'Séparateur DBA : hauteur 0,80 m, base 0,60 m, tête 0,15 m (environ 700 kg/m) ; extrémités à traiter (abaissement ou atténuateur de choc).',
+  ckS8: () => 'Garde-corps S8 : hauteur 1,00 m, poteaux tous les 1,50 m ; il conduit les piétons vers les passages et s’interrompt à leur droit.',
+  pfIrapTitle: 'Classement iRAP indicatif de la section courante (100 m) : existante et projetée',
+  pfIrapCols: ['Usager', 'Existant', 'Projeté'], pfIrapUsers: { ped: 'Piétons', vo: 'Occupants des voitures', mc: 'Motocyclistes', bc: 'Cyclistes' },
+  pfIrapVEx: v => `V85 existante : ${f0(v)} km/h (mesurée, données du site)`, pfIrapVPr: 'V85 projetée (km/h)', pfIrapVPrTxt: v => `V85 projetée : ${f0(v)} km/h`,
+  pfIrapNote: 'Approximation à valider par un expert iRAP : facteurs de risque publiés par iRAP (modèle 3.02), rue droite et plate, sans carrefour ni accès, traversée n’importe où sans aménagement (nulle si des garde-corps S8 bordent les deux trottoirs). Chaque élément du profil compte : dispositifs de retenue, garde-corps, terre-pleins, éclairage, trottoirs, aménagements cyclables, stationnement. Le passage lui-même est classé avec chaque variante, plus bas.',
   pfTotal: 'Largeur disponible (façade à façade)', pfPreset: 'Modèle de rue', pfLoad: 'Charger le modèle', pfAdd: 'Ajouter :',
   presets: { defaut: 'Rue à deux voies (12 m)', quartier: 'Rue de quartier (10 m)', avenue: 'Avenue avec stationnement (16 m)', bus: 'Avenue avec voies bus (19,5 m)',
     boulevard: 'Boulevard 2 × 2 voies avec terre-plein (22 m)', sensunique: 'Rue à sens unique avec stationnement (9 m)', velo: 'Rue avec bandes cyclables (14 m)' },
   segNames: { walk: ['Trottoir', 'Trottoir'], ext: ['Avancée de trottoir', 'Avancée'], trees: ['Bande plantée', 'Plantation'], park: ['Stationnement', 'Stationnement'],
-    lane: ['Voie de circulation', 'Voie'], bus: ['Voie bus', 'Voie bus'], bike: ['Bande cyclable', 'Bande vélo'], track: ['Piste cyclable', 'Piste vélo'], median: ['Terre-plein central', 'Terre-plein'], island: ['Îlot refuge', 'Îlot'], lamp: ['Poteau d’éclairage', 'Éclairage'] },
+    lane: ['Voie de circulation', 'Voie'], bus: ['Voie bus', 'Voie bus'], bike: ['Bande cyclable', 'Bande vélo'], track: ['Piste cyclable', 'Piste vélo'], median: ['Terre-plein central', 'Terre-plein'], island: ['Îlot refuge', 'Îlot'], lamp: ['Poteau d’éclairage', 'Éclairage'],
+    medPave: ['Terre-plein en pavés', 'TPC pavé'], medPaveLamp: ['Terre-plein en pavés avec candélabre', 'TPC pavé éclairé'], medGreenLamp: ['Terre-plein végétalisé avec candélabre', 'TPC végétal éclairé'],
+    dba: ['Séparateur béton DBA (base 0,60 m, hauteur 0,80 m)', 'DBA'], gs2: ['Glissière acier GS2 (lisse à 0,75 m)', 'GS2'], s8: ['Garde-corps piétons S8 (hauteur 1,00 m)', 'S8'],
+    t2: ['Bordure T2 (15 × 25 cm)', 'T2'], t3: ['Bordure T3 (17 × 28 cm)', 'T3'], cs2: ['Caniveau CS2 (25 × 13,5 cm)', 'CS2'], cc2: ['Caniveau central CC2 (50 × 14 cm)', 'CC2'] },
   dir1: 'sens 1', dir2: 'sens 2', pfLeft: 'Déplacer à gauche', pfRight: 'Déplacer à droite', pfDel: 'Supprimer', pfWidth: 'Largeur',
   pfExact: 'La largeur disponible est entièrement affectée.', pfRest: r => `Reste ${fm(r)} m non affecté.`, pfOver: r => `Dépasse la largeur disponible de ${fm(r)} m.`, pfRestLabel: 'non affecté',
   ckWalkBad: w => `Trottoir de ${fm(w)} m : au moins 1,40 m libre d’obstacle est nécessaire pour un fauteuil roulant ou une poussette.`,
@@ -4449,7 +4509,7 @@ Object.assign(I18N.ar, {
     <h3>المراحل</h3>
     <ol>
       <li><strong>تحديد الموقع</strong> على الخريطة، ثم «تحليل الموقع»: النهج، والمدارس والمؤسّسات الصحّية القريبة، ومحطّات الحافلات، وكثافة السكّان.</li>
-      <li><strong>وصف النهج</strong> في المقطع العرضي، من واجهة إلى أخرى (الأرصفة، والمسالك، وأماكن الوقوف، ومسالك الحافلات والدرّاجات، والفاصل الوسطي، والجزيرة، وأعمدة الإنارة)، وعلى ثلاث مراحل: الوضع الحالي، والمقطع المبرمج في الجزء الجاري (النهج بعد الأشغال، خارج الممرّ)، والمقطع عند الممرّ. ويُحسب هذا الأخير للتهيئة المختارة، ويمكنك تعديله.</li>
+      <li><strong>وصف النهج</strong> في المقطع العرضي، من واجهة إلى أخرى (الأرصفة، والمسالك، وأماكن الوقوف، ومسالك الحافلات والدرّاجات، والفواصل الوسطية المغروسة أو المرصوفة بعمود إنارة أو دونه، والفاصل الخرساني DBA والحاجز المعدني GS2 وحاجز المترجّلين S8 والحافّات T2 وT3 والمجاري CS2 وCC2 بأبعادها الحقيقية، والفاصل الوسطي، والجزيرة، وأعمدة الإنارة)، وعلى ثلاث مراحل: الوضع الحالي، والمقطع المبرمج في الجزء الجاري (النهج بعد الأشغال، خارج الممرّ)، والمقطع عند الممرّ. ويُحسب هذا الأخير للتهيئة المختارة، ويمكنك تعديله.</li>
       <li><strong>إدخال حركة المرور</strong>: عدد المسالك في كل اتجاه (مسلك أو مسلكان)، وتدفّق الذروة في كل اتجاه، ونسبة العربات الثقيلة والحافلات، والسرعة المقاسة، والمترجّلون، والسرعة القصوى؛ وإن أمكن، عمليات العدّ ساعة بساعة. فوق حوالي 1800 عربة/س في كل اتجاه لا يكفي مسلك واحد: أدخل مسلكين في كل اتجاه (حتى 3600 عربة/س في كل اتجاه).</li>
       <li><strong>ضبط التهيئات</strong>: أبعاد التضييق والتعرّج، ومدّة الإشارة الضوئية، ثم «تطبيق وإعادة التشغيل».</li>
       <li><strong>مشاهدة المحاكاة</strong>: شريحة متحرّكة لكل تهيئة، مع أرقامها الرئيسية وصورة ثلاثية الأبعاد (اضغط على الصورة المصغّرة). ويعرضها وضع العرض كلّها في شاشة واحدة.</li>
@@ -4476,7 +4536,7 @@ Object.assign(I18N.ar, {
     </tbody></table></div>
     <h3>أين توجد النتائج</h3>
     <ul>
-      <li><strong>في المقطع العرضي</strong>: العروض التي يجب تصحيحها، والمقطع عند الممرّ مع طول العبور.</li>
+      <li><strong>في المقطع العرضي</strong>: العروض التي يجب تصحيحها، والمقطع عند الممرّ مع طول العبور، وتصنيف iRAP الاسترشادي للمقطع الحالي والمبرمج للمترجّلين والسيارات والدرّاجات النارية والهوائية (تقدير تقريبي يجب أن يتحقّق منه خبير iRAP).</li>
       <li><strong>في كل شريحة</strong>: السرعة عند الممرّ، وزمن القطع، والطابور، وانتظار المترجّلين، والخطر على مترجّل مصدوم، وتصنيف iRAP بالنجوم للمترجّلين (استرشادي، من نجمة إلى 5 نجوم؛ والهدف 3 على الأقلّ)، مع تقدير للسيارات والدرّاجات النارية والهوائية (تقريبي يجب أن يتحقّق منه خبير iRAP)، المفصّلَين أيضًا في مذكّرة الحساب.</li>
       <li><strong>في «النتائج»</strong>: الحلّ الأنسب وأسبابه، والجدول المقارن، وحركة المرور ساعة بساعة.</li>
       <li><strong>في مذكّرة الحساب</strong> (زرّ «إعداد مذكّرة الحساب»): كل ما سبق مشروحًا ببساطة، والموقع على مخطّط موقع وصورة جوية، والمقطع العرضي، والمخطّط بالأبعاد، والإشارات، والإنارة، والأرصفة، والكلفة، وخطّة العمل.</li>
@@ -4496,11 +4556,23 @@ Object.assign(I18N.ar, {
   pfCustomNote: 'مقطع عدّلته البلدية يدويًا.',
   pfProjected: 'المقطع المبرمج (الجزء الجاري)', pfProjSame: 'المقطع المبرمج في الجزء الجاري مطابق للوضع الحالي.',
   ckIslandWarn: w => `جزيرة بعرض ${fm(w)} م: يلزم 1,50 م على الأقلّ لتكون ملجأً، و2,00 م مع عربة أطفال أو درّاجة.`,
+  pfBarrierCut: 'تُقطع الحواجز والحواجز الحديدية للمترجّلين عند الممرّ: تصبح الفتحة جزيرةً بين الاتجاهين، أو تُضمّ إلى الرصيف على الجانب.',
+  ckBlockCross: () => 'حاجز يعترض الممرّ: يجب قطعه لكي يمرّ المترجّلون.',
+  ckGs2: () => 'حاجز GS2: أعمدة C100 كل 2 م، وحافّة الحاجز العليا على ارتفاع 0,75 م؛ يجب إخلاء عرض الاشتغال (W4، حوالي 1,3 م) خلف الحاجز ومعالجة الأطراف.',
+  ckDba: () => 'فاصل خرساني DBA: الارتفاع 0,80 م، والقاعدة 0,60 م، والأعلى 0,15 م (حوالي 700 كغ/م)؛ يجب معالجة الأطراف (خفضها أو ممتصّ صدمات).',
+  ckS8: () => 'حاجز المترجّلين S8: الارتفاع 1,00 م، وأعمدة كل 1,50 م؛ يوجّه المترجّلين نحو الممرّات ويُقطع عندها.',
+  pfIrapTitle: 'تصنيف iRAP استرشادي لمقطع النهج (100 م): الحالي والمبرمج',
+  pfIrapCols: ['المستعمل', 'الحالي', 'المبرمج'], pfIrapUsers: { ped: 'المترجّلون', vo: 'ركّاب السيارات', mc: 'سائقو الدرّاجات النارية', bc: 'راكبو الدرّاجات الهوائية' },
+  pfIrapVEx: v => `V85 الحالية: ${f0(v)} كم/س (مقاسة، معطيات الموقع)`, pfIrapVPr: 'V85 المبرمجة (كم/س)', pfIrapVPrTxt: v => `V85 المبرمجة: ${f0(v)} كم/س`,
+  pfIrapNote: 'تقدير تقريبي يجب أن يتحقّق منه خبير iRAP: عوامل الخطر المنشورة من iRAP (النموذج 3.02)، نهج مستقيم ومستوٍ، دون مفترق ولا مداخل، والعبور في أيّ مكان دون تهيئة (منعدم إذا كانت حواجز S8 تحاذي الرصيفين). يُحتسب كل عنصر من المقطع العرضي: الحواجز، وحواجز المترجّلين، والفواصل الوسطية، والإنارة، والأرصفة، وتهيئات الدرّاجات، وأماكن الوقوف. أمّا الممرّ نفسه فيُصنَّف مع كل تهيئة، أسفله.',
   pfTotal: 'العرض المتاح (من واجهة إلى واجهة)', pfPreset: 'نموذج النهج', pfLoad: 'تحميل النموذج', pfAdd: 'إضافة:',
   presets: { defaut: 'نهج بمسلكين (12 م)', quartier: 'نهج سكني (10 م)', avenue: 'شارع مع أماكن وقوف (16 م)', bus: 'شارع مع مسالك للحافلات (19,5 م)',
     boulevard: 'شارع 2 × 2 مسالك مع فاصل وسطي (22 م)', sensunique: 'نهج ذو اتجاه واحد مع وقوف (9 م)', velo: 'نهج مع أشرطة للدرّاجات (14 م)' },
   segNames: { walk: ['رصيف', 'رصيف'], ext: ['امتداد الرصيف', 'امتداد'], trees: ['شريط مغروس', 'غراسة'], park: ['أماكن الوقوف', 'وقوف'],
-    lane: ['مسلك سير', 'مسلك'], bus: ['مسلك الحافلات', 'حافلات'], bike: ['شريط للدرّاجات', 'شريط درّاجات'], track: ['مسلك للدرّاجات', 'مسلك درّاجات'], median: ['فاصل وسطي', 'فاصل'], island: ['جزيرة ملجأ', 'جزيرة'], lamp: ['عمود إنارة', 'إنارة'] },
+    lane: ['مسلك سير', 'مسلك'], bus: ['مسلك الحافلات', 'حافلات'], bike: ['شريط للدرّاجات', 'شريط درّاجات'], track: ['مسلك للدرّاجات', 'مسلك درّاجات'], median: ['فاصل وسطي', 'فاصل'], island: ['جزيرة ملجأ', 'جزيرة'], lamp: ['عمود إنارة', 'إنارة'],
+    medPave: ['فاصل وسطي مرصوف', 'فاصل مرصوف'], medPaveLamp: ['فاصل وسطي مرصوف بعمود إنارة', 'مرصوف مُنار'], medGreenLamp: ['فاصل وسطي مغروس بعمود إنارة', 'مغروس مُنار'],
+    dba: ['فاصل خرساني DBA (القاعدة 0,60 م، الارتفاع 0,80 م)', 'DBA'], gs2: ['حاجز معدني GS2 (الحاجز على ارتفاع 0,75 م)', 'GS2'], s8: ['حاجز المترجّلين S8 (الارتفاع 1,00 م)', 'S8'],
+    t2: ['حافّة T2 (15 × 25 سم)', 'T2'], t3: ['حافّة T3 (17 × 28 سم)', 'T3'], cs2: ['مجرى جانبي CS2 (25 × 13,5 سم)', 'CS2'], cc2: ['مجرى وسطي CC2 (50 × 14 سم)', 'CC2'] },
   dir1: 'الاتجاه 1', dir2: 'الاتجاه 2', pfLeft: 'تحريك إلى اليسار', pfRight: 'تحريك إلى اليمين', pfDel: 'حذف', pfWidth: 'العرض',
   pfExact: 'العرض المتاح مخصّص بالكامل.', pfRest: r => `يبقى ${fm(r)} م غير مخصّص.`, pfOver: r => `يتجاوز العرض المتاح بـ ${fm(r)} م.`, pfRestLabel: 'غير مخصّص',
   ckWalkBad: w => `رصيف بعرض ${fm(w)} م: يلزم 1,40 م على الأقلّ خالية من العوائق لمرور كرسيّ متحرّك أو عربة أطفال.`,
@@ -4541,7 +4613,7 @@ Object.assign(I18N.en, {
     <h3>The steps</h3>
     <ol>
       <li><strong>Locate the site</strong> on the map, then click “Analyze the site”: street, nearby schools and health facilities, bus stops, population density.</li>
-      <li><strong>Describe the street</strong> in the cross-section, from building line to building line (sidewalks, lanes, parking, bus lanes, bike facilities, median, island, street lights), in three stages: the existing street, the proposed typical section (the street after the works, away from the crossing) and the cross-section at the crossing. The last one is calculated for the chosen option; you can modify it.</li>
+      <li><strong>Describe the street</strong> in the cross-section, from building line to building line (sidewalks, lanes, parking, bus lanes, bike facilities, planted or paved medians with or without a lighting column, island, street lights, and at their real dimensions: DBA concrete barrier, GS2 guardrail, S8 pedestrian railing, T2 and T3 kerbs, CS2 and CC2 gutters), in three stages: the existing street, the proposed typical section (the street after the works, away from the crossing) and the cross-section at the crossing. The last one is calculated for the chosen option; you can modify it.</li>
       <li><strong>Enter the traffic</strong>: number of lanes per direction (one or two), peak flow per direction, share of trucks and buses, measured speed, pedestrians, speed limit; and, if possible, your hour-by-hour traffic counts. Above about 1,800 veh/h per direction one lane is no longer enough: enter two lanes per direction (up to 3,600 veh/h per direction).</li>
       <li><strong>Adjust the measures</strong>: dimensions of the narrowing and the chicane, signal timing. Then click “Apply and rerun”.</li>
       <li><strong>Watch the simulations</strong>: one animated strip per measure, with its key figures and a 3D view (click the thumbnail). Presentation mode shows them all on one screen.</li>
@@ -4568,7 +4640,7 @@ Object.assign(I18N.en, {
     </tbody></table></div>
     <h3>Where to find the results</h3>
     <ul>
-      <li><strong>In the cross-section</strong>: widths to correct, and the cross-section at the crossing with the crossing length.</li>
+      <li><strong>In the cross-section</strong>: widths to correct, the cross-section at the crossing with the crossing length, and the indicative iRAP rating of the existing and proposed section for pedestrians, cars, motorcycles and bicycles (an approximation to be validated by an iRAP expert).</li>
       <li><strong>In each strip</strong>: speed at the crossing, travel time, queue, pedestrian waiting time, risk for a pedestrian who is hit, and the iRAP pedestrian star rating (indicative, 1 to 5 stars; target: at least 3), with an estimate for cars, motorcycles and bicycles (an approximation to be validated by an iRAP expert), also detailed in the calculation note.</li>
       <li><strong>In “Results”</strong>: the most suitable solution and why, the comparison table, hour-by-hour traffic.</li>
       <li><strong>In the design report</strong> (“Generate the design report” button): everything above explained in plain terms, the location on a site map and an aerial view, the cross-section, the dimensioned plan, signage, lighting, sidewalks, cost and action plan.</li>
@@ -4588,11 +4660,23 @@ Object.assign(I18N.en, {
   pfCustomNote: 'Cross-section modified by hand by the municipality.',
   pfProjected: 'Proposed cross-section (typical section)', pfProjSame: 'The proposed cross-section in the typical section is the same as the existing one.',
   ckIslandWarn: w => `Island of ${fm(w)} m: at least 1.50 m is needed for it to serve as a refuge, 2.00 m with a stroller or a bicycle.`,
+  pfBarrierCut: 'Barriers and railings are interrupted at the crossing: the opening becomes an island between the two directions, or joins the sidewalk at the edge.',
+  ckBlockCross: () => 'Barrier or railing across the crossing: interrupt it so pedestrians can get through.',
+  ckGs2: () => 'GS2 guardrail: C100 posts every 2 m, A-profile rail with its top edge at 0.75 m; keep the working width (W4, about 1.3 m) clear behind the rail; treat the ends (anchoring, lowering).',
+  ckDba: () => 'DBA concrete barrier: height 0.80 m, base 0.60 m, top 0.15 m (about 700 kg/m); ends to be treated (lowering or crash cushion).',
+  ckS8: () => 'S8 railing: height 1.00 m, posts every 1.50 m; it guides pedestrians to the crossings and is interrupted there.',
+  pfIrapTitle: 'Indicative iRAP rating of the street section (100 m): existing and proposed',
+  pfIrapCols: ['Road user', 'Existing', 'Proposed'], pfIrapUsers: { ped: 'Pedestrians', vo: 'Car occupants', mc: 'Motorcyclists', bc: 'Bicyclists' },
+  pfIrapVEx: v => `Existing V85: ${f0(v)} km/h (measured, site data)`, pfIrapVPr: 'Proposed V85 (km/h)', pfIrapVPrTxt: v => `proposed V85: ${f0(v)} km/h`,
+  pfIrapNote: 'An approximation to be validated by an iRAP expert: risk factors published by iRAP (model 3.02), straight and flat street, no intersection or property access, crossing anywhere without a facility (none if S8 railings line both sidewalks). Each element of the cross-section counts: barriers, railings, medians, lighting, sidewalks, cycle facilities, parking. The crossing itself is rated with each option, below.',
   pfTotal: 'Available width (building line to building line)', pfPreset: 'Street template', pfLoad: 'Load the template', pfAdd: 'Add:',
   presets: { defaut: 'Two-lane street (12 m)', quartier: 'Neighborhood street (10 m)', avenue: 'Avenue with parking (16 m)', bus: 'Avenue with bus lanes (19.5 m)',
     boulevard: 'Boulevard, 2 × 2 lanes with median (22 m)', sensunique: 'One-way street with parking (9 m)', velo: 'Street with bike lanes (14 m)' },
   segNames: { walk: ['Sidewalk', 'Sidewalk'], ext: ['Curb extension', 'Extension'], trees: ['Planting strip', 'Planting'], park: ['Parking', 'Parking'],
-    lane: ['Traffic lane', 'Lane'], bus: ['Bus lane', 'Bus lane'], bike: ['Bike lane', 'Bike lane'], track: ['Bike track', 'Bike track'], median: ['Median', 'Median'], island: ['Refuge island', 'Island'], lamp: ['Street light', 'Light'] },
+    lane: ['Traffic lane', 'Lane'], bus: ['Bus lane', 'Bus lane'], bike: ['Bike lane', 'Bike lane'], track: ['Bike track', 'Bike track'], median: ['Median', 'Median'], island: ['Refuge island', 'Island'], lamp: ['Street light', 'Light'],
+    medPave: ['Paved median', 'Paved median'], medPaveLamp: ['Paved median with lighting column', 'Lit paved median'], medGreenLamp: ['Planted median with lighting column', 'Lit planted median'],
+    dba: ['Concrete barrier DBA (base 0.60 m, height 0.80 m)', 'DBA'], gs2: ['Steel guardrail GS2 (rail at 0.75 m)', 'GS2'], s8: ['Pedestrian railing S8 (height 1.00 m)', 'S8'],
+    t2: ['Kerb T2 (15 × 25 cm)', 'T2'], t3: ['Kerb T3 (17 × 28 cm)', 'T3'], cs2: ['Side gutter CS2 (25 × 13.5 cm)', 'CS2'], cc2: ['Central gutter CC2 (50 × 14 cm)', 'CC2'] },
   dir1: 'direction 1', dir2: 'direction 2', pfLeft: 'Move left', pfRight: 'Move right', pfDel: 'Delete', pfWidth: 'Width',
   pfExact: 'The available width is fully allocated.', pfRest: r => `${fm(r)} m left unallocated.`, pfOver: r => `Exceeds the available width by ${fm(r)} m.`, pfRestLabel: 'unallocated',
   ckWalkBad: w => `Sidewalk of ${fm(w)} m: at least 1.40 m clear of obstacles is needed for a wheelchair or a stroller.`,
@@ -4646,10 +4730,23 @@ const SEG = {
   track:  { raised: true,  color: '#3f8a58', def: 2.0, dir: true },
   median: { raised: true,  color: '#9fbf86', def: 2.0 },
   island: { raised: true,  color: '#c4d3ae', def: 2.0 },
-  lamp:   { raised: true,  color: '#8a9099', def: 0.6 }
+  lamp:   { raised: true,  color: '#8a9099', def: 0.6 },
+  // terre-pleins : en pavés, en pavés avec candélabre au milieu, végétalisé avec candélabre au milieu
+  medPave:      { raised: true, color: '#c8b49a', def: 2.0 },
+  medPaveLamp:  { raised: true, color: '#c8b49a', def: 2.0 },
+  medGreenLamp: { raised: true, color: '#9fbf86', def: 2.0 },
+  // éléments normalisés, à leurs dimensions réelles (largeur fixe) ; block : on ne les traverse pas à pied
+  dba: { raised: false, color: '#c3c0b6', def: 0.60, fixed: true, block: true },   // béton adhérent double : base 0,60, tête 0,15, hauteur 0,80 m
+  gs2: { raised: false, color: '#b9c0c8', def: 0.35, fixed: true, block: true },   // glissière simple : C100 tous les 2 m, lisse profil A à 0,75 m
+  s8:  { raised: true,  color: '#8d98a6', def: 0.15, fixed: true, block: true },   // garde-corps piétons : hauteur 1,00 m, poteaux tous les 1,50 m
+  t2:  { raised: true,  color: '#aeaba3', def: 0.15, fixed: true },                // bordure 15 × 25 cm
+  t3:  { raised: true,  color: '#aeaba3', def: 0.17, fixed: true },                // bordure 17 × 28 cm
+  cs2: { raised: false, color: '#bdbab2', def: 0.25, fixed: true },                // caniveau à une pente 25 × 13,5 cm
+  cc2: { raised: false, color: '#bdbab2', def: 0.50, fixed: true }                 // caniveau central à deux pentes 50 × 14 cm
 };
-const SEG_ADD = ['walk', 'ext', 'trees', 'lamp', 'park', 'lane', 'bus', 'bike', 'track', 'median', 'island'];
-const isRefuge = s => (s.t === 'median' || s.t === 'island') && s.w >= ISLAND_MIN;
+const SEG_ADD = ['walk', 'ext', 'trees', 'lamp', 'park', 'lane', 'bus', 'bike', 'track', 'median', 'medGreenLamp', 'medPave', 'medPaveLamp',
+  'island', 'dba', 'gs2', 's8', 't2', 't3', 'cs2', 'cc2'];
+const isRefuge = s => (s.t === 'island' || MEDIAN_SEGS.includes(s.t)) && s.w >= ISLAND_MIN;
 const PRESETS = {
   defaut: { total: 12, segs: [['walk', 2.5], ['lane', 3.5, 1], ['lane', 3.5, -1], ['walk', 2.5]] },
   quartier: { total: 10, segs: [['walk', 2], ['lane', 3, 1], ['lane', 3, -1], ['walk', 2]] },
@@ -4667,6 +4764,7 @@ const okSegs = a => Array.isArray(a) && a.length > 0 && a.every(g => g && SEG[g.
 const readSegs = a => a.map(g => ({ t: g.t, w: +g.w, d: g.d < 0 ? -1 : 1 }));
 const sameSegs = (a, b) => a.length === b.length && a.every((s, i) => s.t === b[i].t && Math.abs(s.w - b[i].w) < 0.005 && s.d === b[i].d);
 let PROF = presetProfile('defaut'), PROJ = null, pfTab = 'ex';
+let PROJV = null;   // V85 projetée en section courante (km/h) ; null = la V85 mesurée
 const CROSS = {};
 try {
   const s = JSON.parse(localStorage.getItem('mv-prof') || 'null');
@@ -4674,11 +4772,14 @@ try {
     PROF = { total: +s.total || 12, segs: readSegs(s.segs) };
     if (okSegs(s.proj)) PROJ = readSegs(s.proj);
     if (s.cross) for (const k of Object.keys(s.cross)) if (okSegs(s.cross[k])) CROSS[k] = readSegs(s.cross[k]);
+    if (Number.isFinite(+s.pv) && +s.pv > 0) PROJV = +s.pv;
   }
 } catch (e) { /* stockage indisponible */ }
-const saveProf = () => { profVer++; try { localStorage.setItem('mv-prof', JSON.stringify({ total: PROF.total, segs: PROF.segs, proj: PROJ, cross: CROSS })); } catch (e) { /* stockage indisponible */ } };
+const saveProf = () => { profVer++; try { localStorage.setItem('mv-prof', JSON.stringify({ total: PROF.total, segs: PROF.segs, proj: PROJ, cross: CROSS, pv: PROJV })); } catch (e) { /* stockage indisponible */ } };
 const profSum = segs => segs.reduce((a, s) => a + s.w, 0);
 const projProfile = () => ({ total: PROF.total, segs: PROJ || PROF.segs });
+// décalage (m) du profil centré entre les façades quand il est plus étroit que l'espace disponible
+const profOffset = segs => Math.max(0, (PROF.total - profSum(segs)) / 2);
 
 // contrôles du profil : [niveau, message, rang de l'élément concerné s'il y en a un] ; le rang sert à faire clignoter l'élément
 function profChecks(pf, atCrossing = false) {
@@ -4692,8 +4793,12 @@ function profChecks(pf, atCrossing = false) {
     else if (s.t === 'park' && s.w < 2.0) add('bad', 'ckParkBad');
     else if (s.t === 'bike' && s.w < 1.2) add('bad', 'ckBikeBad');
     else if (s.t === 'track' && s.w < 1.5) add('bad', 'ckTrackBad');
-    else if (s.t === 'median' && s.w < ISLAND_MIN) add('warn', 'ckMedianWarn');
+    else if (MEDIAN_SEGS.includes(s.t) && s.w < ISLAND_MIN) add('warn', 'ckMedianWarn');
     else if (s.t === 'island' && s.w < 2.0) add(s.w < ISLAND_MIN ? 'bad' : 'warn', 'ckIslandWarn');
+    else if (SEG[s.t].block && atCrossing) add('bad', 'ckBlockCross');
+    else if (s.t === 'gs2') add('info', 'ckGs2');
+    else if (s.t === 'dba') add('info', 'ckDba');
+    else if (s.t === 's8') add('info', 'ckS8');
   });
   const lanes = pf.segs.filter(s => s.t === 'lane'), n1 = lanes.filter(s => s.d > 0).length, n2 = lanes.length - n1;
   if (!lanes.length) out.push(['bad', t('ckNoLane')]);
@@ -4717,7 +4822,7 @@ function crossStages(segs) {
   const xs = []; let x = 0; for (const s of segs) { xs.push(x); x += s.w; }
   const runs = []; let cur = null;
   segs.forEach((s, i) => {
-    const crossable = !SEG[s.t].raised || s.t === 'track' || ((s.t === 'median' || s.t === 'island') && !isRefuge(s));
+    const crossable = !SEG[s.t].block && (!SEG[s.t].raised || s.t === 'track' || s.t === 't2' || s.t === 't3' || ((s.t === 'island' || MEDIAN_SEGS.includes(s.t)) && !isRefuge(s)));
     if (crossable) { if (!cur) cur = { xa: xs[i], w: 0 }; cur.w += s.w; cur.xb = xs[i] + s.w; }
     else if (cur) { runs.push(cur); cur = null; }
   });
@@ -4729,6 +4834,14 @@ function crossStages(segs) {
 function crossProfile(pf, id) {
   let segs = pf.segs.map(s => ({ ...s }));
   const notes = [];
+  // dispositifs de retenue et garde-corps interrompus au droit du passage : entre les deux sens, l'ouverture devient
+  // un îlot ; en rive, leur emprise rejoint le trottoir voisin
+  if (segs.some(s => SEG[s.t].block)) {
+    const tr = segs.map((s, j) => isTraffic(s) ? j : -1).filter(j => j >= 0), a = tr[0], b = tr[tr.length - 1];
+    segs = segs.map((s, j) => !SEG[s.t].block ? s : { t: j > a && j < b ? 'island' : 'walk', w: s.w, d: 1 })
+      .reduce((acc, s) => { const p = acc[acc.length - 1]; if (p && p.t === s.t && (s.t === 'walk' || s.t === 'island')) p.w += s.w; else acc.push(s); return acc; }, []);
+    notes.push(['info', t('pfBarrierCut')]);
+  }
   if (segs.some(s => s.t === 'park')) { segs = segs.map(s => s.t === 'park' ? { t: 'ext', w: s.w, d: 1 } : s); notes.push(['info', t('pfExt')]); }
   const fitWidth = () => {   // ajuste au gabarit disponible : pris sur les avancées puis sur les trottoirs, rendu aux trottoirs
     let over = profSum(segs) - pf.total;
@@ -4755,7 +4868,7 @@ function crossProfile(pf, id) {
   };
   if (id === 'ret') {
     segs.forEach(s => { if (s.t === 'lane') s.w = P.retLane; });
-    const med = segs.find(s => s.t === 'median' || s.t === 'island'), dirs = new Set(segs.filter(s => SEG[s.t].dir).map(s => s.d));
+    const med = segs.find(s => MEDIAN_SEGS.includes(s.t) || s.t === 'island'), dirs = new Set(segs.filter(s => SEG[s.t].dir).map(s => s.d));
     if (med) { med.w = Math.max(med.w, P.retIsl); notes.push(['info', t('pfIslMed')]); }
     else if (dirs.size < 2) notes.push(['warn', t('pfOneWayNoIsl')]);
     else {
@@ -4822,10 +4935,25 @@ function profileSVG(segs, total, opts = {}) {
   const bike = (cx, top) => `<rect x="${fx(cx - 5)}" y="${top - 66}" width="10" height="66" rx="5" fill="#222"/><rect x="${fx(cx - 30)}" y="${top - 112}" width="60" height="7" rx="3" fill="#444"/>` + person(cx, top - 40, 2).replace(/<rect x="[^"]+" y="[^"]+" width="12" height="68" fill="#2f3a4a"\/>/g, '');
   const tree = (cx, top, w) => `<rect x="${fx(cx - 11)}" y="${top - 210}" width="22" height="210" fill="#6b4f35"/><circle cx="${fx(cx)}" cy="${top - 270}" r="${fx(Math.min(115, w / 2))}" fill="#5f8f45"/>`;
   const shrub = (cx, top, w) => { let s = ''; for (let k = -1; k <= 1; k++) s += `<circle cx="${fx(cx + k * Math.min(45, w / 4))}" cy="${top - 26}" r="28" fill="#6f9a52"/>`; return s; };
-  let x = 0; const glow = [];
+  // candélabre : crosse tournée vers la chaussée (sides : -1 à gauche, 1 à droite, les deux pour un terre-plein)
+  const glow = [];
+  const lampAt = (cx, top, sides) => {
+    o.push(`<rect x="${fx(cx - 6)}" y="48" width="12" height="${top - 48}" fill="#59606a"/><rect x="${fx(cx - 14)}" y="${top - 30}" width="28" height="30" fill="#4a5059"/>`);
+    for (const d of sides) {
+      const lx = cx + d * 125;
+      o.push(`<path d="M${fx(cx)} 60Q${fx(cx + d * 20)} 34 ${fx(cx + d * 70)} 34L${fx(lx)} 34" stroke="#59606a" stroke-width="9" fill="none"/><rect x="${fx(lx - 32)}" y="30" width="64" height="15" rx="6" fill="#3f454d"/>`);
+      glow.push(`<path d="M${fx(lx - 26)} 46L${fx(lx + 26)} 46L${fx(lx + 120)} ${yR}L${fx(lx - 120)} ${yR}Z" fill="#ffe28a" opacity=".28"/>`);
+    }
+  };
+  // côté de la circulation pour un élément i : -1 (à gauche), 1 (à droite), 0 (les deux)
+  const roadAt = j => j >= 0 && j < segs.length && !SEG[segs[j].t].raised && !['cs2', 'cc2', 'dba', 'gs2'].includes(segs[j].t);
+  const faceOf = i => roadAt(i - 1) && roadAt(i + 1) ? 0 : roadAt(i + 1) ? 1 : roadAt(i - 1) ? -1 : 1;
+  // profil plus étroit que l'espace entre façades : centré sur l'axe, le reste réparti des deux côtés
+  const off = Math.max(0, (total - sum) / 2) * U;
+  let x = off;
   segs.forEach((s, i) => {
     const S = SEG[s.t], w = s.w * U, top = S.raised ? yR - curb : yR, cx = x + w / 2;
-    o.push(`<rect x="${fx(x)}" y="${top}" width="${fx(w)}" height="${380 - top}" fill="${S.color}"/>`);
+    o.push(`<rect x="${fx(x)}" y="${top}" width="${fx(w)}" height="${380 - top}" fill="${s.t === 'dba' || s.t === 'gs2' ? SEG.lane.color : S.color}"/>`);
     if (S.raised) o.push(`<rect x="${fx(x)}" y="${top}" width="${fx(w)}" height="6" fill="#00000022"/>`);
     if (s.t === 'walk' || s.t === 'ext') {
       const n = Math.max(1, Math.min(2, Math.floor(s.w / 1.3)));
@@ -4841,33 +4969,64 @@ function profileSVG(segs, total, opts = {}) {
     else if (s.t === 'lamp') {
       // crosse tournée vers la chaussée ; double crosse si le poteau est entre deux chaussées
       const lowL = i > 0 && !SEG[segs[i - 1].t].raised, lowR = i < segs.length - 1 && !SEG[segs[i + 1].t].raised;
-      const sides = lowL && lowR ? [-1, 1] : lowL ? [-1] : lowR ? [1] : [cx < total * U / 2 ? 1 : -1];
-      o.push(`<rect x="${fx(cx - 6)}" y="48" width="12" height="${top - 48}" fill="#59606a"/><rect x="${fx(cx - 14)}" y="${top - 30}" width="28" height="30" fill="#4a5059"/>`);
-      for (const d of sides) {
-        const lx = cx + d * 125;
-        o.push(`<path d="M${fx(cx)} 60Q${fx(cx + d * 20)} 34 ${fx(cx + d * 70)} 34L${fx(lx)} 34" stroke="#59606a" stroke-width="9" fill="none"/><rect x="${fx(lx - 32)}" y="30" width="64" height="15" rx="6" fill="#3f454d"/>`);
-        glow.push(`<path d="M${fx(lx - 26)} 46L${fx(lx + 26)} 46L${fx(lx + 120)} ${yR}L${fx(lx - 120)} ${yR}Z" fill="#ffe28a" opacity=".28"/>`);
-      }
+      lampAt(cx, top, lowL && lowR ? [-1, 1] : lowL ? [-1] : lowR ? [1] : [cx < total * U / 2 ? 1 : -1]);
       txt(cx, 22, N.lamp[1], 18);
+    } else if (s.t === 'medPave' || s.t === 'medPaveLamp') {
+      for (let px = x + 6, r = 0; px + 18 <= x + w - 4; px += 22, r++) o.push(`<rect x="${fx(px)}" y="${top + 3 + (r % 2) * 3}" width="18" height="9" rx="2" fill="#a88f70"/>`);
+      if (s.t === 'medPaveLamp') { lampAt(cx, top, [-1, 1]); txt(cx, 22, N.lamp[1], 18); }
+    } else if (s.t === 'medGreenLamp') { o.push(shrub(cx, top, w)); lampAt(cx, top, [-1, 1]); txt(cx, 22, N.lamp[1], 18); }
+    else if (s.t === 'dba') {
+      // profil symétrique : base 60, 25 cm à 50, tête 15 cm à 80 cm de hauteur
+      const k = w / 60, P0 = [[0, 0], [0, 7.5], [10, 25], [22.5, 80], [37.5, 80], [50, 25], [60, 7.5], [60, 0]];
+      o.push(`<polygon points="${P0.map(([px, py]) => `${fx(x + px * k)},${fx(yR - py)}`).join(' ')}" fill="#c3c0b6" stroke="#7d7a72" stroke-width="2"/>`);
+    } else if (s.t === 'gs2') {
+      // poteau C100 (10 cm), écarteur, lisse profil A de 31 cm dont l'arête haute est à 75 cm, du côté de la circulation
+      const f = faceOf(i), rect = (a, b, y0, h, fill, st = '') => o.push(`<rect x="${fx(a)}" y="${fx(yR - y0)}" width="${fx(b - a)}" height="${h}" fill="${fill}"${st}/>`);
+      const post = a => rect(a, a + 10, 70, 70, '#7f8891'), spacer = (a, b) => rect(a, b, 62, 6, '#7f8891');
+      const beam = a => rect(a, a + 8, 75, 31, '#aab3bc', ' stroke="#6c757e" stroke-width="2"');
+      if (f === 0) { post(cx - 5); spacer(x + 8, cx - 5); spacer(cx + 5, x + w - 8); beam(x); beam(x + w - 8); }
+      else if (f > 0) { post(x + 4); spacer(x + 14, x + w - 8); beam(x + w - 8); }
+      else { post(x + w - 14); spacer(x + 8, x + w - 14); beam(x); }
+    } else if (s.t === 's8') {
+      // garde-corps : poteau, main courante à 1,00 m, lisses intermédiaire et basse
+      o.push(`<rect x="${fx(cx - 3)}" y="${top - 100}" width="6" height="100" fill="#5c6670"/><rect x="${fx(cx - 7)}" y="${top - 3}" width="14" height="3" fill="#5c6670"/>`);
+      for (const h of [100, 55, 12]) o.push(`<circle cx="${fx(cx)}" cy="${top - h}" r="${h === 100 ? 5 : 3.5}" fill="#3f4851"/>`);
+    } else if (s.t === 't2' || s.t === 't3') {
+      // bordure posée sur fondation : 25 ou 28 cm de haut, vue de 15 cm au-dessus de la chaussée
+      o.push(`<rect x="${fx(x)}" y="${top}" width="${fx(w)}" height="${s.t === 't2' ? 25 : 28}" fill="#c2bfb7" stroke="#7d7a72" stroke-width="2"/>`);
+    } else if (s.t === 'cs2' || s.t === 'cc2') {
+      // caniveau : 13,5 cm (une pente vers la bordure) ou 14 cm (deux pentes, fil d'eau au milieu)
+      const h = s.t === 'cs2' ? 13.5 : 14, low = s.t === 'cc2' ? 0 : faceOf(i) > 0 ? -1 : 1;
+      o.push(`<rect x="${fx(x)}" y="${yR}" width="${fx(w)}" height="${h}" fill="#d0cdc5" stroke="#7d7a72" stroke-width="2"/>`);
+      o.push(low === 0 ? `<path d="M${fx(x)} ${yR}L${fx(cx)} ${yR + 4}L${fx(x + w)} ${yR}" stroke="#4a6fa0" stroke-width="3" fill="none"/>`
+        : `<path d="M${fx(low > 0 ? x : x + w)} ${yR}L${fx(low > 0 ? x + w : x)} ${yR + 3}" stroke="#4a6fa0" stroke-width="3" fill="none"/>`);
     }
     // marquage entre deux éléments de chaussée
     const nx = segs[i + 1];
-    if (nx && !S.raised && !SEG[nx.t].raised) o.push(`<rect x="${fx(x + w - 6)}" y="${yR - 3}" width="12" height="5" fill="#ffffff"/>`);
+    const unmarked = k => ['dba', 'gs2', 'cs2', 'cc2'].includes(k);
+    if (nx && !S.raised && !SEG[nx.t].raised && !unmarked(s.t) && !unmarked(nx.t)) o.push(`<rect x="${fx(x + w - 6)}" y="${yR - 3}" width="12" height="5" fill="#ffffff"/>`);
     // étiquettes
     const nm = N[s.t][1] + (S.dir ? (s.d > 0 ? ' ↑' : ' ↓') : '');
-    if (s.t !== 'lamp') txt(cx, 412, nm, w < 140 ? 19 : 24);
-    txt(cx, 442, fm(s.w), w < 140 ? 22 : 26, ' font-weight="600"');
+    // élément étroit (bordure, caniveau, dispositif de retenue) : nom court écrit verticalement, sans cote
+    if (w < 45) txt(cx + 6, 418, nm, 17, ` transform="rotate(-90 ${fx(cx + 6)} 418)"`);
+    else {
+      if (s.t !== 'lamp') txt(cx, 412, nm, w < 140 ? 19 : 24);
+      txt(cx, 442, fm(s.w), w < 140 ? 22 : 26, ' font-weight="600"');
+    }
     o.push(`<line x1="${fx(x)}" y1="385" x2="${fx(x)}" y2="450" stroke="#888" stroke-width="2"/>`);
     x += w;
   });
   o.push(...glow);
   // éléments en défaut : surbrillance (clignotante dans la page, fixe dans la note)
-  if (opts.flags) { let xf = 0; segs.forEach((s, i) => { const lv = opts.flags.get(i), w = s.w * U; if (lv) o.push(`<rect class="pf-flag" x="${fx(xf + 3)}" y="14" width="${fx(Math.max(6, w - 6))}" height="440" rx="10" fill="${lv === 'bad' ? '#d32f2f' : '#f0a000'}" fill-opacity=".16" stroke="${lv === 'bad' ? '#d32f2f' : '#f0a000'}" stroke-width="7"/>`); xf += w; }); }
+  if (opts.flags) { let xf = off; segs.forEach((s, i) => { const lv = opts.flags.get(i), w = s.w * U; if (lv) o.push(`<rect class="pf-flag" x="${fx(xf + 3)}" y="14" width="${fx(Math.max(6, w - 6))}" height="440" rx="10" fill="${lv === 'bad' ? '#d32f2f' : '#f0a000'}" fill-opacity=".16" stroke="${lv === 'bad' ? '#d32f2f' : '#f0a000'}" stroke-width="7"/>`); xf += w; }); }
   o.push(`<line x1="${fx(x)}" y1="385" x2="${fx(x)}" y2="450" stroke="#888" stroke-width="2"/>`);
   o.push(`<rect x="${-M}" y="380" width="${W + 2 * M}" height="4" fill="#555"/>`);
   if (sum < total - 0.005) {
-    o.push(`<rect x="${fx(sum * U)}" y="${yR - 40}" width="${fx((total - sum) * U)}" height="40" fill="none" stroke="#b0303c" stroke-width="3" stroke-dasharray="10 8"/>`);
-    txt((sum + total) / 2 * U, yR - 52, t('pfRestLabel'), 20, ' fill="#b0303c"');
+    // espace non affecté réparti des deux côtés du profil centré
+    for (const xa of [0, off + sum * U]) {
+      o.push(`<rect x="${fx(xa)}" y="${yR - 40}" width="${fx(off)}" height="40" fill="none" stroke="#b0303c" stroke-width="3" stroke-dasharray="10 8"/>`);
+      if (off >= 70) txt(xa + off / 2, yR - 52, t('pfRestLabel'), off >= 140 ? 20 : 15, ' fill="#b0303c"');
+    }
   }
   if (sum > total + 0.005) o.push(`<line x1="${fx(total * U)}" y1="20" x2="${fx(total * U)}" y2="380" stroke="#b0303c" stroke-width="5" stroke-dasharray="14 10"/>`);
   // cote totale
@@ -4876,7 +5035,7 @@ function profileSVG(segs, total, opts = {}) {
   txt(total * U / 2, yD - 9, `${fm(total)} ${t('m')}`, 24, ' font-weight="600"');
   // parcours du piéton
   if (opts.stages) opts.stages.forEach(st => {
-    const a = st.xa * U, b = st.xb * U, y = 550;
+    const a = off + st.xa * U, b = off + st.xb * U, y = 550;
     o.push(`<line x1="${fx(a)}" y1="${y}" x2="${fx(b)}" y2="${y}" stroke="#e0a100" stroke-width="8"/><circle cx="${fx(a)}" cy="${y}" r="9" fill="#e0a100"/><circle cx="${fx(b)}" cy="${y}" r="9" fill="#e0a100"/>`);
     txt((a + b) / 2, y - 12, `${t('pfCrossing')} ${fm(st.w)} ${t('m')}`, 21);
   });
@@ -4911,6 +5070,7 @@ function buildProfileUI() {
     <div class="prof-draw" id="pf-draw"></div>
     <div class="prof-segs" id="pf-segs"></div>
     <div class="prof-checks" id="pf-checks"></div>
+    <div class="prof-irap" id="pf-irap"></div>
     <div class="form-actions"><span id="pf-acts"></span><span class="msg" id="pf-msg"></span></div>`;
   renderProfile(true);
 }
@@ -4938,13 +5098,28 @@ function renderProfile(cards) {
   $('#pf-draw').innerHTML = profileSVG(segs, PROF.total, { stages: C ? C.stages : null, flags });
   if (cards) $('#pf-segs').innerHTML = segs.map((s, i) => `<div class="pseg" data-i="${i}">
       <div class="nm"><span class="sw" style="background:${SEG[s.t].color}"></span>${esc(N[s.t][0])}</div>
-      <div class="wrow"><button class="btn mini" type="button" data-act="minus" data-i="${i}" aria-label="−0,25 m">−</button><input type="number" min="0.25" max="30" step="0.05" value="${Math.round(s.w * 100) / 100}" data-act="w" data-i="${i}" aria-label="${esc(t('pfWidth'))}"><button class="btn mini" type="button" data-act="plus" data-i="${i}" aria-label="+0,25 m">+</button><span>${t('m')}</span></div>
+      ${SEG[s.t].fixed ? `<div class="wrow"><span class="fixw">${fm(s.w)} ${t('m')}</span></div>` : `<div class="wrow"><button class="btn mini" type="button" data-act="minus" data-i="${i}" aria-label="−0,25 m">−</button><input type="number" min="0.25" max="30" step="0.05" value="${Math.round(s.w * 100) / 100}" data-act="w" data-i="${i}" aria-label="${esc(t('pfWidth'))}"><button class="btn mini" type="button" data-act="plus" data-i="${i}" aria-label="+0,25 m">+</button><span>${t('m')}</span></div>`}
       ${SEG[s.t].dir ? `<button class="btn mini dir" type="button" data-act="dir" data-i="${i}">${s.d > 0 ? '↑ ' + esc(t('dir1')) : '↓ ' + esc(t('dir2'))}</button>` : ''}
       <div class="wrow"><button class="btn mini" type="button" data-act="left" data-i="${i}" aria-label="${esc(t('pfLeft'))}">◀</button><button class="btn mini" type="button" data-act="right" data-i="${i}" aria-label="${esc(t('pfRight'))}">▶</button><button class="btn mini" type="button" data-act="del" data-i="${i}" aria-label="${esc(t('pfDel'))}">✕</button></div>
     </div>`).join('');
   $('#pf-checks').innerHTML = checks.map(([l, m]) => `<div class="${l}">${esc(m)}</div>`).join('');
   document.querySelectorAll('#pf-segs .pseg').forEach(c => { const lv = flags.get(+c.dataset.i); c.classList.toggle('flag-bad', lv === 'bad'); c.classList.toggle('flag-warn', lv === 'warn'); });
+  const typingV = document.activeElement && document.activeElement.id === 'pf-vproj';
+  if (!typingV) renderProfileIrap();
 }
+// classement iRAP indicatif de la section courante, existante et projetée, pour chaque usager (page et note de calcul)
+function irapSectionTable(forNote) {
+  const vEx = P.v85free, vPr = PROJV || P.v85free;
+  const ex = irapSection(PROF.segs, vEx), pr = irapSection(projProfile().segs, vPr), U = t('pfIrapUsers');
+  const cell = r => `${starHtml(r.stars)} <small>${f1(r.score)}</small>`, ped = r => ({ stars: r.stars, score: r.total });
+  const rows = [['ped', '🚶', ped(ex), ped(pr)], ['vo', '🚗', ex.vo, pr.vo], ['mc', '🏍', ex.mc, pr.mc], ['bc', '🚲', ex.bc, pr.bc]]
+    .map(([k, ic, a, b]) => `<tr><td>${ic} ${esc(U[k])}</td><td class="n">${cell(a)}</td><td class="n">${cell(b)}</td></tr>`).join('');
+  const head = `<tr>${t('pfIrapCols').map(c => `<th>${esc(c)}</th>`).join('')}</tr>`;
+  const speeds = forNote ? `<p class="small">${esc(t('pfIrapVEx', vEx))} · ${esc(t('pfIrapVPrTxt', vPr))}</p>`
+    : `<div class="pf-irap-v"><span>${esc(t('pfIrapVEx', vEx))}</span><label>${esc(t('pfIrapVPr'))} <input id="pf-vproj" type="number" min="20" max="110" step="1" value="${Math.round(vPr)}" inputmode="numeric"></label></div>`;
+  return `${forNote ? '' : `<h4>${esc(t('pfIrapTitle'))}</h4>`}${speeds}<table class="pf-irap-t"><thead>${head}</thead><tbody>${rows}</tbody></table><p class="${forNote ? 'small' : 'note'}">${esc(t('pfIrapNote'))}</p>`;
+}
+function renderProfileIrap() { const box = $('#pf-irap'); if (box) box.innerHTML = irapSectionTable(false); }
 // appelée quand la variante choisie ou les paramètres changent : ne reconstruit pas les cartes pendant une saisie
 function renderProfileCross() {
   if (!$('#pf-draw')) return;
@@ -4962,7 +5137,7 @@ function reportDesign(id) {
   const lw = lanes.reduce((a, s) => a + s.w, 0) / lanes.length;
   if (id === 'ret') {
     put('retLane', lw, v => t('dsLane', v));
-    const isl = segs.filter(s => s.t === 'island' || s.t === 'median').reduce((a, s) => Math.max(a, s.w), 0);
+    const isl = segs.filter(s => s.t === 'island' || MEDIAN_SEGS.includes(s.t)).reduce((a, s) => Math.max(a, s.w), 0);
     if (isl > 0) put('retIsl', isl, v => t('dsIsl', v));
   } else if (id === 'chi') put('chLane', lw, v => t('dsLane', v));
   else return t('pfDesignNone');
@@ -5013,6 +5188,7 @@ $('#profil').addEventListener('click', e => {
 $('#profil').addEventListener('input', e => {
   const el = e.target;
   if (el.id === 'pf-total') { const v = parseFloat(el.value); if (v > 0) { PROF.total = v; saveProf(); renderProfile(false); } return; }
+  if (el.id === 'pf-vproj') { const v = parseFloat(el.value); if (v >= 20 && v <= 110) { PROJV = Math.abs(v - P.v85free) < 0.5 ? null : v; saveProf(); renderProfile(false); } return; }
   if (el.dataset.act === 'w') { const v = parseFloat(el.value), segs = tabSegs(true), s = segs[+el.dataset.i]; if (s && v > 0) { s.w = v; saveProf(); renderProfile(false); } }
 });
 $('#profil').addEventListener('change', e => {
@@ -5028,7 +5204,7 @@ const PD = { pend: null, on: false, src: null, ins: -1, x0: 0, y0: 0, ghost: nul
 function drawBounds() {
   const svg = $('#pf-draw svg'); if (!svg) return null;
   const m = svg.getScreenCTM(); if (!m) return null;
-  const xs = [0]; for (const s of tabSegs(false)) xs.push(xs[xs.length - 1] + s.w);
+  const sg = tabSegs(false), xs = [profOffset(sg)]; for (const s of sg) xs.push(xs[xs.length - 1] + s.w);
   return xs.map(x => m.a * x * 100 + m.e);
 }
 function cardBounds() {
@@ -5042,7 +5218,7 @@ function pdMarkers(ins) {
   if (ins < 0) return;
   const svg = $('#pf-draw svg');
   if (svg) {
-    const xs = [0]; for (const s of tabSegs(false)) xs.push(xs[xs.length - 1] + s.w);
+    const sg = tabSegs(false), xs = [profOffset(sg)]; for (const s of sg) xs.push(xs[xs.length - 1] + s.w);
     svg.insertAdjacentHTML('beforeend', `<line id="pf-insline" x1="${xs[ins] * 100}" y1="6" x2="${xs[ins] * 100}" y2="470" stroke="#1b5ea8" stroke-width="12" stroke-linecap="round"/>`);
   }
   const box = $('#pf-segs'), cb = cardBounds();
@@ -5108,7 +5284,7 @@ $('#profil').addEventListener('pointerdown', e => {
   if (svg) {
     const m = svg.getScreenCTM(); if (!m) return;
     const xm = (e.clientX - m.e) / m.a / 100;
-    let x = 0, i = -1; tabSegs(false).forEach((s, k) => { if (xm >= x && xm < x + s.w) i = k; x += s.w; });
+    const sg = tabSegs(false); let x = profOffset(sg), i = -1; sg.forEach((s, k) => { if (xm >= x && xm < x + s.w) i = k; x += s.w; });
     if (i >= 0) pdStart(e, { kind: 'seg', i });
   }
 });
@@ -6990,7 +7166,7 @@ function projSnapshot() {
   const params = {}; for (const g of FIELDS) for (const f of g.items) params[f.k] = P[f.k];
   return { app: 'urbain.ksr-infra.org', kind: 'urb-projet', version: 1, savedAt: new Date().toISOString(), lang, module: MOD,
     meta: { ...META }, site: SITE.lat === null ? null : { lat: SITE.lat, lon: SITE.lon, data: SITE.data, pop: SITE.pop, popState: SITE.popState === 'run' ? '' : SITE.popState },
-    params, calibModified, profile: { total: PROF.total, segs: PROF.segs, proj: PROJ, cross: CROSS }, day: { mode: DAY.mode, counts: DAY.counts },
+    params, calibModified, profile: { total: PROF.total, segs: PROF.segs, proj: PROJ, cross: CROSS, pv: PROJV }, day: { mode: DAY.mode, counts: DAY.counts },
     variant: pickedVariant, prices: { ...PRICES }, rate: RATE, jx: { ...JX }, jxPicked, pv: { ...PV }, pvPicked };
 }
 function projApply(s) {
@@ -7005,6 +7181,7 @@ function projApply(s) {
   if (s.profile && okSegs(s.profile.segs)) {
     PROF = { total: +s.profile.total || 12, segs: readSegs(s.profile.segs) };
     PROJ = okSegs(s.profile.proj) ? readSegs(s.profile.proj) : null;
+    PROJV = Number.isFinite(+s.profile.pv) && +s.profile.pv > 0 ? +s.profile.pv : null;
     for (const k of Object.keys(CROSS)) delete CROSS[k];
     if (s.profile.cross) for (const k of Object.keys(s.profile.cross)) if (okSegs(s.profile.cross[k])) CROSS[k] = readSegs(s.profile.cross[k]);
     saveProf();
